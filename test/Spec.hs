@@ -19,9 +19,13 @@ testAddressParsing =
     ("KG6HWF", address "KG6HWF" ""),
     ("KG6HWF-9", address "KG6HWF" "9")]
 
+prop_roundtrips :: Address -> Bool
+prop_roundtrips x = (read (show x)) == x
+
 tests = [
   testGroup "callPass"  testCallPass,
-  testGroup "addrParse" testAddressParsing
+  testGroup "addrParse" testAddressParsing,
+  testProperty "round trips" prop_roundtrips
   ]
 
 main = defaultMain tests

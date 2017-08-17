@@ -1,5 +1,6 @@
 module APRS.Types
     ( PacketType
+    , Address
     , address
     , Frame
     , identifyPacket
@@ -9,6 +10,8 @@ module APRS.Types
 import Data.Bits
 import Data.Int
 import Data.List
+import Test.QuickCheck (choose, shuffle)
+import Test.QuickCheck.Arbitrary
 
 data PacketType = CurrentMicE
   | Item
@@ -61,6 +64,14 @@ address c s
 instance Show Address where
   show (Address c "") = c
   show (Address c s) = c ++ "-" ++ s
+
+instance Arbitrary Address where
+  arbitrary = do
+    l <- choose (3, 12)
+    r <- choose (0, 5)
+    lel <- shuffle addrChars
+    rel <- shuffle addrChars
+    return $ address (take l lel) (take r rel)
 
 instance Read Address where
   readsPrec _ x = [let (l, r) = splitAt (maybe (length x) id (elemIndex '-' x)) x

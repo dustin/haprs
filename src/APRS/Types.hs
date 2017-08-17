@@ -72,11 +72,11 @@ instance Read Address where
                   where tail' [] = []
                         tail' (x:xs) = xs
 
+ctoi = toEnum . fromEnum :: Char -> Int16
 
 callPass :: Address -> Int16
 callPass a =
-  let ctoi c = (toEnum (fromEnum c)) ::Int16 in
-    0x7fff .&. (foldl xor 0x73e2 $ map (\(x, f) -> f (ctoi x)) (zip (call a) $ cycle [(\x -> shiftL x 8), id]))
+  0x7fff .&. (foldl xor 0x73e2 $ map (\(c, f) -> f (ctoi c)) (zip (call a) $ cycle [flip shiftL 8, id]))
 
 data Info = String deriving (Show)
 

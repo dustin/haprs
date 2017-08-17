@@ -65,7 +65,7 @@ instance Show Address where
 instance Read Address where
   readsPrec _ x = [let (l, r) = splitAt (maybe (length x) id (elemIndex '-' x)) x
                        r' = (tail' r)
-                       off = maybe (length x) id (findIndex (\c -> not $ elem c addrChars) r')
+                       off = maybe (length x) id $ findIndex (\c -> not $ elem c addrChars) r'
                        (u, xtra) = splitAt off r' in
                      (address l u, xtra)]
                   where tail' [] = []
@@ -75,7 +75,7 @@ instance Read Address where
 callPass :: Address -> Int16
 callPass a =
   let ctoi c = (toEnum (fromEnum c)) ::Int16 in
-    0x7fff .&. (foldl xor 0x73e2 $ map (\(x, f) -> f (ctoi x)) (zip (call a) (cycle [(\x -> shiftL x 8), id])))
+    0x7fff .&. (foldl xor 0x73e2 $ map (\(x, f) -> f (ctoi x)) (zip (call a) $ cycle [(\x -> shiftL x 8), id]))
 
 data Info = String deriving (Show)
 
@@ -83,4 +83,5 @@ data Frame = Frame { original :: String
                    , source :: Address
                    , dest :: Address
                    , path :: [Address]
-                   , body :: Info } deriving (Show)
+                   , body :: Info }
+           deriving (Show)

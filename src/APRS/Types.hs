@@ -54,9 +54,11 @@ instance Show Address where
   show (Address c s) = c ++ "-" ++ s
 
 instance Read Address where
-  readsPrec _ x = [(case elemIndex '-' x of
-                      Nothing -> Address x ""
-                      Just n -> let (l, r) = splitAt n x in Address l (tail r), "")]
+  readsPrec _ x = [(let (l, r) = splitAt (maybe (length x) id (elemIndex '-' x)) x in
+                      Address l (tail' r), "")]
+                  where tail' [] = []
+                        tail' (x:xs) = xs
+
 
 callPass :: Address -> Int16
 callPass a =

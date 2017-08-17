@@ -2,9 +2,20 @@ import APRS.Types
 
 import Test.HUnit
 import Test.QuickCheck
+import Test.QuickCheck.Arbitrary
 import Test.Framework (defaultMain, testGroup)
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2 (testProperty)
+
+addrChars = ['A'..'Z'] ++ ['0'..'9']
+
+instance Arbitrary Address where
+  arbitrary = do
+    l <- choose (3, 12)
+    r <- choose (0, 5)
+    lel <- shuffle addrChars
+    rel <- shuffle addrChars
+    return $ address (take l lel) (take r rel)
 
 testCallPass =
   map (\(s, want) -> testCase s $ assertEqual s (callPass $ read s) want) [

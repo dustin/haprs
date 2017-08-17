@@ -35,7 +35,7 @@ prop_roundtrips x = (read (show x)) == x
 tests = [
   testGroup "callPass"  testCallPass,
   testGroup "addrParse" testAddressParsing,
-  testProperty "round trips" (prop_roundtrips :: Address -> Bool)
+  testProperty "address round trips" (prop_roundtrips :: Address -> Bool)
   ]
 
 main = defaultMain tests

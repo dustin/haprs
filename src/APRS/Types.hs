@@ -53,9 +53,13 @@ instance Show Address where
   show (Address c "") = c
   show (Address c s) = c ++ "-" ++ s
 
+addrChars = '-' : ['A'..'Z'] ++ ['0'..'9']
+
 instance Read Address where
-  readsPrec _ x = [(let (l, r) = splitAt (maybe (length x) id (elemIndex '-' x)) x in
-                      Address l (tail' r), "")]
+  readsPrec _ x = [let (l, r) = splitAt (maybe (length x) id (elemIndex '-' x)) x
+                       off = maybe (length x) id (findIndex (\c -> not $ elem c addrChars) r)
+                       (u, xtra) = splitAt off r in
+                     (Address l (tail' u), xtra)]
                   where tail' [] = []
                         tail' (x:xs) = xs
 

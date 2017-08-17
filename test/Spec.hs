@@ -14,7 +14,8 @@ testAddressParsing :: Test
 testAddressParsing = TestList (
   map (\(s, want) -> TestCase (assertEqual s (read s) want)) [
       ("KG6HWF-11", Address "KG6HWF" "11"),
-      ("KG6HWF", Address "KG6HWF" "")])
+      ("KG6HWF", Address "KG6HWF" ""),
+      ("KG6HWF-9", Address "KG6HWF" "9")])
 
 tests :: Test
 tests = TestList [

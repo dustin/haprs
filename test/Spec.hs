@@ -4,8 +4,11 @@ import Test.HUnit
 import Test.QuickCheck
 
 testCallPass :: Test
-testCallPass = TestCase (assertEqual "callpass" 22955 (callPass $ Address {call = "KG6HWF", ssid = "11"}))
-
+testCallPass = TestList (
+  map (\(s, want) -> TestCase (assertEqual s (callPass $ read s) want)) [
+      ("KG6HWF-9", 22955),
+      ("KG6HWF", 22955),
+      ("KE6AFE-13", 18595)])
 
 testAddressParsing :: Test
 testAddressParsing = TestList (

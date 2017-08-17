@@ -47,11 +47,16 @@ identifyPacket '{' = UserDefined
 identifyPacket '}' = ThirdParty
 identifyPacket x = Invalid x
 
-data Address = Address { call :: String, ssid :: String }
+data Address = Address { call :: String, ssid :: String } deriving (Eq)
 
 instance Show Address where
   show (Address c "") = c
   show (Address c s) = c ++ "-" ++ s
+
+instance Read Address where
+  readsPrec _ x = [(case elemIndex '-' x of
+                      Nothing -> Address x ""
+                      Just n -> let (l, r) = splitAt n x in Address l (tail r), "")]
 
 callPass :: Address -> Int16
 callPass a =

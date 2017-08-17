@@ -50,7 +50,8 @@ identifyPacket x = Invalid x
 data Address = Address { call :: String, ssid :: String }
 
 instance Show Address where
-  show a = call a ++ "-" ++ ssid a
+  show (Address c "") = c
+  show (Address c s) = c ++ "-" ++ s
 
 callPass :: Address -> Int16
 callPass a =

@@ -49,7 +49,7 @@ identifyPacket '{' = UserDefined
 identifyPacket '}' = ThirdParty
 identifyPacket x = Invalid x
 
-data Address = Address { call :: String, ssid :: String } deriving (Eq)
+data Address = Address { call :: !String, ssid :: !String } deriving (Eq)
 
 addrChars = ['A'..'Z'] ++ ['0'..'9']
 

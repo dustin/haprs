@@ -1,6 +1,6 @@
 module APRS.Types
     ( PacketType
-    , Address(..)
+    , address
     , Frame
     , identifyPacket
     , callPass
@@ -26,7 +26,8 @@ data PacketType = CurrentMicE
   | WeatherNoPos
   | UserDefined
   | ThirdParty
-  | Invalid Char deriving (Show, Eq)
+  | Invalid Char
+  deriving (Show, Eq)
 
 identifyPacket :: Char -> PacketType
 identifyPacket '\x1c' = CurrentMicE
@@ -49,17 +50,24 @@ identifyPacket x = Invalid x
 
 data Address = Address { call :: String, ssid :: String } deriving (Eq)
 
+addrChars = ['A'..'Z'] ++ ['0'..'9']
+
+address c s
+  | invalid c = error "invalid characters in callsign"
+  | invalid s = error "invalid characters in SSID"
+  | otherwise = Address c s
+  where invalid x = not $ null $ nub x \\ addrChars
+
 instance Show Address where
   show (Address c "") = c
   show (Address c s) = c ++ "-" ++ s
 
-addrChars = '-' : ['A'..'Z'] ++ ['0'..'9']
-
 instance Read Address where
   readsPrec _ x = [let (l, r) = splitAt (maybe (length x) id (elemIndex '-' x)) x
-                       off = maybe (length x) id (findIndex (\c -> not $ elem c addrChars) r)
-                       (u, xtra) = splitAt off r in
-                     (Address l (tail' u), xtra)]
+                       r' = (tail' r)
+                       off = maybe (length x) id (findIndex (\c -> not $ elem c addrChars) r')
+                       (u, xtra) = splitAt off r' in
+                     (address l u, xtra)]
                   where tail' [] = []
                         tail' (x:xs) = xs
 

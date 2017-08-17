@@ -14,9 +14,9 @@ testCallPass = TestList (
 testAddressParsing :: Test
 testAddressParsing = TestList (
   map (\(s, want) -> TestCase (assertEqual s (read s) want)) [
-      ("KG6HWF-11", Address "KG6HWF" "11"),
-      ("KG6HWF", Address "KG6HWF" ""),
-      ("KG6HWF-9", Address "KG6HWF" "9")])
+      ("KG6HWF-11", address "KG6HWF" "11"),
+      ("KG6HWF", address "KG6HWF" ""),
+      ("KG6HWF-9", address "KG6HWF" "9")])
 
 tests :: Test
 tests = TestList [

@@ -43,6 +43,15 @@ prop_roundtrips x = (read $ show x) == x
 
 christmasMsg = "KG6HWF>APX200,WIDE1-1,WIDE2-1:=3722.1 N/12159.1 W-Merry Christmas!"
 
+instance Arbitrary Frame where
+  arbitrary = do
+    src <- (arbitrary ::Gen Address)
+    dst <- (arbitrary ::Gen Address)
+    return $ Frame { source = src,
+                     dest = dst,
+                     APRS.Types.path = [raddr "WIDE1-1", raddr "WIDE2-1"],
+                     body = "hi" }
+
 rframe a = (read a) :: Frame
 
 testChristmasMsg =
@@ -53,7 +62,8 @@ tests = [
   testGroup "addrParse" testAddressParsing,
   testProperty "address round trips" (prop_roundtrips :: Address -> Bool),
   testGroup "addrSimilar" testAddrSimilar,
-  testCase "frame parsing" testChristmasMsg
+  testCase "frame parsing" testChristmasMsg,
+  testProperty "frame round trips" (prop_roundtrips :: Frame -> Bool)
   ]
 
 main = defaultMain tests

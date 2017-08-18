@@ -92,21 +92,23 @@ callPass (Address a _) =
 instance Similar Address where
   (≈) (Address a _) (Address b _) = a == b
 
-data Frame = Frame { original :: String
-                   , source :: Address
+data Frame = Frame { source :: Address
                    , dest :: Address
                    , path :: [Address]
                    , body :: String }
-           deriving (Show)
+           deriving (Eq)
 
 instance Read Frame where
   readsPrec _ x = [let (addrd, msgd) = splitOn ':' x
                        (src, dest') = splitOn '>' addrd
                        (dest, paths) = splitOn ',' dest'
                        path = map read $ words $ map (\c -> if c == ',' then ' ' else c) paths in
-                      (Frame { original = x,
-                               path = path,
+                      (Frame { path = path,
                                dest = (read dest),
                                source = (read src),
                                body = msgd
                              }, "")]
+
+instance Show Frame where
+  show (Frame src dst path body) =
+    (show src) ++ ">" ++ (show dst) ++ "," ++ (intercalate "," $ map show path) ++ ":" ++ body

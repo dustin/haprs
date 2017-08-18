@@ -12,6 +12,9 @@ import Data.Bits
 import Data.Int
 import Data.List
 
+class Similar a where
+  (≊) :: a -> a -> Bool
+
 data PacketType = CurrentMicE
   | Item
   | PositionNoTSNoMsg
@@ -79,7 +82,8 @@ callPass :: Address -> Int16
 callPass (Address a _) =
   0x7fff .&. (foldl xor 0x73e2 $ map (\(c, f) -> f (ctoi c)) $ zip a $ cycle [flip shiftL 8, id])
 
-(≊) (Address a _) (Address b _) = a == b
+instance Similar Address where
+  (≊) (Address a _) (Address b _) = a == b
 
 data Info = String deriving (Show)
 

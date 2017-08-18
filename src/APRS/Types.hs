@@ -8,6 +8,7 @@ module APRS.Types
     , Body(..)
     , identifyPacket
     , callPass
+    , decodeBase91
     ) where
 
 import Data.Bits
@@ -125,3 +126,7 @@ instance Read Frame where
 instance Show Frame where
   show (Frame src dst path body) =
     (show src) ++ ">" ++ (show dst) ++ "," ++ (intercalate "," path) ++ ":" ++ (show body)
+
+decodeBase91 all@(a:b:c:d) =
+  foldl (\a (c, i) -> i * ((toEnum . fromEnum $ c) -33) + a) 0 $ zip all [91^x | x <- [3,2..0]]
+decodeBase91 _ = 0

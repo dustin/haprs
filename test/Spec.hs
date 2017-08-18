@@ -39,6 +39,14 @@ testAddrSimilar =
   ("KG6HWF", "KG6HWF-11"),
   ("KG6HWF-9", "KG6HWF-11")]
 
+testBase91 =
+  map (\(a, want) -> testCase (a ++ " -> " ++ (show want)) $ assertEqual "" (decodeBase91 a)    want) [
+  (['\0', '\0', '\0', '\0'], -25144152),
+  (['\1', '\0', '\0', '\0'], -24390581),
+  (['\1', '\0', '\0', '\1'], -24390580),
+  (['\1', '\0', '\xff', '\1'], -24367375),
+  ("<*e7", 20346417 + 74529 + 6188 + 22)]
+
 prop_roundtrips x = (read $ show x) == x
 
 christmasMsg = "KG6HWF>APX200,WIDE1-1,WIDE2-1:=3722.1 N/12159.1 W-Merry Christmas!"
@@ -63,7 +71,8 @@ tests = [
   testProperty "address round trips" (prop_roundtrips :: Address -> Bool),
   testGroup "addrSimilar" testAddrSimilar,
   testCase "frame parsing" testChristmasMsg,
-  testProperty "frame round trips" (prop_roundtrips :: Frame -> Bool)
+  testProperty "frame round trips" (prop_roundtrips :: Frame -> Bool),
+  testGroup "base91" testBase91
   ]
 
 main = defaultMain tests

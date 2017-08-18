@@ -80,7 +80,7 @@ splitWith f s =
 
 instance Read Address where
   readsPrec _ x = [let (l, r) = splitOn '-' x
-                       (u, xtra) = splitWith (\c -> not $ elem c addrChars) r in
+                       (u, xtra) = splitWith (not . (flip elem addrChars)) r in
                      (address l u, xtra)]
 
 ctoi = toEnum . fromEnum :: Char -> Int16

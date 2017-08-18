@@ -68,14 +68,18 @@ instance Show Address where
   show (Address c "") = c
   show (Address c s) = c ++ "-" ++ s
 
+splitOn :: Char -> String -> (String, String)
+splitOn c s =
+  let go l [] = (reverse l, [])
+      go l (x:r)
+        | x == c = (reverse l, r)
+        | otherwise = go (x:l) r in go [] s
+
 instance Read Address where
-  readsPrec _ x = [let (l, r) = splitAt (maybe (length x) id (elemIndex '-' x)) x
-                       r' = (tail' r)
-                       off = maybe (length x) id $ findIndex (\c -> not $ elem c addrChars) r'
-                       (u, xtra) = splitAt off r' in
+  readsPrec _ x = [let (l, r) = splitOn '-' x
+                       off = maybe (length x) id $ findIndex (\c -> not $ elem c addrChars) r
+                       (u, xtra) = splitAt off r in
                      (address l u, xtra)]
-                  where tail' [] = []
-                        tail' (x:xs) = xs
 
 ctoi = toEnum . fromEnum :: Char -> Int16
 

@@ -30,12 +30,20 @@ testAddressParsing =
     ("KG6HWF", address "KG6HWF" ""),
     ("KG6HWF-9", address "KG6HWF" "9")]
 
+testAddrSimilar =
+  map (\(a, b) -> testCase (a ++ " ~= " ++ b) $ assertBool "" ( (read a) ≊ (read b) )) [
+  ("KG6HWF", "KG6HWF"),
+  ("KG6HWF-9", "KG6HWF"),
+  ("KG6HWF", "KG6HWF-11"),
+  ("KG6HWF-9", "KG6HWF-11")]
+
 prop_roundtrips x = (read $ show x) == x
 
 tests = [
   testGroup "callPass"  testCallPass,
   testGroup "addrParse" testAddressParsing,
-  testProperty "address round trips" (prop_roundtrips :: Address -> Bool)
+  testProperty "address round trips" (prop_roundtrips :: Address -> Bool),
+  testGroup "addrSimilar" testAddrSimilar
   ]
 
 main = defaultMain tests

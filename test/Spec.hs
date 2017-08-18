@@ -49,7 +49,7 @@ instance Arbitrary Frame where
     dst <- (arbitrary ::Gen Address)
     return $ Frame { source = src,
                      dest = dst,
-                     APRS.Types.path = [raddr "WIDE1-1", raddr "WIDE2-1"],
+                     APRS.Types.path = ["WIDE1-1", "WIDE2-1"],
                      body = "hi" }
 
 rframe a = (read a) :: Frame

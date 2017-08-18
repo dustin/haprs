@@ -94,7 +94,7 @@ instance Similar Address where
 
 data Frame = Frame { source :: Address
                    , dest :: Address
-                   , path :: [Address]
+                   , path :: [String]
                    , body :: String }
            deriving (Eq)
 
@@ -102,7 +102,7 @@ instance Read Frame where
   readsPrec _ x = [let (addrd, msgd) = splitOn ':' x
                        (src, dest') = splitOn '>' addrd
                        (dest, paths) = splitOn ',' dest'
-                       path = map read $ words $ map (\c -> if c == ',' then ' ' else c) paths in
+                       path = words $ map (\c -> if c == ',' then ' ' else c) paths in
                       (Frame { path = path,
                                dest = (read dest),
                                source = (read src),
@@ -111,4 +111,4 @@ instance Read Frame where
 
 instance Show Frame where
   show (Frame src dst path body) =
-    (show src) ++ ">" ++ (show dst) ++ "," ++ (intercalate "," $ map show path) ++ ":" ++ body
+    (show src) ++ ">" ++ (show dst) ++ "," ++ (intercalate "," path) ++ ":" ++ body

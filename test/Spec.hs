@@ -41,11 +41,19 @@ testAddrSimilar =
 
 prop_roundtrips x = (read $ show x) == x
 
+christmasMsg = "KG6HWF>APX200,WIDE1-1,WIDE2-1:=3722.1 N/12159.1 W-Merry Christmas!"
+
+rframe a = (read a) :: Frame
+
+testChristmasMsg =
+  assertEqual "christmas parsing" (raddr "KG6HWF") $ source $ rframe christmasMsg
+
 tests = [
   testGroup "callPass"  testCallPass,
   testGroup "addrParse" testAddressParsing,
   testProperty "address round trips" (prop_roundtrips :: Address -> Bool),
-  testGroup "addrSimilar" testAddrSimilar
+  testGroup "addrSimilar" testAddrSimilar,
+  testCase "frame parsing" testChristmasMsg
   ]
 
 main = defaultMain tests

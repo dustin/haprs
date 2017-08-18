@@ -4,7 +4,7 @@ module APRS.Types
     , address
     , Similar
     , (≈)
-    , Frame
+    , Frame(..)
     , identifyPacket
     , callPass
     ) where
@@ -92,11 +92,21 @@ callPass (Address a _) =
 instance Similar Address where
   (≈) (Address a _) (Address b _) = a == b
 
-data Info = String deriving (Show)
-
 data Frame = Frame { original :: String
                    , source :: Address
                    , dest :: Address
                    , path :: [Address]
-                   , body :: Info }
+                   , body :: String }
            deriving (Show)
+
+instance Read Frame where
+  readsPrec _ x = [let (addrd, msgd) = splitOn ':' x
+                       (src, dest') = splitOn '>' addrd
+                       (dest, paths) = splitOn ',' dest'
+                       path = map read $ words $ map (\c -> if c == ',' then ' ' else c) paths in
+                      (Frame { original = x,
+                               path = path,
+                               dest = (read dest),
+                               source = (read src),
+                               body = msgd
+                             }, "")]

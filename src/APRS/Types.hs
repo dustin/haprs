@@ -2,6 +2,7 @@ module APRS.Types
     ( PacketType
     , Address
     , address
+    , Similar
     , (≈)
     , Frame
     , identifyPacket

@@ -40,11 +40,12 @@ testAddrSimilar =
   ("KG6HWF-9", "KG6HWF-11")]
 
 testBase91 =
-  map (\(a, want) -> testCase (a ++ " -> " ++ (show want)) $ assertEqual "" (decodeBase91 a)    want) [
+  map (\(a, want) -> testCase ((show a) ++ " -> " ++ (show want)) $ assertEqual "" (decodeBase91 a)    want) [
   (['\0', '\0', '\0', '\0'], -25144152),
   (['\1', '\0', '\0', '\0'], -24390581),
   (['\1', '\0', '\0', '\1'], -24390580),
   (['\1', '\0', '\xff', '\1'], -24367375),
+  ([], 0),
   ("<*e7", 20346417 + 74529 + 6188 + 22)]
 
 prop_roundtrips x = (read $ show x) == x

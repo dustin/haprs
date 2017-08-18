@@ -75,8 +75,8 @@ instance Read Address where
 ctoi = toEnum . fromEnum :: Char -> Int16
 
 callPass :: Address -> Int16
-callPass a =
-  0x7fff .&. (foldl xor 0x73e2 $ map (\(c, f) -> f (ctoi c)) $ zip (call a) $ cycle [flip shiftL 8, id])
+callPass (Address a _) =
+  0x7fff .&. (foldl xor 0x73e2 $ map (\(c, f) -> f (ctoi c)) $ zip a $ cycle [flip shiftL 8, id])
 
 data Info = String deriving (Show)
 

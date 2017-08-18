@@ -69,7 +69,7 @@ instance Show Address where
   show (Address c s) = c ++ "-" ++ s
 
 splitOn :: Char -> String -> (String, String)
-splitOn c s = splitWith (== c) s
+splitOn c = splitWith (== c)
 
 splitWith :: (Char -> Bool) -> String -> (String, String)
 splitWith f s =

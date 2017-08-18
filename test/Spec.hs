@@ -33,7 +33,7 @@ testAddressParsing =
 raddr a = (read a) :: Address
 
 testAddrSimilar =
-  map (\(a, b) -> testCase (a ++ " ~= " ++ b) $ assertBool "" ((raddr a) ≊ (raddr b))) [
+  map (\(a, b) -> testCase (a ++ " ~= " ++ b) $ assertBool "" ((raddr a) ≈ (raddr b))) [
   ("KG6HWF", "KG6HWF"),
   ("KG6HWF-9", "KG6HWF"),
   ("KG6HWF", "KG6HWF-11"),

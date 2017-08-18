@@ -2,7 +2,7 @@ module APRS.Types
     ( PacketType
     , Address
     , address
-    , (≊)
+    , (≈)
     , Frame
     , identifyPacket
     , callPass
@@ -13,7 +13,7 @@ import Data.Int
 import Data.List
 
 class Similar a where
-  (≊) :: a -> a -> Bool
+  (≈) :: a -> a -> Bool
 
 data PacketType = CurrentMicE
   | Item
@@ -83,7 +83,7 @@ callPass (Address a _) =
   0x7fff .&. (foldl xor 0x73e2 $ map (\(c, f) -> f (ctoi c)) $ zip a $ cycle [flip shiftL 8, id])
 
 instance Similar Address where
-  (≊) (Address a _) (Address b _) = a == b
+  (≈) (Address a _) (Address b _) = a == b
 
 data Info = String deriving (Show)
 

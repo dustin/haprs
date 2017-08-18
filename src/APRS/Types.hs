@@ -5,6 +5,7 @@ module APRS.Types
     , Similar
     , (≈)
     , Frame(..)
+    , Body(..)
     , identifyPacket
     , callPass
     ) where
@@ -12,6 +13,9 @@ module APRS.Types
 import Data.Bits
 import Data.Int
 import Data.List
+
+import Geodetics.Geodetic
+import Numeric.Units.Dimensional.SIUnits
 
 class Similar a where
   (≈) :: a -> a -> Bool
@@ -25,7 +29,7 @@ data PacketType = CurrentMicE
   | StationCaps
   | PositionNoTS
   | PositionNoMsg
-  | Position
+  | PositionMsg
   | Status
   | Query
   | Telemetry
@@ -46,7 +50,7 @@ identifyPacket '<' = StationCaps
 identifyPacket '=' = PositionNoTS
 identifyPacket '>' = Status
 identifyPacket '?' = Query
-identifyPacket '@' = Position
+identifyPacket '@' = PositionMsg
 identifyPacket 'T' = Telemetry
 identifyPacket '_' = WeatherNoPos
 identifyPacket '`' = CurrentMicE
@@ -92,10 +96,19 @@ callPass (Address a _) =
 instance Similar Address where
   (≈) (Address a _) (Address b _) = a == b
 
+newtype Body = Body String deriving (Eq)
+
+instance Show Body where show (Body x) = x
+
+data Position = Position { pos :: Geodetic WGS84, ambiguity :: Int }
+
+position :: Body -> Maybe Position
+position _ = Nothing
+
 data Frame = Frame { source :: Address
                    , dest :: Address
                    , path :: [String]
-                   , body :: String }
+                   , body :: Body }
            deriving (Eq)
 
 instance Read Frame where
@@ -106,9 +119,9 @@ instance Read Frame where
                       (Frame { path = path,
                                dest = (read dest),
                                source = (read src),
-                               body = msgd
+                               body = Body msgd
                              }, "")]
 
 instance Show Frame where
   show (Frame src dst path body) =
-    (show src) ++ ">" ++ (show dst) ++ "," ++ (intercalate "," path) ++ ":" ++ body
+    (show src) ++ ">" ++ (show dst) ++ "," ++ (intercalate "," path) ++ ":" ++ (show body)

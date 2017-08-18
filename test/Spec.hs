@@ -50,7 +50,7 @@ instance Arbitrary Frame where
     return $ Frame { source = src,
                      dest = dst,
                      APRS.Types.path = ["WIDE1-1", "WIDE2-1"],
-                     body = "hi" }
+                     body = Body "hi" }
 
 rframe a = (read a) :: Frame
 

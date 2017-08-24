@@ -60,10 +60,11 @@ instance Arbitrary Frame where
   arbitrary = do
     src <- (arbitrary ::Gen Address)
     dst <- (arbitrary ::Gen Address)
+    msg <- (arbitrary ::Gen String)
     return $ Frame { source = src,
                      dest = dst,
                      APRS.Types.path = ["WIDE1-1", "WIDE2-1"],
-                     body = Body "hi" }
+                     body = Body msg }
 
 rframe a = (read a) :: Frame
 

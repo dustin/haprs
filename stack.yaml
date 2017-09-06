@@ -4,4 +4,4 @@ packages:
 - '.'
 extra-deps:
 - geodetics-0.0.4
-resolver: lts-9.2
+resolver: lts-9.3

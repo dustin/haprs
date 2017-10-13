@@ -85,14 +85,14 @@ splitWith f s =
 
 instance Read Address where
   readsPrec _ x = [let (l, r) = splitOn '-' x
-                       (u, xtra) = splitWith (not . (flip elem addrChars)) r in
+                       (u, xtra) = splitWith (not . (`elem` addrChars)) r in
                      (address l u, xtra)]
 
 ctoi = toEnum . fromEnum :: Char -> Int16
 
 callPass :: Address -> Int16
 callPass (Address a _) =
-  0x7fff .&. (foldl xor 0x73e2 $ map (\(c, f) -> f (ctoi c)) $ zip a $ cycle [flip shiftL 8, id])
+  0x7fff .&. foldl xor 0x73e2 (map (\(c, f) -> f (ctoi c)) $ zip a $ cycle [flip shiftL 8, id])
 
 instance Similar Address where
   (≈) (Address a _) (Address b _) = a == b
@@ -118,15 +118,15 @@ instance Read Frame where
                        (dest, paths) = splitOn ',' dest'
                        path = words $ map (\c -> if c == ',' then ' ' else c) paths in
                       (Frame { path = path,
-                               dest = (read dest),
-                               source = (read src),
+                               dest = read dest,
+                               source = read src,
                                body = Body msgd
                              }, "")]
 
 instance Show Frame where
   show (Frame src dst path body) =
-    (show src) ++ ">" ++ (show dst) ++ "," ++ (intercalate "," path) ++ ":" ++ (show body)
+    show src ++ ">" ++ show dst ++ "," ++ intercalate "," path ++ ":" ++ show body
 
-decodeBase91 all@(_:_:_:_:[]) =
+decodeBase91 all@[_,_,_,_] =
   foldl (\a (c, i) -> i * ((toEnum . fromEnum $ c) -33) + a) 0 $ zip all [91^x | x <- [3,2..0]]
 decodeBase91 _ = 0

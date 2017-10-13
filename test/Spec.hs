@@ -30,17 +30,17 @@ testAddressParsing =
     ("KG6HWF", address "KG6HWF" ""),
     ("KG6HWF-9", address "KG6HWF" "9")]
 
-raddr a = (read a) :: Address
+raddr a = read a :: Address
 
 testAddrSimilar =
-  map (\(a, b) -> testCase (a ++ " ≈ " ++ b) $ assertBool "" ((raddr a) ≈ (raddr b))) [
+  map (\(a, b) -> testCase (a ++ " ≈ " ++ b) $ assertBool "" (raddr a ≈ raddr b)) [
   ("KG6HWF", "KG6HWF"),
   ("KG6HWF-9", "KG6HWF"),
   ("KG6HWF", "KG6HWF-11"),
   ("KG6HWF-9", "KG6HWF-11")]
 
 testBase91 =
-  map (\(a, want) -> testCase ((show a) ++ " -> " ++ (show want)) $ assertEqual "" (decodeBase91 a)    want) [
+  map (\(a, want) -> testCase (show a ++ " -> " ++ show want) $ assertEqual "" (decodeBase91 a)    want) [
   (['\0', '\0', '\0', '\0'], -25144152),
   (['\1', '\0', '\0', '\0'], -24390581),
   (['\1', '\0', '\0', '\1'], -24390580),
@@ -52,21 +52,21 @@ testBase91 =
   ("abcde", 0),
   ("<*e7", 20346417 + 74529 + 6188 + 22)]
 
-prop_roundtrips x = (read $ show x) == x
+prop_roundtrips x = read (show x) == x
 
 christmasMsg = "KG6HWF>APX200,WIDE1-1,WIDE2-1:=3722.1 N/12159.1 W-Merry Christmas!"
 
 instance Arbitrary Frame where
   arbitrary = do
-    src <- (arbitrary ::Gen Address)
-    dst <- (arbitrary ::Gen Address)
-    msg <- (arbitrary ::Gen String)
-    return $ Frame { source = src,
-                     dest = dst,
-                     APRS.Types.path = ["WIDE1-1", "WIDE2-1"],
-                     body = Body msg }
+    src <- arbitrary ::Gen Address
+    dst <- arbitrary ::Gen Address
+    msg <- arbitrary ::Gen String
+    return Frame { source = src,
+                   dest = dst,
+                   APRS.Types.path = ["WIDE1-1", "WIDE2-1"],
+                   body = Body msg }
 
-rframe a = (read a) :: Frame
+rframe a = read a :: Frame
 
 testChristmasMsg =
   assertEqual "christmas parsing" (raddr "KG6HWF") $ source $ rframe christmasMsg

@@ -13,10 +13,9 @@ module APRS.Types
 
 import Data.Bits
 import Data.Int
-import Data.List
+import Data.List (intercalate, nub, (\\))
 
 import Geodetics.Geodetic
-import Numeric.Units.Dimensional.SIUnits
 
 class Similar a where
   (≈) :: a -> a -> Bool
@@ -59,10 +58,12 @@ identifyPacket '{' = UserDefined
 identifyPacket '}' = ThirdParty
 identifyPacket x = Invalid x
 
-data Address = Address { call :: !String, ssid :: !String } deriving (Eq)
+data Address = Address { _call :: !String, _ssid :: !String } deriving (Eq)
 
+addrChars :: [Char]
 addrChars = ['A'..'Z'] ++ ['0'..'9']
 
+address :: String -> String -> Address
 address c s
   | invalid c = error "invalid characters in callsign"
   | invalid s = error "invalid characters in SSID"
@@ -88,7 +89,8 @@ instance Read Address where
                        (u, xtra) = splitWith (not . (`elem` addrChars)) r in
                      (address l u, xtra)]
 
-ctoi = toEnum . fromEnum :: Char -> Int16
+ctoi :: Char -> Int16
+ctoi = toEnum . fromEnum
 
 callPass :: Address -> Int16
 callPass (Address a _) =
@@ -101,7 +103,7 @@ newtype Body = Body String deriving (Eq)
 
 instance Show Body where show (Body x) = x
 
-data Position = Position { pos :: Geodetic WGS84, ambiguity :: Int }
+data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
 
 position :: Body -> Maybe Position
 position _ = Nothing
@@ -115,18 +117,18 @@ data Frame = Frame { source :: Address
 instance Read Frame where
   readsPrec _ x = [let (addrd, msgd) = splitOn ':' x
                        (src, dest') = splitOn '>' addrd
-                       (dest, paths) = splitOn ',' dest'
-                       path = words $ map (\c -> if c == ',' then ' ' else c) paths in
-                      (Frame { path = path,
-                               dest = read dest,
+                       (dests, paths) = splitOn ',' dest' in
+                      (Frame { path = words $ map (\c -> if c == ',' then ' ' else c) paths,
+                               dest = read dests,
                                source = read src,
                                body = Body msgd
                              }, "")]
 
 instance Show Frame where
-  show (Frame src dst path body) =
-    show src ++ ">" ++ show dst ++ "," ++ intercalate "," path ++ ":" ++ show body
+  show (Frame s d p b) =
+    show s ++ ">" ++ show d ++ "," ++ intercalate "," p ++ ":" ++ show b
 
-decodeBase91 all@[_,_,_,_] =
-  foldl (\a (c, i) -> i * ((toEnum . fromEnum $ c) -33) + a) 0 $ zip all [91^x | x <- [3,2..0]]
+decodeBase91 :: String -> Int
+decodeBase91 s@[_,_,_,_] =
+  foldl (\a (c, i) -> i * ((toEnum . fromEnum $ c) -33) + a) 0 $ zip s [91^x | x <- [3,2..0]]
 decodeBase91 _ = 0

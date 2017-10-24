@@ -1,12 +1,12 @@
 import APRS.Types
 
-import Test.HUnit
+import Test.HUnit (Assertion, assertEqual, assertBool)
 import Test.QuickCheck
-import Test.QuickCheck.Arbitrary
-import Test.Framework (defaultMain, testGroup)
+import Test.Framework (defaultMain, testGroup, Test)
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 
+addrChars :: [Char]
 addrChars = ['A'..'Z'] ++ ['0'..'9']
 
 instance Arbitrary Address where
@@ -17,6 +17,7 @@ instance Arbitrary Address where
     rel <- shuffle addrChars
     return $ address (take l lel) (take r rel)
 
+testCallPass :: [Test]
 testCallPass =
   map (\(s, want) -> testCase s $ assertEqual s (callPass $ read s) want) [
     ("KG6HWF-9", 22955),
@@ -24,14 +25,17 @@ testCallPass =
     ("KE6AFE-13", 18595),
     ("K6MGD", 12691)]
 
+testAddressParsing :: [Test]
 testAddressParsing =
   map (\(s, want) -> testCase s $ assertEqual s (read s) want) [
     ("KG6HWF-11", address "KG6HWF" "11"),
     ("KG6HWF", address "KG6HWF" ""),
     ("KG6HWF-9", address "KG6HWF" "9")]
 
-raddr a = read a :: Address
+raddr :: String -> Address
+raddr a = read a
 
+testAddrSimilar :: [Test]
 testAddrSimilar =
   map (\(a, b) -> testCase (a ++ " ≈ " ++ b) $ assertBool "" (raddr a ≈ raddr b)) [
   ("KG6HWF", "KG6HWF"),
@@ -39,6 +43,7 @@ testAddrSimilar =
   ("KG6HWF", "KG6HWF-11"),
   ("KG6HWF-9", "KG6HWF-11")]
 
+testBase91 :: [Test]
 testBase91 =
   map (\(a, want) -> testCase (show a ++ " -> " ++ show want) $ assertEqual "" (decodeBase91 a)    want) [
   (['\0', '\0', '\0', '\0'], -25144152),
@@ -52,8 +57,10 @@ testBase91 =
   ("abcde", 0),
   ("<*e7", 20346417 + 74529 + 6188 + 22)]
 
+prop_roundtrips :: (Show a, Read a, Eq a) => a -> Bool
 prop_roundtrips x = read (show x) == x
 
+christmasMsg :: String
 christmasMsg = "KG6HWF>APX200,WIDE1-1,WIDE2-1:=3722.1 N/12159.1 W-Merry Christmas!"
 
 instance Arbitrary Frame where
@@ -66,11 +73,14 @@ instance Arbitrary Frame where
                    APRS.Types.path = ["WIDE1-1", "WIDE2-1"],
                    body = Body msg }
 
-rframe a = read a :: Frame
+rframe :: String -> Frame
+rframe a = read a
 
+testChristmasMsg :: Assertion
 testChristmasMsg =
   assertEqual "christmas parsing" (raddr "KG6HWF") $ source $ rframe christmasMsg
 
+tests :: [Test]
 tests = [
   testGroup "callPass"  testCallPass,
   testGroup "addrParse" testAddressParsing,
@@ -81,6 +91,5 @@ tests = [
   testGroup "base91" testBase91
   ]
 
+main :: IO ()
 main = defaultMain tests
-
-

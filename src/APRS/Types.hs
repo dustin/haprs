@@ -1,5 +1,6 @@
 module APRS.Types
     ( PacketType
+    , must
     , Address
     , address
     , Similar
@@ -63,11 +64,16 @@ data Address = Address { _call :: !String, _ssid :: !String } deriving (Eq)
 addrChars :: [Char]
 addrChars = ['A'..'Z'] ++ ['0'..'9']
 
-address :: String -> String -> Address
+must :: Either String a -> a
+must (Left x) = error x
+must (Right x) = x
+
+address :: String -> String -> Either String Address
 address c s
-  | invalid c = error "invalid characters in callsign"
-  | invalid s = error "invalid characters in SSID"
-  | otherwise = Address c s
+  | c == [] = Left "callsign is too short"
+  | invalid c = Left "invalid characters in callsign"
+  | invalid s = Left "invalid characters in SSID"
+  | otherwise = Right $ Address c s
   where invalid x = not $ null $ nub x \\ addrChars
 
 instance Show Address where
@@ -87,7 +93,7 @@ splitWith f s =
 instance Read Address where
   readsPrec _ x = [let (l, r) = splitOn '-' x
                        (u, xtra) = splitWith (not . (`elem` addrChars)) r in
-                     (address l u, xtra)]
+                     (must $ address l u, xtra)]
 
 ctoi :: Char -> Int16
 ctoi = toEnum . fromEnum

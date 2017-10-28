@@ -15,7 +15,7 @@ instance Arbitrary Address where
     r <- choose (0, 5)
     lel <- shuffle addrChars
     rel <- shuffle addrChars
-    return $ address (take l lel) (take r rel)
+    return $ must $ address (take l lel) (take r rel)
 
 testCallPass :: [Test]
 testCallPass =
@@ -28,9 +28,9 @@ testCallPass =
 testAddressParsing :: [Test]
 testAddressParsing =
   map (\(s, want) -> testCase s $ assertEqual s (read s) want) [
-    ("KG6HWF-11", address "KG6HWF" "11"),
-    ("KG6HWF", address "KG6HWF" ""),
-    ("KG6HWF-9", address "KG6HWF" "9")]
+    ("KG6HWF-11", must $ address "KG6HWF" "11"),
+    ("KG6HWF", must $ address "KG6HWF" ""),
+    ("KG6HWF-9", must $ address "KG6HWF" "9")]
 
 raddr :: String -> Address
 raddr a = read a

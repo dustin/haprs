@@ -80,6 +80,16 @@ testChristmasMsg :: Assertion
 testChristmasMsg =
   assertEqual "christmas parsing" (raddr "KG6HWF") $ source $ rframe christmasMsg
 
+propValidAddress :: String -> Bool
+propValidAddress s
+  | s == [] = not valid
+  | length s > 12 = not valid
+  | all (`elem` addrChars) s = valid
+  | otherwise = not valid
+  where valid = case address s "" of
+                  Left _ -> False
+                  Right _ -> True
+
 tests :: [Test]
 tests = [
   testGroup "callPass"  testCallPass,
@@ -88,6 +98,7 @@ tests = [
   testGroup "addrSimilar" testAddrSimilar,
   testCase "frame parsing" testChristmasMsg,
   testProperty "frame round trips" (prop_roundtrips :: Frame -> Bool),
+  testProperty "address validation" propValidAddress,
   testGroup "base91" testBase91
   ]
 

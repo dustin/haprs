@@ -2,9 +2,12 @@ import APRS.Types
 
 import Test.HUnit (Assertion, assertEqual, assertBool)
 import Test.QuickCheck
-import Test.Framework (defaultMain, testGroup, Test)
+import Test.Framework.Runners.Options
+import Test.Framework.Options (TestOptions'(..))
+import Test.Framework (defaultMainWithOpts, interpretArgsOrExit, testGroup, Test)
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2 (testProperty)
+import System.Environment (getArgs)
 
 addrChars :: [Char]
 addrChars = ['A'..'Z'] ++ ['0'..'9']
@@ -80,13 +83,14 @@ testChristmasMsg :: Assertion
 testChristmasMsg =
   assertEqual "christmas parsing" (raddr "KG6HWF") $ source $ rframe christmasMsg
 
-propValidAddress :: String -> Bool
-propValidAddress s
-  | s == [] = not valid
-  | length s > 12 = not valid
-  | all (`elem` addrChars) s = valid
-  | otherwise = not valid
-  where valid = case address s "" of
+propValidAddress :: String -> String -> Property
+propValidAddress a s
+  | a == [] = collect "short" $ not valid
+  | length a > 12 = collect "long" $ not valid
+  | length s > 6 = collect "long ssid" $ not valid
+  | all (`elem` addrChars) (a++s) = collect "valid" $ valid
+  | otherwise = collect "other" $ not valid
+  where valid = case address a s of
                   Left _ -> False
                   Right _ -> True
 
@@ -103,4 +107,7 @@ tests = [
   ]
 
 main :: IO ()
-main = defaultMain tests
+main = do opts <- interpretArgsOrExit =<< getArgs
+          defaultMainWithOpts tests
+            opts { ropt_hide_successes = Just True,
+                   ropt_test_options = Just $ mempty { topt_maximum_generated_tests = Just 500 }}

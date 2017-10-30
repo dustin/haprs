@@ -10,6 +10,9 @@ module APRS.Types
     , identifyPacket
     , callPass
     , decodeBase91
+    -- For testing
+    , splitWith
+    , splitOn
     ) where
 
 import Data.Bits
@@ -80,10 +83,10 @@ instance Show Address where
   show (Address c "") = c
   show (Address c s) = c ++ "-" ++ s
 
-splitOn :: Char -> String -> (String, String)
+splitOn :: (Eq a) => a -> [a] -> ([a], [a])
 splitOn c = splitWith (== c)
 
-splitWith :: (Char -> Bool) -> String -> (String, String)
+splitWith :: (a -> Bool) -> [a] -> ([a], [a])
 splitWith f s =
   let go l [] = (reverse l, [])
       go l (x:r)

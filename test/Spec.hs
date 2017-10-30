@@ -94,6 +94,16 @@ propValidAddress a s
                   Left _ -> False
                   Right _ -> True
 
+propSplitOnSplits :: NonEmptyList Char -> NonEmptyList Char -> Property
+propSplitOnSplits (NonEmpty a) (NonEmpty b) = nospace ==> splitOn ' ' (a ++ " " ++ b) == (a, b)
+  where nospace = nospace' a && nospace' b
+        nospace' l = ' ' `notElem` l
+
+propSplitOnMultiSplits :: NonEmptyList Char -> NonEmptyList Char -> Property
+propSplitOnMultiSplits (NonEmpty a) (NonEmpty b) = nospace ==> splitOn ' ' (a ++ "  " ++ b) == (a, " " ++ b)
+  where nospace = nospace' a && nospace' b
+        nospace' l = ' ' `notElem` l
+
 tests :: [Test]
 tests = [
   testGroup "callPass"  testCallPass,
@@ -103,7 +113,10 @@ tests = [
   testCase "frame parsing" testChristmasMsg,
   testProperty "frame round trips" (prop_roundtrips :: Frame -> Bool),
   testProperty "address validation" propValidAddress,
-  testGroup "base91" testBase91
+  testGroup "base91" testBase91,
+
+  testProperty "split splits on" propSplitOnSplits,
+  testProperty "split splits on multi" propSplitOnMultiSplits
   ]
 
 main :: IO ()

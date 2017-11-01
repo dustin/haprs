@@ -81,10 +81,11 @@ fapTest f = case readEither (src f) :: Either String Frame of
     validate :: Frame -> [Test]
     validate (Frame s d _ b) =
       [
-        testCase "" $ assertEqual "src" (fromJust.srcCallsign.fromJust $ result f) (show s),
-        testCase "" $ assertEqual "dst" (fromJust.dstCallsign.fromJust $ result f) (show d),
-        testCase "" $ assertEqual "body" (fromJust.FAPTests.body.fromJust $ result f) (show b)
+        testCase "" $ assertMaybeEqual "src" (srcCallsign =<< result f) s,
+        testCase "" $ assertMaybeEqual "dst" (dstCallsign =<< result f) d,
+        testCase "" $ assertMaybeEqual "body" (FAPTests.body =<< result f) b
       ]
+    assertMaybeEqual lbl a b = assertEqual lbl (fromJust a) (show b)
 
 tests :: IO [Test]
 tests = do

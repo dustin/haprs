@@ -70,26 +70,23 @@ instance FromJSON FAPTest where
         <*> v .:? "result"
         <*> v .:? "failed" .!= 0
 
-fapTest :: FAPTest -> TestTree
-fapTest (FAPTest _ _ 1) = testGroup "" [ ] -- ignore failed ones
-fapTest f = case readEither (src f) :: Either String Frame of
-              Left e -> testCase "" (assertFailure (show e))
-              Right f' -> testGroup "" $ validate f'
-  where
-    validate :: Frame -> [TestTree]
-    validate (Frame s d _ b) =
-      [
-        testCase "" $ assertMaybeEqual "src" srcCallsign s,
-        testCase "" $ assertMaybeEqual "dst" dstCallsign d,
-        testCase "" $ assertMaybeEqual "body" FAPTests.body b
-      ]
-    assertMaybeEqual lbl a b = assertEqual lbl (fromJust (a =<< result f)) (show b)
+fapTest :: [FAPTest] -> TestTree
+fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Frame of
+                                  Left e -> error (show e)
+                                  Right f' -> (f,f')) fs in
+               testCaseSteps "FAP" $ \_ -> do
+                 mapM_ (\(f, (Frame s d _ b)) -> do
+                           assertMaybeEqual "src" f srcCallsign s
+                           assertMaybeEqual "dst" f dstCallsign d
+                           assertMaybeEqual "body" f FAPTests.body b
+                       ) parsed
+                   where assertMaybeEqual lbl f a b = assertEqual lbl (fromJust (a =<< result f)) (show b)
 
-tests :: IO [TestTree]
+tests :: IO TestTree
 tests = do
   jstr <- B.readFile "test/faptests.json"
   let tj = case eitherDecode jstr :: Either String [FAPTest] of
              Right x -> x
              Left x -> error ("decoding junk: " ++ show x)
 
-  return $ map fapTest tj
+  return $ fapTest $ filter (\(FAPTest _ _ n) -> n == 0) tj

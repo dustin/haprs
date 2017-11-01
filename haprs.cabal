@@ -26,9 +26,10 @@ test-suite haprs-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Main.hs
-  other-modules:       APRSTests
+  other-modules:       APRSTests, FAPTests
   build-depends:       base
                      , haprs
+                     , aeson, bytestring, text
                      , HUnit
                      , QuickCheck
                      , test-framework

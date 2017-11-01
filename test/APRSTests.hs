@@ -6,11 +6,11 @@ module APRSTests (tests) where
 import APRS.Types
 
 import Data.String (fromString)
-import Test.HUnit (Assertion, assertEqual, assertBool)
 import Test.QuickCheck
-import Test.Framework (testGroup, Test)
-import Test.Framework.Providers.HUnit
-import Test.Framework.Providers.QuickCheck2 (testProperty)
+import Test.Tasty
+import Test.Tasty.QuickCheck as QC
+import Test.Tasty.HUnit
+
 
 addrChars :: [Char]
 addrChars = ['A'..'Z'] ++ ['0'..'9']
@@ -23,7 +23,7 @@ instance Arbitrary Address where
     rel <- shuffle addrChars
     return $ must $ address ((fromString.take l) lel) ((fromString.take r) rel)
 
-testCallPass :: [Test]
+testCallPass :: [TestTree]
 testCallPass =
   map (\(s, want) -> testCase s $ assertEqual s (callPass $ read s) want) [
     ("KG6HWF-9", 22955),
@@ -31,7 +31,7 @@ testCallPass =
     ("KE6AFE-13", 18595),
     ("K6MGD", 12691)]
 
-testAddressParsing :: [Test]
+testAddressParsing :: [TestTree]
 testAddressParsing =
   map (\(s, want) -> testCase s $ assertEqual s (read s) want) [
     ("KG6HWF-11", must $ address "KG6HWF" "11"),
@@ -41,7 +41,7 @@ testAddressParsing =
 raddr :: String -> Address
 raddr = read
 
-testAddrSimilar :: [Test]
+testAddrSimilar :: [TestTree]
 testAddrSimilar =
   map (\(a, b) -> testCase (a ++ " ≈ " ++ b) $ assertBool "" (raddr a ≈ raddr b)) [
   ("KG6HWF", "KG6HWF"),
@@ -49,7 +49,7 @@ testAddrSimilar =
   ("KG6HWF", "KG6HWF-11"),
   ("KG6HWF-9", "KG6HWF-11")]
 
-testBase91 :: [Test]
+testBase91 :: [TestTree]
 testBase91 =
   map (\(a, want) -> testCase (show a ++ " -> " ++ show want) $ assertEqual "" (decodeBase91 a)    want) [
   (['\0', '\0', '\0', '\0'], -25144152),
@@ -107,7 +107,7 @@ propSplitOnMultiSplits (NonEmpty a) (NonEmpty b) = nospace ==> splitOn ' ' (a ++
   where nospace = nospace' a && nospace' b
         nospace' l = ' ' `notElem` l
 
-tests :: [Test]
+tests :: [TestTree]
 tests = [
   testGroup "callPass"  testCallPass,
   testGroup "addrParse" testAddressParsing,

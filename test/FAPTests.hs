@@ -9,10 +9,8 @@ import Data.Maybe
 import Text.Read (readEither)
 import qualified Data.ByteString.Lazy as B
 
-import Test.HUnit (assertEqual, assertFailure)
-import Test.Framework (testGroup, Test)
-import Test.Framework.Providers.HUnit
-
+import Test.Tasty
+import Test.Tasty.HUnit
 
 data Digipeater = Digipeater {
   _wasdigied :: Int
@@ -72,13 +70,13 @@ instance FromJSON FAPTest where
         <*> v .:? "result"
         <*> v .:? "failed" .!= 0
 
-fapTest :: FAPTest -> Test
+fapTest :: FAPTest -> TestTree
 fapTest (FAPTest _ _ 1) = testGroup "" [ ] -- ignore failed ones
 fapTest f = case readEither (src f) :: Either String Frame of
               Left e -> testCase "" (assertFailure (show e))
               Right f' -> testGroup "" $ validate f'
   where
-    validate :: Frame -> [Test]
+    validate :: Frame -> [TestTree]
     validate (Frame s d _ b) =
       [
         testCase "" $ assertMaybeEqual "src" srcCallsign s,
@@ -87,7 +85,7 @@ fapTest f = case readEither (src f) :: Either String Frame of
       ]
     assertMaybeEqual lbl a b = assertEqual lbl (fromJust (a =<< result f)) (show b)
 
-tests :: IO [Test]
+tests :: IO [TestTree]
 tests = do
   jstr <- B.readFile "test/faptests.json"
   let tj = case eitherDecode jstr :: Either String [FAPTest] of

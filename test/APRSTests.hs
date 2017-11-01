@@ -38,7 +38,7 @@ testAddressParsing =
     ("KG6HWF-9", must $ address "KG6HWF" "9")]
 
 raddr :: String -> Address
-raddr a = read a
+raddr = read
 
 testAddrSimilar :: [Test]
 testAddrSimilar =
@@ -79,7 +79,7 @@ instance Arbitrary Frame where
                    body = Body msg }
 
 rframe :: String -> Frame
-rframe a = read a
+rframe = read
 
 testChristmasMsg :: Assertion
 testChristmasMsg =
@@ -87,10 +87,10 @@ testChristmasMsg =
 
 propValidAddress :: String -> String -> Property
 propValidAddress a s
-  | a == [] = collect "short" $ not valid
+  | null a = collect "short" $ not valid
   | length a > 12 = collect "long" $ not valid
   | length s > 6 = collect "long ssid" $ not valid
-  | all (`elem` addrChars) (a++s) = collect "valid" $ valid
+  | all (`elem` addrChars) (a++s) = collect "valid" valid
   | otherwise = collect "other" $ not valid
   where valid = case address a s of
                   Left _ -> False

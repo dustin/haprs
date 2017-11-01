@@ -7,6 +7,6 @@ import System.Environment (getArgs)
 
 main :: IO ()
 main = do opts <- interpretArgsOrExit =<< getArgs
-          defaultMainWithOpts (APRSTests.tests)
+          defaultMainWithOpts APRSTests.tests
             opts { ropt_hide_successes = Just True,
                    ropt_test_options = Just $ mempty { topt_maximum_generated_tests = Just 500 }}

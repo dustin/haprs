@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-type-defaults #-}
 
 module APRS.Types
     ( PacketType
@@ -18,10 +19,9 @@ module APRS.Types
     ) where
 
 import Data.String (fromString)
-import Data.Text (Text, any, unpack)
+import Data.Text (Text, any, intercalate, unpack)
 import Data.Bits
 import Data.Int
-import Data.List (intercalate)
 
 import Geodetics.Geodetic
 
@@ -114,9 +114,9 @@ callPass (Address a _) =
 instance Similar Address where
   (≈) (Address a _) (Address b _) = a == b
 
-newtype Body = Body String deriving (Eq)
+newtype Body = Body Text deriving (Eq)
 
-instance Show Body where show (Body x) = x
+instance Show Body where show (Body x) = unpack x
 
 data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
 
@@ -125,7 +125,7 @@ position _ = Nothing
 
 data Frame = Frame { source :: Address
                    , dest :: Address
-                   , path :: [String]
+                   , path :: [Text]
                    , body :: Body }
            deriving (Eq)
 
@@ -133,15 +133,15 @@ instance Read Frame where
   readsPrec _ x = [let (addrd, msgd) = splitOn ':' x
                        (src, dest') = splitOn '>' addrd
                        (dests, paths) = splitOn ',' dest' in
-                      (Frame { path = words $ map (\c -> if c == ',' then ' ' else c) paths,
+                      (Frame { path = map fromString $ words $ map (\c -> if c == ',' then ' ' else c) paths,
                                dest = read dests,
                                source = read src,
-                               body = Body msgd
+                               body = Body (fromString msgd)
                              }, "")]
 
 instance Show Frame where
   show (Frame s d p b) =
-    show s ++ ">" ++ show d ++ "," ++ intercalate "," p ++ ":" ++ show b
+    show s ++ ">" ++ show d ++ "," ++ (unpack.intercalate ",") p ++ ":" ++ show b
 
 decodeBase91 :: String -> Int
 decodeBase91 s@[_,_,_,_] =

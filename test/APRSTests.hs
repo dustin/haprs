@@ -1,15 +1,14 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
+
 module APRSTests (tests) where
 
 import APRS.Types
 
 import Test.HUnit (Assertion, assertEqual, assertBool)
 import Test.QuickCheck
-import Test.Framework.Runners.Options
-import Test.Framework.Options (TestOptions'(..))
-import Test.Framework (defaultMainWithOpts, interpretArgsOrExit, testGroup, Test)
+import Test.Framework (testGroup, Test)
 import Test.Framework.Providers.HUnit
 import Test.Framework.Providers.QuickCheck2 (testProperty)
-import System.Environment (getArgs)
 
 addrChars :: [Char]
 addrChars = ['A'..'Z'] ++ ['0'..'9']

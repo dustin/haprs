@@ -1,9 +1,11 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-orphans -Wno-type-defaults #-}
 
 module APRSTests (tests) where
 
 import APRS.Types
 
+import Data.String (fromString)
 import Test.HUnit (Assertion, assertEqual, assertBool)
 import Test.QuickCheck
 import Test.Framework (testGroup, Test)
@@ -19,7 +21,7 @@ instance Arbitrary Address where
     r <- choose (0, 5)
     lel <- shuffle addrChars
     rel <- shuffle addrChars
-    return $ must $ address (take l lel) (take r rel)
+    return $ must $ address ((fromString.take l) lel) ((fromString.take r) rel)
 
 testCallPass :: [Test]
 testCallPass =
@@ -91,7 +93,7 @@ propValidAddress a s
   | length s > 6 = collect "long ssid" $ not valid
   | all (`elem` addrChars) (a++s) = collect "valid" valid
   | otherwise = collect "other" $ not valid
-  where valid = case address a s of
+  where valid = case address (fromString a) (fromString s) of
                   Left _ -> False
                   Right _ -> True
 

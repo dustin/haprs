@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module APRS.Types
     ( PacketType
     , must
@@ -15,9 +17,11 @@ module APRS.Types
     , splitOn
     ) where
 
+import Data.String (fromString)
+import Data.Text (Text, any, unpack)
 import Data.Bits
 import Data.Int
-import Data.List (intercalate, nub, (\\))
+import Data.List (intercalate)
 
 import Geodetics.Geodetic
 
@@ -62,7 +66,7 @@ identifyPacket '{' = UserDefined
 identifyPacket '}' = ThirdParty
 identifyPacket x = Invalid x
 
-data Address = Address { _call :: !String, _ssid :: !String } deriving (Eq)
+data Address = Address { _call :: !Text, _ssid :: !Text } deriving (Eq)
 
 addrChars :: [Char]
 addrChars = ['A'..'Z'] ++ ['0'..'9']
@@ -71,17 +75,18 @@ must :: Either String a -> a
 must (Left x) = error x
 must (Right x) = x
 
-address :: String -> String -> Either String Address
+address :: Text -> Text -> Either String Address
 address c s
-  | c == [] = Left "callsign is too short"
+  | c == "" = Left "callsign is too short"
   | invalid c = Left "invalid characters in callsign"
   | invalid s = Left "invalid characters in SSID"
   | otherwise = Right $ Address c s
-  where invalid x = not $ null $ nub x \\ addrChars
+  where invalid :: Text -> Bool
+        invalid = Data.Text.any (`notElem` addrChars)
 
 instance Show Address where
-  show (Address c "") = c
-  show (Address c s) = c ++ "-" ++ s
+  show (Address c "") = unpack c
+  show (Address c s) = unpack c ++ "-" ++ unpack s
 
 splitOn :: (Eq a) => a -> [a] -> ([a], [a])
 splitOn c = splitWith (== c)
@@ -96,14 +101,15 @@ splitWith f s =
 instance Read Address where
   readsPrec _ x = [let (l, r) = splitOn '-' x
                        (u, xtra) = splitWith (not . (`elem` addrChars)) r in
-                     (must $ address l u, xtra)]
+                     (must $ address (fromString l) (fromString u), xtra)]
 
 ctoi :: Char -> Int16
 ctoi = toEnum . fromEnum
 
 callPass :: Address -> Int16
 callPass (Address a _) =
-  0x7fff .&. foldl xor 0x73e2 (map (\(c, f) -> f (ctoi c)) $ zip a $ cycle [flip shiftL 8, id])
+  0x7fff .&. foldl xor 0x73e2 (map (\(c, f) -> f (ctoi c)) $ zip a' $ cycle [flip shiftL 8, id])
+  where a' = unpack a
 
 instance Similar Address where
   (≈) (Address a _) (Address b _) = a == b

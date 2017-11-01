@@ -4,6 +4,7 @@ module FAPTests (tests) where
 
 import APRS.Types
 
+import Control.Monad (foldM)
 import Data.Aeson
 import Data.Maybe
 import Text.Read (readEither)
@@ -74,13 +75,15 @@ fapTest :: [FAPTest] -> TestTree
 fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Frame of
                                   Left e -> error (show e)
                                   Right f' -> (f,f')) fs in
-               testCaseSteps "FAP" $ \_ -> do
-                 mapM_ (\(f, (Frame s d _ b)) -> do
-                           assertMaybeEqual "src" f srcCallsign s
-                           assertMaybeEqual "dst" f dstCallsign d
-                           assertMaybeEqual "body" f FAPTests.body b
-                       ) parsed
-                   where assertMaybeEqual lbl f a b = assertEqual lbl (fromJust (a =<< result f)) (show b)
+               testCaseInfo "FAP tests" $ do
+                 asses <- foldM (\n (f, (Frame s d _ b)) -> do
+                                    assertMaybeEqual "src" f srcCallsign s
+                                    assertMaybeEqual "dst" f dstCallsign d
+                                    assertMaybeEqual "body" f FAPTests.body b
+                                    return $ n + 3
+                                ) (0::Int) parsed
+                 return $ show asses ++ " assertions run"
+  where assertMaybeEqual lbl f a b = assertEqual lbl (fromJust (a =<< result f)) (show b)
 
 tests :: IO TestTree
 tests = do

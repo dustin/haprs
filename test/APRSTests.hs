@@ -1,3 +1,5 @@
+module APRSTests (tests) where
+
 import APRS.Types
 
 import Test.HUnit (Assertion, assertEqual, assertBool)
@@ -118,9 +120,3 @@ tests = [
   testProperty "split splits on" propSplitOnSplits,
   testProperty "split splits on multi" propSplitOnMultiSplits
   ]
-
-main :: IO ()
-main = do opts <- interpretArgsOrExit =<< getArgs
-          defaultMainWithOpts tests
-            opts { ropt_hide_successes = Just True,
-                   ropt_test_options = Just $ mempty { topt_maximum_generated_tests = Just 500 }}

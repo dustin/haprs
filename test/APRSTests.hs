@@ -6,6 +6,7 @@ module APRSTests (tests) where
 import APRS.Types
 
 import Data.String (fromString)
+import Data.Either (isRight)
 import Test.QuickCheck
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC
@@ -88,14 +89,13 @@ testChristmasMsg =
 
 propValidAddress :: String -> String -> Property
 propValidAddress a s
-  | null a = collect "short" $ not valid
-  | length a > 12 = collect "long" $ not valid
-  | length s > 6 = collect "long ssid" $ not valid
-  | all (`elem` addrChars) (a++s) = collect "valid" valid
-  | otherwise = collect "other" $ not valid
-  where valid = case address (fromString a) (fromString s) of
-                  Left _ -> False
-                  Right _ -> True
+  | null a = collect "short" $ addr == Left "callsign is too short"
+  | length a > 12 = collect "long" $ addr == Left "callsign is too long"
+  | length s > 6 = collect "long ssid" $  addr == Left "SSID is too long"
+  | any (`notElem` addrChars) a = collect "call invalid" $ addr == Left "invalid characters in callsign"
+  | any (`notElem` addrChars) s = collect "SSID invalid" $ addr == Left "invalid characters in SSID"
+  | otherwise = collect "other" $ isRight addr
+  where addr = address (fromString a) (fromString s)
 
 propSplitOnSplits :: NonEmptyList Char -> NonEmptyList Char -> Property
 propSplitOnSplits (NonEmpty a) (NonEmpty b) = nospace ==> splitOn ' ' (a ++ " " ++ b) == (a, b)

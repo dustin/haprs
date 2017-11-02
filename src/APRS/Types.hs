@@ -80,7 +80,9 @@ must (Right x) = x
 
 address :: Text -> Text -> Either String Address
 address c s
-  | c == "" = Left "callsign is too short"
+  | Data.Text.length c < 1 = Left "callsign is too short"
+  | Data.Text.length c > 12 = Left "callsign is too long"
+  | Data.Text.length s > 6 = Left "SSID is too long"
   | invalid c = Left "invalid characters in callsign"
   | invalid s = Left "invalid characters in SSID"
   | otherwise = Right $ Address c s

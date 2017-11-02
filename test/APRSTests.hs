@@ -115,7 +115,7 @@ tests = [
   testGroup "addrSimilar" testAddrSimilar,
   testCase "frame parsing" testChristmasMsg,
   testProperty "frame round trips" (prop_roundtrips :: Frame -> Bool),
-  testProperty "address validation" propValidAddress,
+  localOption (QC.QuickCheckTests 1000) $ testProperty "address validation" propValidAddress,
   testGroup "base91" testBase91,
 
   testProperty "split splits on" propSplitOnSplits,

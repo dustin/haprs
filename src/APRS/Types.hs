@@ -198,12 +198,11 @@ position bod@(Body bt)
                                           3 -> 5 / 60
                                           4 -> 0.5
                                           _ -> error "Invalid ambiguity"
-                                        asig = if d1 `elem` ['S', 'W'] then -1 else 1
-                                        bsig = if d2 `elem` ['S', 'W'] then -1 else 1
+                                        asig = if d1 == 'S' then -1 else 1
+                                        bsig = if d2 == 'W' then -1 else 1
                                         a' = (a + offby) * asig
-                                        b' = (b + offby) * bsig
-                                        lonlat = if d1 `elem` ['N', 'S'] then (a', b') else (b', a') in
-                                      Just $ Position lonlat
+                                        b' = (b + offby) * bsig in
+                                      Just $ Position (a', b')
               _ -> Nothing
 
 data Frame = Frame { source :: Address

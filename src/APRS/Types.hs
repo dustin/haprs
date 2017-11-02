@@ -153,10 +153,12 @@ matchCompressed = matchText compressedPositionRe
 
 -- data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
 -- lon, lat
-data Position = Position (Double, Double) deriving (Show)
+data Position = Position (Double, Double) deriving (Eq, Show)
 
 position :: Body -> Maybe Position
-position bod@(Body bt) = go $ pktType bod
+position bod@(Body bt)
+  | Data.Text.length bt < 6 = Nothing
+  | otherwise = go $ pktType bod
   where go Nothing = Nothing
         go (Just t)
           | t `elem` [PositionNoTSNoMsg, PositionNoTS]  = newp (Data.Text.drop 1 bt)
@@ -164,12 +166,9 @@ position bod@(Body bt) = go $ pktType bod
           | t == Object                                 = newp (Data.Text.drop 19 bt)
           | otherwise                                   = oldp bt
         newp t
-          | t == "" = Nothing
           | isDigit (Data.Text.head t) = newPU t
           | otherwise = newPC t
-        oldp t
-          | t == "" = Nothing
-          | otherwise = oldPC (matchCompressed t) <|> oldPU (matchUncompressed t)
+        oldp t = oldPC (matchCompressed t) <|> oldPU (matchUncompressed t)
         oldPC (Just [_m0, m1, m2, _m3, _m4, _m5, _m6]) =
           Just $ Position (unc m1 m2)
         oldPC _ = Nothing

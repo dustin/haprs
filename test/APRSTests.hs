@@ -107,6 +107,14 @@ propSplitOnMultiSplits (NonEmpty a) (NonEmpty b) = nospace ==> splitOn ' ' (a ++
   where nospace = nospace' a && nospace' b
         nospace' l = ' ' `notElem` l
 
+testBadPositions :: IO ()
+testBadPositions = do
+  assertEqual "empty" (position (Body "")) Nothing
+  assertEqual "!" (position (Body "!")) Nothing
+  assertEqual "x" (position (Body "x")) Nothing
+  assertEqual "bad new pu" (position (Body "!12345678")) Nothing
+  assertEqual "bad new pc" (position (Body "!x2345678")) Nothing
+
 tests :: [TestTree]
 tests = [
   testGroup "callPass"  testCallPass,
@@ -117,6 +125,7 @@ tests = [
   testProperty "frame round trips" (prop_roundtrips :: Frame -> Bool),
   localOption (QC.QuickCheckTests 1000) $ testProperty "address validation" propValidAddress,
   testGroup "base91" testBase91,
+  testCase "bad positions" testBadPositions,
 
   testProperty "split splits on" propSplitOnSplits,
   testProperty "split splits on multi" propSplitOnMultiSplits

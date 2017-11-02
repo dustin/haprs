@@ -189,23 +189,22 @@ position bod@(Body bt)
           let numstrs' = map (map (\c -> if c == ' ' then '0' else c)) numstrs
               posamb = Prelude.length (filter (== ' ') $ concat numstrs) `div` 2 in
             case sequence (map readMaybe numstrs') of
-              Nothing -> Nothing
-              Just nums -> let a = (nums !! 0) + ((nums !! 1) / 60)
-                               b = (nums !! 2) + ((nums !! 3) / 60)
-                               offby = case posamb of
-                                 0 -> 0
-                                 1 -> 0.05 / 60
-                                 2 -> 0.5 / 60
-                                 3 -> 5 / 60
-                                 4 -> 0.5
-                                 _ -> error "Invalid ambiguity"
-                               asig = if d1 `elem` ['S', 'W'] then -1 else 1
-                               bsig = if d2 `elem` ['S', 'W'] then -1 else 1
-                               a' = (a + offby) * asig
-                               b' = (b + offby) * bsig
-                               lonlat = if d1 `elem` ['N', 'S'] then (a', b') else (b', a') in
-                             Just $ Position lonlat
-
+              Just [a1,a2,b1,b2] -> let a = a1 + (a2 / 60)
+                                        b = b1 + (b2 / 60)
+                                        offby = case posamb of
+                                          0 -> 0
+                                          1 -> 0.05 / 60
+                                          2 -> 0.5 / 60
+                                          3 -> 5 / 60
+                                          4 -> 0.5
+                                          _ -> error "Invalid ambiguity"
+                                        asig = if d1 `elem` ['S', 'W'] then -1 else 1
+                                        bsig = if d2 `elem` ['S', 'W'] then -1 else 1
+                                        a' = (a + offby) * asig
+                                        b' = (b + offby) * bsig
+                                        lonlat = if d1 `elem` ['N', 'S'] then (a', b') else (b', a') in
+                                      Just $ Position lonlat
+              _ -> Nothing
 
 data Frame = Frame { source :: Address
                    , dest :: Address

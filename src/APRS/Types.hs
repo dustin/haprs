@@ -23,7 +23,7 @@ module APRS.Types
 import Control.Applicative ((<|>))
 import Data.Char (isDigit)
 import Data.String (fromString)
-import Data.Text (Text, any, take, drop, head, length, index, intercalate, unpack)
+import Data.Text (Text, any, take, drop, head, uncons, length, index, intercalate, unpack)
 import Data.Bits
 import Data.Int
 import Text.Regex (Regex, mkRegex, matchRegex)
@@ -125,8 +125,7 @@ newtype Body = Body Text deriving (Eq)
 instance Show Body where show (Body x) = unpack x
 
 pktType :: Body -> Maybe PacketType
-pktType (Body "") = Nothing
-pktType (Body b) = Just $ identifyPacket (Data.Text.head b)
+pktType (Body b) = identifyPacket <$> fst <$> uncons b
 
 coordField :: String
 coordField = "(\\d{1,3})([0-5 ][0-9 ])\\.([0-9 ]+)([NEWS])"

@@ -23,10 +23,11 @@ module APRS.Types
 import Control.Applicative ((<|>))
 import Data.Char (isDigit)
 import Data.String (fromString)
-import Data.Text (Text, any, take, drop, head, length, intercalate, unpack)
+import Data.Text (Text, any, take, drop, head, length, index, intercalate, unpack)
 import Data.Bits
 import Data.Int
 import Text.Regex (Regex, mkRegex, matchRegex)
+import Text.Read (readMaybe)
 
 class Similar a where
   (≈) :: a -> a -> Bool
@@ -151,10 +152,11 @@ matchCompressed :: Text -> Maybe [String]
 matchCompressed = matchText compressedPositionRe
 
 -- data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
+-- lon, lat
 data Position = Position (Double, Double) deriving (Show)
 
 position :: Body -> Maybe Position
-position b@(Body bt) = go $ pktType b
+position bod@(Body bt) = go $ pktType bod
   where go Nothing = Nothing
         go (Just t)
           | t `elem` [PositionNoTSNoMsg, PositionNoTS]  = newp (Data.Text.drop 1 bt)
@@ -171,17 +173,41 @@ position b@(Body bt) = go $ pktType b
         oldPC (Just [_m0, m1, m2, _m3, _m4, _m5, _m6]) =
           Just $ Position (unc m1 m2)
         oldPC _ = Nothing
-        oldPU (Just _) = Nothing -- TODO
+        oldPU (Just [_m0, _m1, m2, m3, m4, m5, _m6, m7, m8, m9, m10, _m11, _m12]) =
+          let numstrs = [m2, m3 ++ "." ++ m4, m7, m8 ++ "." ++ m9] in
+            parseu numstrs (m5 !! 0) (m10 !! 0)
         oldPU _ = Nothing
         newPU t
           | Data.Text.length t < 19 = Nothing
-          | otherwise = Nothing -- TODO
+          | otherwise = let numstrs = [subt 0 2 t, subt 2 5 t, subt 9 3 t, subt 12 5 t] in
+                          parseu numstrs (t `index` 7) (t `index` 17)
         newPC t
           | Data.Text.length t < 12 = Nothing
           | otherwise = Just $ Position $ unc (subt 1 4 t) (subt 5 4 t)
         b91f = fromIntegral.decodeBase91 :: String -> Double
         unc m1 m2 = (90 - (b91f m1 / 380926), (-180) + (b91f m2 / 190463))
         subt s n = unpack.(Data.Text.take n).Data.Text.drop s
+        parseu numstrs d1 d2 =
+          let numstrs' = map (map (\c -> if c == ' ' then '0' else c)) numstrs
+              posamb = Prelude.length (filter (== ' ') $ concat numstrs) `div` 2 in
+            case sequence (map readMaybe numstrs') of
+              Nothing -> Nothing
+              Just nums -> let a = (nums !! 0) + ((nums !! 1) / 60)
+                               b = (nums !! 2) + ((nums !! 3) / 60)
+                               offby = case posamb of
+                                 0 -> 0
+                                 1 -> 0.05 / 60
+                                 2 -> 0.5 / 60
+                                 3 -> 5 / 60
+                                 4 -> 0.5
+                                 _ -> error "Invalid ambiguity"
+                               asig = if d1 `elem` ['S', 'W'] then -1 else 1
+                               bsig = if d2 `elem` ['S', 'W'] then -1 else 1
+                               a' = (a + offby) * asig
+                               b' = (b + offby) * bsig
+                               lonlat = if d1 `elem` ['N', 'S'] then (a', b') else (b', a') in
+                             Just $ Position lonlat
+
 
 data Frame = Frame { source :: Address
                    , dest :: Address

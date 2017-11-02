@@ -36,7 +36,7 @@ data FAPResult = FAPResult {
   , _posResolution :: Maybe Double
   , _posAmbiguity :: Maybe Double
   , body :: Maybe String
-  , format :: Maybe String
+  , _format :: Maybe String
   , _messaging :: Maybe Int
   , _origPacket :: Maybe String
   , _typ :: Maybe String
@@ -95,10 +95,8 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                     let wantpos = isJust $ latitude res
 
                                     pn <- if not (isJust pos && wantpos) then return 0 else do
-                                      let elat = if format res == Just "uncompressed" then 0
-                                                 else (fromMaybe 0.latitude) res
-                                      let elon = if format res == Just "uncompressed" then 0
-                                                 else (fromMaybe 0.longitude) res
+                                      let elat = (fromMaybe 0.latitude) res
+                                      let elon = (fromMaybe 0.longitude) res
                                       assertApproxEqual ("lat " ++ show b) ε elat plat
                                       assertApproxEqual ("lon " ++ show b) ε elon plon
 

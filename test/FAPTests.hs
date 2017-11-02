@@ -4,6 +4,8 @@ module FAPTests (tests) where
 
 import APRS.Types
 
+import Control.Exception (catch, SomeException, evaluate)
+import Control.Applicative ((<|>))
 import Control.Monad (foldM)
 import Data.Aeson
 import Data.Maybe
@@ -12,6 +14,7 @@ import qualified Data.ByteString.Lazy as B
 
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.HUnit.Approx (assertApproxEqual)
 
 data Digipeater = Digipeater {
   _wasdigied :: Int
@@ -28,12 +31,12 @@ data FAPResult = FAPResult {
   , _symbolTable :: Maybe String
   , srcCallsign :: Maybe String
   , dstCallsign :: Maybe String
-  , _latitude :: Maybe Double
-  , _longitude :: Maybe Double
+  , latitude :: Maybe Double
+  , longitude :: Maybe Double
   , _posResolution :: Maybe Double
   , _posAmbiguity :: Maybe Double
   , body :: Maybe String
-  , _format :: Maybe String
+  , format :: Maybe String
   , _messaging :: Maybe Int
   , _origPacket :: Maybe String
   , _typ :: Maybe String
@@ -71,6 +74,9 @@ instance FromJSON FAPTest where
         <*> v .:? "result"
         <*> v .:? "failed" .!= 0
 
+ε :: Double
+ε = 0.001
+
 fapTest :: [FAPTest] -> TestTree
 fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Frame of
                                   Left e -> error (show e)
@@ -80,7 +86,24 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                     assertMaybeEqual "src" f srcCallsign s
                                     assertMaybeEqual "dst" f dstCallsign d
                                     assertMaybeEqual "body" f FAPTests.body b
-                                    return $ n + 3
+
+                                    let res = (fromJust.result) f
+                                    pos <- catch (evaluate $ position b) (\e -> do
+                                                                             let _ = (e :: SomeException)
+                                                                             return Nothing)
+                                    let (Just (Position (plat, plon))) = pos <|> Just (Position (0, 0))
+                                    let wantpos = isJust $ latitude res
+
+                                    pn <- if not (isJust pos && wantpos) then return 0 else do
+                                      let elat = if format res == Just "uncompressed" then 0
+                                                 else (fromMaybe 0.latitude) res
+                                      let elon = if format res == Just "uncompressed" then 0
+                                                 else (fromMaybe 0.longitude) res
+                                      assertApproxEqual ("lat " ++ show b) ε elat plat
+                                      assertApproxEqual ("lon " ++ show b) ε elon plon
+
+                                      return 2
+                                    return $ n + 3 + pn
                                 ) (0::Int) parsed
                  return $ show asses ++ " assertions run"
   where assertMaybeEqual lbl f a b = assertEqual lbl (fromJust (a =<< result f)) (show b)

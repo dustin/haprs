@@ -10,6 +10,8 @@ module APRS.Types
     , (≈)
     , Frame(..)
     , Body(..)
+    , Position(..)
+    , position
     , identifyPacket
     , callPass
     , decodeBase91
@@ -18,12 +20,13 @@ module APRS.Types
     , splitOn
     ) where
 
+import Control.Applicative ((<|>))
+import Data.Char (isDigit)
 import Data.String (fromString)
-import Data.Text (Text, any, intercalate, unpack)
+import Data.Text (Text, any, take, drop, head, length, intercalate, unpack)
 import Data.Bits
 import Data.Int
-
-import Geodetics.Geodetic
+import Text.Regex (Regex, mkRegex, matchRegex)
 
 class Similar a where
   (≈) :: a -> a -> Bool
@@ -118,10 +121,65 @@ newtype Body = Body Text deriving (Eq)
 
 instance Show Body where show (Body x) = unpack x
 
-data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
+pktType :: Body -> Maybe PacketType
+pktType (Body "") = Nothing
+pktType (Body b) = Just $ identifyPacket (Data.Text.head b)
+
+coordField :: String
+coordField = "(\\d{1,3})([0-5 ][0-9 ])\\.([0-9 ]+)([NEWS])"
+b91chars :: String
+b91chars = "[!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\\^_`abcdefghijklmnopqrstuvwxyz{]"
+symbolTables :: String
+symbolTables = "[0-9/\\A-z]"
+
+matchText :: Regex -> Text -> Maybe [String]
+matchText r t = matchRegex r (unpack t)
+
+uncompressedPositionRe :: Regex
+uncompressedPositionRe = mkRegex $ "([!=]|[/@\\*]\\d{6}[hz/])" ++
+                         coordField ++ "(" ++ symbolTables ++ ")" ++
+                         coordField ++ "(.)([0-3][0-9]{2}/[0-9]{3})?"
+
+matchUncompressed :: Text -> Maybe [String]
+matchUncompressed = matchText uncompressedPositionRe
+compressedPositionRe :: Regex
+compressedPositionRe = mkRegex $ "([!=/@])(" ++
+                       b91chars ++ "{4})(" ++ b91chars ++ "{4})(.)(..)(.)"
+matchCompressed :: Text -> Maybe [String]
+matchCompressed = matchText compressedPositionRe
+
+-- data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
+data Position = Position (Double, Double) deriving (Show)
 
 position :: Body -> Maybe Position
-position _ = Nothing
+position b@(Body bt) = go $ pktType b
+  where go Nothing = Nothing
+        go (Just t)
+          | t `elem` [PositionNoTSNoMsg, PositionNoTS]  = newp (Data.Text.drop 1 bt)
+          | t `elem` [PositionNoMsg, PositionMsg]       = newp (Data.Text.drop 8 bt)
+          | t == Object                                 = newp (Data.Text.drop 19 bt)
+          | otherwise                                   = oldp bt
+        newp t
+          | t == "" = Nothing
+          | isDigit (Data.Text.head t) = newPU t
+          | otherwise = newPC t
+        oldp t
+          | t == "" = Nothing
+          | otherwise = oldPC (matchCompressed t) <|> oldPU (matchUncompressed t)
+        oldPC (Just [_m0, m1, m2, _m3, _m4, _m5, _m6]) =
+          Just $ Position (unc m1 m2)
+        oldPC _ = Nothing
+        oldPU (Just _) = Nothing -- TODO
+        oldPU _ = Nothing
+        newPU t
+          | Data.Text.length t < 19 = Nothing
+          | otherwise = Nothing -- TODO
+        newPC t
+          | Data.Text.length t < 12 = Nothing
+          | otherwise = Just $ Position $ unc (subt 1 4 t) (subt 5 4 t)
+        b91f = fromIntegral.decodeBase91 :: String -> Double
+        unc m1 m2 = (90 - (b91f m1 / 380926), (-180) + (b91f m2 / 190463))
+        subt s n = unpack.(Data.Text.take n).Data.Text.drop s
 
 data Frame = Frame { source :: Address
                    , dest :: Address

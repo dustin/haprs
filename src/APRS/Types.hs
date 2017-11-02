@@ -125,7 +125,7 @@ newtype Body = Body Text deriving (Eq)
 instance Show Body where show (Body x) = unpack x
 
 pktType :: Body -> Maybe PacketType
-pktType (Body b) = identifyPacket <$> fst <$> uncons b
+pktType (Body b) = identifyPacket . fst <$> uncons b
 
 coordField :: String
 coordField = "(\\d{1,3})([0-5 ][0-9 ])\\.([0-9 ]+)([NEWS])"
@@ -152,7 +152,7 @@ matchCompressed = matchText compressedPositionRe
 
 -- data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
 -- lon, lat
-data Position = Position (Double, Double) deriving (Eq, Show)
+newtype Position = Position (Double, Double) deriving (Eq, Show)
 
 position :: Body -> Maybe Position
 position bod@(Body bt)
@@ -188,7 +188,7 @@ position bod@(Body bt)
         parseu numstrs d1 d2 =
           let numstrs' = map (map (\c -> if c == ' ' then '0' else c)) numstrs
               posamb = Prelude.length (filter (== ' ') $ concat numstrs) `div` 2 in
-            case sequence (map readMaybe numstrs') of
+            case mapM readMaybe numstrs' of
               Just [a1,a2,b1,b2] -> let a = a1 + (a2 / 60)
                                         b = b1 + (b2 / 60)
                                         offby = case posamb of

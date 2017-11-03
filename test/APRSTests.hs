@@ -98,12 +98,12 @@ propValidAddress a s
   where addr = address (fromString a) (fromString s)
 
 propSplitOnSplits :: NonEmptyList Char -> NonEmptyList Char -> Property
-propSplitOnSplits (NonEmpty a) (NonEmpty b) = nospace ==> splitOn ' ' (a ++ " " ++ b) == (a, b)
+propSplitOnSplits (NonEmpty a) (NonEmpty b) = nospace ==> splitOn' ' ' (a ++ " " ++ b) == (a, b)
   where nospace = nospace' a && nospace' b
         nospace' l = ' ' `notElem` l
 
 propSplitOnMultiSplits :: NonEmptyList Char -> NonEmptyList Char -> Property
-propSplitOnMultiSplits (NonEmpty a) (NonEmpty b) = nospace ==> splitOn ' ' (a ++ "  " ++ b) == (a, " " ++ b)
+propSplitOnMultiSplits (NonEmpty a) (NonEmpty b) = nospace ==> splitOn' ' ' (a ++ "  " ++ b) == (a, " " ++ b)
   where nospace = nospace' a && nospace' b
         nospace' l = ' ' `notElem` l
 

@@ -1397,6 +1397,7 @@
         "src": "OH7AA-1>APRS,WIDE1-1,WIDE2-2,qAo,OH7AA::OH7LZB   :acka"
     },
     {
+        "misunderstood": true,
         "result": {
             "body": ":OH7LZB   :cdefghijklmnopqrstuvwxyz}\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd{42",
             "destination": "OH7LZB",
@@ -7823,6 +7824,7 @@
         "src": "OH7AA-1>APRS,WIDE1-1,WIDE2-2,qAo,OH7AA::OH7LZB   :reja"
     },
     {
+        "misunderstood": true,
         "result": {
             "body": ":OH7LZB   :\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd\ufffd{42",
             "destination": "OH7LZB",

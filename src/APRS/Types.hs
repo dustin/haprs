@@ -12,21 +12,23 @@ module APRS.Types
     , Body(..)
     , Position(..)
     , Velocity(..)
+    , Message(..)
+    , message
     , position
     , identifyPacket
     , callPass
     , decodeBase91
     -- For testing
     , splitWith
-    , splitOn
+    , splitOn'
     ) where
 
 import Prelude hiding (any, take, drop, head, takeWhile)
 import Control.Applicative ((<|>), liftA2)
 import Data.Char (isDigit)
 import Data.String (fromString)
-import Data.Text (Text, any, take, drop, head, uncons,
-                  takeWhile, length, index, intercalate, unpack)
+import Data.Text (Text, any, take, drop, head, uncons, dropAround, splitOn,
+                  takeWhile, length, index, intercalate, unpack, concat)
 import Data.Bits (xor, (.&.), shiftL)
 import Data.Int (Int16)
 import Text.Regex (Regex, mkRegex, matchRegex)
@@ -39,7 +41,7 @@ data PacketType = CurrentMicE
   | Item
   | PositionNoTSNoMsg
   | PositionTSNoMsg
-  | Message
+  | MessagePkt
   | Object
   | StationCaps
   | PositionNoTS
@@ -59,7 +61,7 @@ identifyPacket '\x1c' = CurrentMicE
 identifyPacket '!' = PositionNoTSNoMsg
 identifyPacket ')' = Item
 identifyPacket '/' = PositionNoMsg
-identifyPacket ':' = Message
+identifyPacket ':' = MessagePkt
 identifyPacket ';' = Object
 identifyPacket '<' = StationCaps
 identifyPacket '=' = PositionNoTS
@@ -96,9 +98,9 @@ address c s
 instance Show Address where
   show (Address c "") = unpack c
   show (Address c s) = unpack c ++ "-" ++ unpack s
-
-splitOn :: (Eq a) => a -> [a] -> ([a], [a])
-splitOn c = splitWith (== c)
+  
+splitOn' :: (Eq a) => a -> [a] -> ([a], [a])
+splitOn' c = splitWith (== c)
 
 splitWith :: (a -> Bool) -> [a] -> ([a], [a])
 splitWith f s =
@@ -108,7 +110,7 @@ splitWith f s =
         | otherwise = go (x:l) r in go [] s
 
 instance Read Address where
-  readsPrec _ x = [let (l, r) = splitOn '-' x
+  readsPrec _ x = [let (l, r) = splitOn' '-' x
                        (u, xtra) = splitWith (not . (`elem` addrChars)) r in
                      (must $ address (fromString l) (fromString u), xtra)]
 
@@ -198,10 +200,9 @@ position bod@(Body bt)
                                       course' = if course == 0 then 360 else course in
                                     Just $ Velocity (course', speed)
         pcvel _ = Nothing
-        subt s n = unpack.take n.drop s
         parseu numstrs d1 d2 v =
           let numstrs' = map (map (\c -> if c == ' ' then '0' else c)) numstrs
-              posamb = Prelude.length (filter (== ' ') $ concat numstrs) `div` 2 in
+              posamb = Prelude.length (filter (== ' ') $ Prelude.concat numstrs) `div` 2 in
             case mapM readMaybe numstrs' of
               Just [a1,a2,b1,b2] -> let a = a1 + (a2 / 60)
                                         b = b1 + (b2 / 60)
@@ -226,6 +227,28 @@ position bod@(Body bt)
                   in
                     Velocity <$> liftA2 (,) a b
 
+subt' :: Int -> Int -> Text -> Text
+subt' s n = take n.drop s
+
+subt :: Int -> Int -> Text -> String
+subt s n t = unpack $ subt' s n t
+
+data Message = Message { msgSender :: Address
+                       , msgRecipient :: Address
+                       , msgBody :: Text
+                       , msgID :: Text
+                       }
+
+message :: Frame -> Maybe Message
+message (Frame s _ _ (Body b))
+  | Data.Text.length b < 12 = Nothing
+  | head b /= ':' = Nothing
+  | otherwise = let rc = readMaybe $ unpack ((dropAround (== ' ').subt' 1 9) b) :: Maybe Address
+                    (bod:rest) = splitOn "{" (drop 11 b) in
+                  case rc of
+                    Nothing -> Nothing
+                    Just rc' -> Just $ Message s rc' bod (Data.Text.concat rest)
+
 data Frame = Frame { source :: Address
                    , dest :: Address
                    , path :: [Text]
@@ -233,9 +256,9 @@ data Frame = Frame { source :: Address
            deriving (Eq)
 
 instance Read Frame where
-  readsPrec _ x = [let (addrd, msgd) = splitOn ':' x
-                       (src, dest') = splitOn '>' addrd
-                       (dests, paths) = splitOn ',' dest' in
+  readsPrec _ x = [let (addrd, msgd) = splitOn' ':' x
+                       (src, dest') = splitOn' '>' addrd
+                       (dests, paths) = splitOn' ',' dest' in
                       (Frame { path = map fromString $ words $ map (\c -> if c == ',' then ' ' else c) paths,
                                dest = read dests,
                                source = read src,

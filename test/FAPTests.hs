@@ -9,6 +9,7 @@ import Control.Applicative ((<|>))
 import Control.Monad (foldM)
 import Data.Aeson
 import Data.Maybe
+import Data.Text (unpack)
 import Text.Read (readEither)
 import qualified Data.ByteString.Lazy as B
 
@@ -44,6 +45,8 @@ data FAPResult = FAPResult {
   , _digipeaters :: Maybe [Digipeater]
   , speed :: Maybe Double
   , course :: Maybe Double
+  , fapmsg :: Maybe String
+  , fapmsgid :: Maybe String
   } deriving (Show)
 
 instance FromJSON FAPResult where
@@ -65,11 +68,14 @@ instance FromJSON FAPResult where
     <*> v .:? "digipeaters"
     <*> v .:? "speed"
     <*> v .:? "course"
+    <*> v .:? "message"
+    <*> v .:? "messageid"
 
 data FAPTest = FAPTest {
   src :: !String
   , result :: Maybe FAPResult
   , _failed :: Int
+  , _misunderstood :: Bool
   } deriving (Show)
 
 instance FromJSON FAPTest where
@@ -77,6 +83,7 @@ instance FromJSON FAPTest where
         <$> v .: "src"
         <*> v .:? "result"
         <*> v .:? "failed" .!= 0
+        <*> v .:? "misunderstood" .!= False
 
 ε :: Double
 ε = 0.001
@@ -86,7 +93,7 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                   Left e -> error (show e)
                                   Right f' -> (f,f')) fs in
                testCaseInfo "FAP tests" $ do
-                 asses <- foldM (\n (f, (Frame s d _ b)) -> do
+                 asses <- foldM (\n (f, frame@(Frame s d _ b)) -> do
                                     assertMaybeEqual "src" f srcCallsign s
                                     assertMaybeEqual "dst" f dstCallsign d
                                     assertMaybeEqual "body" f FAPTests.body b
@@ -116,7 +123,17 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
 
                                       return (2 + vn)
 
-                                    return $ n + 3 + pn
+                                    let wantmsg = isJust $ fapmsg res
+                                    let msg = message frame
+                                    mn <- if not (isJust msg && wantmsg) then return 0 else do
+                                      let (Message sndr _ bod msgid) = fromJust msg
+                                      assertMaybeEqual ("msg sender: " ++ show b) f srcCallsign sndr
+                                      assertEqual ("msg bod: " ++ show b) (fromJust . fapmsg $ res) (unpack bod)
+                                      assertEqual ("msgid: " ++ show b) (fromJust . fapmsgid $ res) (unpack msgid)
+
+                                      return 3
+
+                                    return $ n + 3 + pn + mn
                                 ) (0::Int) parsed
                  return $ show asses ++ " assertions run"
   where assertMaybeEqual lbl f a b = assertEqual lbl (fromJust (a =<< result f)) (show b)
@@ -128,4 +145,4 @@ tests = do
              Right x -> x
              Left x -> error ("decoding junk: " ++ show x)
 
-  return $ fapTest $ filter (\(FAPTest _ _ n) -> n == 0) tj
+  return $ fapTest $ filter (\(FAPTest _ _ n m) -> (n == 0 && m == False)) tj

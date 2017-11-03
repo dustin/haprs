@@ -28,7 +28,7 @@ test-suite haprs-test
   other-modules:       APRSTests, FAPTests
   build-depends:       base
                      , haprs
-                     , aeson, bytestring, text
+                     , aeson, bytestring, text, containers
                      , HUnit, HUnit-approx
                      , QuickCheck
                      , tasty, tasty-hunit, tasty-quickcheck

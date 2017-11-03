@@ -37,7 +37,8 @@ import Text.Read (readMaybe)
 class Similar a where
   (≈) :: a -> a -> Bool
 
-data PacketType = CurrentMicE
+data PacketType = CurrentMicEBin
+  | CurrentMicE
   | Item
   | PositionNoTSNoMsg
   | PositionTSNoMsg
@@ -53,11 +54,11 @@ data PacketType = CurrentMicE
   | WeatherNoPos
   | UserDefined
   | ThirdParty
-  | Invalid Char
-  deriving (Show, Eq)
+  | InvalidPacket Char
+  deriving (Show, Ord, Eq)
 
 identifyPacket :: Char -> PacketType
-identifyPacket '\x1c' = CurrentMicE
+identifyPacket '\x1c' = CurrentMicEBin
 identifyPacket '!' = PositionNoTSNoMsg
 identifyPacket ')' = Item
 identifyPacket '/' = PositionNoMsg
@@ -73,7 +74,7 @@ identifyPacket '_' = WeatherNoPos
 identifyPacket '`' = CurrentMicE
 identifyPacket '{' = UserDefined
 identifyPacket '}' = ThirdParty
-identifyPacket x = Invalid x
+identifyPacket x = InvalidPacket x
 
 data Address = Address { _call :: !Text, _ssid :: !Text } deriving (Eq)
 

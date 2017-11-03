@@ -7,6 +7,7 @@ import APRS.Types
 
 import Data.String (fromString)
 import Data.Either (isRight)
+import qualified Data.Set as Set
 import Test.QuickCheck
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC
@@ -115,6 +116,14 @@ testBadPositions = do
   assertEqual "bad new pu" (position (Body "!12345678")) Nothing
   assertEqual "bad new pc" (position (Body "!x2345678")) Nothing
 
+testNoDupMapping :: (Bounded a, Ord a, Enum a, Show b, Ord b) => (a -> b) -> Assertion
+testNoDupMapping f = case foldr findDup (Right Set.empty) [minBound..] of
+                       Left x -> assertString $ "Duplicate value found: " ++ (show x)
+                       Right _ -> return ()
+  where findDup x s = let p = f x in case Set.member p <$> s of
+                                       Right True -> Left p
+                                       _ -> Set.insert p <$> s
+
 tests :: [TestTree]
 tests = [
   testGroup "callPass"  testCallPass,
@@ -126,6 +135,7 @@ tests = [
   localOption (QC.QuickCheckTests 1000) $ testProperty "address validation" propValidAddress,
   testGroup "base91" testBase91,
   testCase "bad positions" testBadPositions,
+  testCase "no dup packet types" $ testNoDupMapping identifyPacket,
 
   testProperty "split splits on" propSplitOnSplits,
   testProperty "split splits on multi" propSplitOnMultiSplits

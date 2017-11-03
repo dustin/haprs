@@ -9,6 +9,7 @@ import Data.String (fromString)
 import Data.Either (isRight)
 import Data.Word (Word8)
 import Data.Char (chr)
+import qualified Data.Text as T
 import qualified Data.Set as Set
 import Test.QuickCheck
 import Test.Tasty
@@ -19,13 +20,27 @@ import Test.Tasty.HUnit
 addrChars :: [Char]
 addrChars = ['A'..'Z'] ++ ['0'..'9']
 
+newtype ArbitraryCall = ArbitraryCall T.Text deriving Show
+
+instance Arbitrary ArbitraryCall where
+  arbitrary = do
+    l <- choose (1, 12)
+    a <- vectorOf l $ elements addrChars
+    return $ ArbitraryCall (fromString $ take l a)
+
+newtype ArbitrarySSID = ArbitrarySSID T.Text deriving Show
+
+instance Arbitrary ArbitrarySSID where
+  arbitrary = do
+    l <- choose (0, 6)
+    a <- vectorOf l $ elements addrChars
+    return $ ArbitrarySSID (fromString $ take l a)
+
 instance Arbitrary Address where
   arbitrary = do
-    l <- choose (3, 12)
-    r <- choose (0, 5)
-    lel <- shuffle addrChars
-    rel <- shuffle addrChars
-    return $ must $ address ((fromString.take l) lel) ((fromString.take r) rel)
+    (ArbitraryCall c) <- arbitrary :: Gen ArbitraryCall
+    (ArbitrarySSID s) <- arbitrary :: Gen ArbitrarySSID
+    return $ must $ address c s
 
 testCallPass :: [TestTree]
 testCallPass =

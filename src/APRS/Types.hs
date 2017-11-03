@@ -159,7 +159,7 @@ instance Show Velocity where
   show (Velocity (course, speed)) = show speed ++ "kph @" ++ show course
 
 -- data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
--- lon, lat, ambiguity
+-- lon, lat, velocity
 newtype Position = Position (Double, Double, Maybe Velocity) deriving (Eq, Show)
 
 position :: Body -> Maybe Position

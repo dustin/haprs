@@ -68,6 +68,12 @@ testAddrSimilar =
   ("KG6HWF", "KG6HWF-11"),
   ("KG6HWF-9", "KG6HWF-11")]
 
+-- Same as the above, but as a property test.
+propAddrSimilar :: ArbitraryCall -> ArbitrarySSID -> ArbitrarySSID -> Bool
+propAddrSimilar (ArbitraryCall c) (ArbitrarySSID s1) (ArbitrarySSID s2) =
+  ma c s1 ≈ ma c s2
+  where ma c' s' = must (address c' s')
+
 testBase91 :: [TestTree]
 testBase91 =
   map (\(a, want) -> testCase (show a ++ " -> " ++ show want) $ assertEqual "" (decodeBase91 a)    want) [
@@ -147,6 +153,7 @@ tests = [
   testGroup "addrParse" testAddressParsing,
   testProperty "address round trips" (prop_roundtrips :: Address -> Bool),
   testGroup "addrSimilar" testAddrSimilar,
+  testProperty "addrSimilar" propAddrSimilar,
   testCase "frame parsing" testChristmasMsg,
   testProperty "frame round trips" (prop_roundtrips :: Frame -> Bool),
   localOption (QC.QuickCheckTests 1000) $ testProperty "address validation" propValidAddress,

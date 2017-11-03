@@ -99,7 +99,7 @@ address c s
 instance Show Address where
   show (Address c "") = unpack c
   show (Address c s) = unpack c ++ "-" ++ unpack s
-  
+
 splitOn' :: (Eq a) => a -> [a] -> ([a], [a])
 splitOn' c = splitWith (== c)
 

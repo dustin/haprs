@@ -145,4 +145,4 @@ tests = do
              Right x -> x
              Left x -> error ("decoding junk: " ++ show x)
 
-  return $ fapTest $ filter (\(FAPTest _ _ n m) -> (n == 0 && m == False)) tj
+  return $ fapTest $ filter (\(FAPTest _ _ n m) -> (n == 0 && not m)) tj

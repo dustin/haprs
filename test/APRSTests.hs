@@ -141,7 +141,7 @@ testBadPositions = do
 
 testNoDupMapping :: (Bounded a, Ord a, Enum a, Show b, Ord b) => (a -> b) -> Assertion
 testNoDupMapping f = case foldr findDup (Right Set.empty) [minBound..] of
-                       Left x -> assertString $ "Duplicate value found: " ++ (show x)
+                       Left x -> assertString $ "Duplicate value found: " ++ show x
                        Right _ -> return ()
   where findDup x s = let p = f x in case Set.member p <$> s of
                                        Right True -> Left p

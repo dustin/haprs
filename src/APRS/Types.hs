@@ -179,9 +179,9 @@ position bod@(Body bt)
         oldPC (Just [_m0, m1, m2, _m3, _m4, m5, _m6]) =
           Just $ Position (unc m1 m2 (fmap fromEnum m5))
         oldPC _ = Nothing
-        oldPU (Just [_m0, _m1, m2, m3, m4, m5, _m6, m7, m8, m9, m10, _m11, m12]) =
+        oldPU (Just [_m0, _m1, m2, m3, m4, [m5], _m6, m7, m8, m9, [m10], _m11, m12]) =
           let numstrs = [m2, m3 ++ "." ++ m4, m7, m8 ++ "." ++ m9] in
-            parseu numstrs (m5 !! 0) (m10 !! 0) (puvel $ fromString m12)
+            parseu numstrs m5 m10 (puvel $ fromString m12)
         oldPU _ = Nothing
         newPU t
           | Data.Text.length t < 19 = Nothing

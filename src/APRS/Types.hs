@@ -21,6 +21,7 @@ module APRS.Types
     , splitOn
     ) where
 
+import Prelude hiding (any, take, drop, head, takeWhile)
 import Control.Applicative ((<|>), liftA2)
 import Data.Char (isDigit)
 import Data.String (fromString)
@@ -90,7 +91,7 @@ address c s
   | invalid s = Left "invalid characters in SSID"
   | otherwise = Right $ Address c s
   where invalid :: Text -> Bool
-        invalid = Data.Text.any (`notElem` addrChars)
+        invalid = any (`notElem` addrChars)
 
 instance Show Address where
   show (Address c "") = unpack c
@@ -159,7 +160,7 @@ instance Show Velocity where
 
 -- data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
 -- lon, lat, ambiguity
-newtype Position = Position (Double, Double, (Maybe Velocity)) deriving (Eq, Show)
+newtype Position = Position (Double, Double, Maybe Velocity) deriving (Eq, Show)
 
 position :: Body -> Maybe Position
 position bod@(Body bt)
@@ -167,12 +168,12 @@ position bod@(Body bt)
   | otherwise = go $ pktType bod
   where go Nothing = Nothing
         go (Just t)
-          | t `elem` [PositionNoTSNoMsg, PositionNoTS]  = newp (Data.Text.drop 1 bt)
-          | t `elem` [PositionNoMsg, PositionMsg]       = newp (Data.Text.drop 8 bt)
-          | t == Object                                 = newp (Data.Text.drop 19 bt)
+          | t `elem` [PositionNoTSNoMsg, PositionNoTS]  = newp (drop 1 bt)
+          | t `elem` [PositionNoMsg, PositionMsg]       = newp (drop 8 bt)
+          | t == Object                                 = newp (drop 19 bt)
           | otherwise                                   = oldp bt
         newp t
-          | isDigit (Data.Text.head t) = newPU t
+          | isDigit (head t) = newPU t
           | otherwise = newPC t
         oldp t = oldPC (matchCompressed t) <|> oldPU (matchUncompressed t)
         oldPC (Just [_m0, m1, m2, _m3, _m4, m5, _m6]) =
@@ -185,7 +186,7 @@ position bod@(Body bt)
         newPU t
           | Data.Text.length t < 19 = Nothing
           | otherwise = let numstrs = [subt 0 2 t, subt 2 5 t, subt 9 3 t, subt 12 5 t] in
-                          parseu numstrs (t `index` 7) (t `index` 17) (puvel $ Data.Text.drop 19 t)
+                          parseu numstrs (t `index` 7) (t `index` 17) (puvel $ drop 19 t)
         newPC t
           | Data.Text.length t < 12 = Nothing
           | otherwise = Just $ Position $ unc (subt 1 4 t) (subt 5 4 t) ((fmap fromEnum.subt 10 2) t)
@@ -197,7 +198,7 @@ position bod@(Body bt)
                                       course' = if course == 0 then 360 else course in
                                     Just $ Velocity (course', speed)
         pcvel _ = Nothing
-        subt s n = unpack.(Data.Text.take n).Data.Text.drop s
+        subt s n = unpack.take n.drop s
         parseu numstrs d1 d2 v =
           let numstrs' = map (map (\c -> if c == ' ' then '0' else c)) numstrs
               posamb = Prelude.length (filter (== ' ') $ concat numstrs) `div` 2 in
@@ -218,8 +219,8 @@ position bod@(Body bt)
                                       Just $ Position (a', b', v)
               _ -> Nothing
         puvel :: Text -> Maybe Velocity
-        puvel x = let as = (unpack.Data.Text.takeWhile isDigit) x
-                      bs = (unpack.Data.Text.takeWhile isDigit) $ Data.Text.drop (1 + Prelude.length as) x
+        puvel x = let as = (unpack.takeWhile isDigit) x
+                      bs = (unpack.takeWhile isDigit) $ drop (1 + Prelude.length as) x
                       a = readMaybe as :: Maybe Double
                       b = (* 1.852) <$> readMaybe bs :: Maybe Double
                   in

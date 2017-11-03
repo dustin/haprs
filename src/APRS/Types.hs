@@ -11,6 +11,7 @@ module APRS.Types
     , Frame(..)
     , Body(..)
     , Position(..)
+    , Velocity(..)
     , position
     , identifyPacket
     , callPass
@@ -20,10 +21,11 @@ module APRS.Types
     , splitOn
     ) where
 
-import Control.Applicative ((<|>))
+import Control.Applicative ((<|>), liftA2)
 import Data.Char (isDigit)
 import Data.String (fromString)
-import Data.Text (Text, any, take, drop, head, uncons, length, index, intercalate, unpack)
+import Data.Text (Text, any, take, drop, head, uncons,
+                  takeWhile, length, index, intercalate, unpack)
 import Data.Bits
 import Data.Int
 import Text.Regex (Regex, mkRegex, matchRegex)
@@ -150,9 +152,14 @@ compressedPositionRe = mkRegex $ "([!=/@])(" ++
 matchCompressed :: Text -> Maybe [String]
 matchCompressed = matchText compressedPositionRe
 
+newtype Velocity = Velocity (Double, Double) deriving (Eq)
+
+instance Show Velocity where
+  show (Velocity (course, speed)) = show speed ++ "kph @" ++ show course
+
 -- data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
--- lon, lat
-newtype Position = Position (Double, Double) deriving (Eq, Show)
+-- lon, lat, ambiguity
+newtype Position = Position (Double, Double, (Maybe Velocity)) deriving (Eq, Show)
 
 position :: Body -> Maybe Position
 position bod@(Body bt)
@@ -168,24 +175,30 @@ position bod@(Body bt)
           | isDigit (Data.Text.head t) = newPU t
           | otherwise = newPC t
         oldp t = oldPC (matchCompressed t) <|> oldPU (matchUncompressed t)
-        oldPC (Just [_m0, m1, m2, _m3, _m4, _m5, _m6]) =
-          Just $ Position (unc m1 m2)
+        oldPC (Just [_m0, m1, m2, _m3, _m4, m5, _m6]) =
+          Just $ Position (unc m1 m2 (fmap fromEnum m5))
         oldPC _ = Nothing
-        oldPU (Just [_m0, _m1, m2, m3, m4, m5, _m6, m7, m8, m9, m10, _m11, _m12]) =
+        oldPU (Just [_m0, _m1, m2, m3, m4, m5, _m6, m7, m8, m9, m10, _m11, m12]) =
           let numstrs = [m2, m3 ++ "." ++ m4, m7, m8 ++ "." ++ m9] in
-            parseu numstrs (m5 !! 0) (m10 !! 0)
+            parseu numstrs (m5 !! 0) (m10 !! 0) (puvel $ fromString m12)
         oldPU _ = Nothing
         newPU t
           | Data.Text.length t < 19 = Nothing
           | otherwise = let numstrs = [subt 0 2 t, subt 2 5 t, subt 9 3 t, subt 12 5 t] in
-                          parseu numstrs (t `index` 7) (t `index` 17)
+                          parseu numstrs (t `index` 7) (t `index` 17) (puvel $ Data.Text.drop 19 t)
         newPC t
           | Data.Text.length t < 12 = Nothing
-          | otherwise = Just $ Position $ unc (subt 1 4 t) (subt 5 4 t)
+          | otherwise = Just $ Position $ unc (subt 1 4 t) (subt 5 4 t) ((fmap fromEnum.subt 10 2) t)
         b91f = fromIntegral.decodeBase91 :: String -> Double
-        unc m1 m2 = (90 - (b91f m1 / 380926), (-180) + (b91f m2 / 190463))
+        unc m1 m2 m5 = (90 - (b91f m1 / 380926), (-180) + (b91f m2 / 190463), pcvel m5)
+        pcvel [a,b]
+          | a >= 33 && a <= 122 = let course = fromIntegral (a - 33) * 4
+                                      speed = 1.852 * ((1.08 ^ (b - 33)) - 1)
+                                      course' = if course == 0 then 360 else course in
+                                    Just $ Velocity (course', speed)
+        pcvel _ = Nothing
         subt s n = unpack.(Data.Text.take n).Data.Text.drop s
-        parseu numstrs d1 d2 =
+        parseu numstrs d1 d2 v =
           let numstrs' = map (map (\c -> if c == ' ' then '0' else c)) numstrs
               posamb = Prelude.length (filter (== ' ') $ concat numstrs) `div` 2 in
             case mapM readMaybe numstrs' of
@@ -202,8 +215,15 @@ position bod@(Body bt)
                                         bsig = if d2 == 'W' then -1 else 1
                                         a' = (a + offby) * asig
                                         b' = (b + offby) * bsig in
-                                      Just $ Position (a', b')
+                                      Just $ Position (a', b', v)
               _ -> Nothing
+        puvel :: Text -> Maybe Velocity
+        puvel x = let as = (unpack.Data.Text.takeWhile isDigit) x
+                      bs = (unpack.Data.Text.takeWhile isDigit) $ Data.Text.drop (1 + Prelude.length as) x
+                      a = readMaybe as :: Maybe Double
+                      b = (* 1.852) <$> readMaybe bs :: Maybe Double
+                  in
+                    Velocity <$> liftA2 (,) a b
 
 data Frame = Frame { source :: Address
                    , dest :: Address

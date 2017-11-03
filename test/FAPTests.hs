@@ -42,6 +42,8 @@ data FAPResult = FAPResult {
   , _typ :: Maybe String
   , _header :: Maybe String
   , _digipeaters :: Maybe [Digipeater]
+  , speed :: Maybe Double
+  , course :: Maybe Double
   } deriving (Show)
 
 instance FromJSON FAPResult where
@@ -61,6 +63,8 @@ instance FromJSON FAPResult where
     <*> v .:? "type"
     <*> v .:? "header"
     <*> v .:? "digipeaters"
+    <*> v .:? "speed"
+    <*> v .:? "course"
 
 data FAPTest = FAPTest {
   src :: !String
@@ -91,7 +95,7 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                     pos <- catch (evaluate $ position b) (\e -> do
                                                                              let _ = (e :: SomeException)
                                                                              return Nothing)
-                                    let (Just (Position (plat, plon))) = pos <|> Just (Position (0, 0))
+                                    let (Just (Position (plat, plon, vel))) = pos <|> Just (Position (0, 0, Nothing))
                                     let wantpos = isJust $ latitude res
 
                                     pn <- if not (isJust pos && wantpos) then return 0 else do
@@ -100,7 +104,18 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                       assertApproxEqual ("lat " ++ show b) ε elat plat
                                       assertApproxEqual ("lon " ++ show b) ε elon plon
 
-                                      return 2
+                                      let wantvel = isJust $ speed res
+                                      vn <- if not (isJust vel && wantvel) then return 0 else do
+                                        let (Velocity (crs, spd)) = fromJust vel
+                                        let ecrs = (fromMaybe 0.course) res
+                                        let espd = (fromMaybe 0.speed) res
+                                        assertApproxEqual ("course " ++ show b) ε ecrs crs
+                                        assertApproxEqual ("speed " ++ show b) ε espd spd
+
+                                        return 2
+
+                                      return (2 + vn)
+
                                     return $ n + 3 + pn
                                 ) (0::Int) parsed
                  return $ show asses ++ " assertions run"

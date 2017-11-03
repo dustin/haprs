@@ -7,6 +7,8 @@ import APRS.Types
 
 import Data.String (fromString)
 import Data.Either (isRight)
+import Data.Word (Word8)
+import Data.Char (chr)
 import qualified Data.Set as Set
 import Test.QuickCheck
 import Test.Tasty
@@ -135,7 +137,7 @@ tests = [
   localOption (QC.QuickCheckTests 1000) $ testProperty "address validation" propValidAddress,
   testGroup "base91" testBase91,
   testCase "bad positions" testBadPositions,
-  testCase "no dup packet types" $ testNoDupMapping identifyPacket,
+  testCase "no dup packet types" $ testNoDupMapping (identifyPacket.chr.fromIntegral :: Word8 -> PacketType),
 
   testProperty "split splits on" propSplitOnSplits,
   testProperty "split splits on multi" propSplitOnMultiSplits

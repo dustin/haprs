@@ -27,8 +27,8 @@ import Data.Char (isDigit)
 import Data.String (fromString)
 import Data.Text (Text, any, take, drop, head, uncons,
                   takeWhile, length, index, intercalate, unpack)
-import Data.Bits
-import Data.Int
+import Data.Bits (xor, (.&.), shiftL)
+import Data.Int (Int16)
 import Text.Regex (Regex, mkRegex, matchRegex)
 import Text.Read (readMaybe)
 

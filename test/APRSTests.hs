@@ -20,26 +20,26 @@ import Test.Tasty.HUnit
 addrChars :: [Char]
 addrChars = ['A'..'Z'] ++ ['0'..'9']
 
+arbitraryText :: String -> (Int, Int) -> Gen T.Text
+arbitraryText chars range = do
+    l <- choose range
+    a <- vectorOf l $ elements chars
+    return (fromString $ take l a)
+
 newtype ArbitraryCall = ArbitraryCall T.Text deriving Show
 
 instance Arbitrary ArbitraryCall where
-  arbitrary = do
-    l <- choose (1, 12)
-    a <- vectorOf l $ elements addrChars
-    return $ ArbitraryCall (fromString $ take l a)
+  arbitrary = pure.ArbitraryCall =<< arbitraryText addrChars (1, 12)
 
 newtype ArbitrarySSID = ArbitrarySSID T.Text deriving Show
 
 instance Arbitrary ArbitrarySSID where
-  arbitrary = do
-    l <- choose (0, 6)
-    a <- vectorOf l $ elements addrChars
-    return $ ArbitrarySSID (fromString $ take l a)
+  arbitrary = pure.ArbitrarySSID =<< arbitraryText addrChars (0, 6)
 
 instance Arbitrary Address where
   arbitrary = do
-    (ArbitraryCall c) <- arbitrary :: Gen ArbitraryCall
-    (ArbitrarySSID s) <- arbitrary :: Gen ArbitrarySSID
+    (ArbitraryCall c) <- arbitrary
+    (ArbitrarySSID s) <- arbitrary
     return $ must $ address c s
 
 testCallPass :: [TestTree]

@@ -119,15 +119,14 @@ propValidAddress a s
   | otherwise = collect "other" $ isRight addr
   where addr = address (fromString a) (fromString s)
 
+nospace :: [String] -> Bool
+nospace = (not.any (' ' `elem`))
+
 propSplitOnSplits :: NonEmptyList Char -> NonEmptyList Char -> Property
-propSplitOnSplits (NonEmpty a) (NonEmpty b) = nospace ==> splitOn' ' ' (a ++ " " ++ b) == (a, b)
-  where nospace = nospace' a && nospace' b
-        nospace' l = ' ' `notElem` l
+propSplitOnSplits (NonEmpty a) (NonEmpty b) = nospace [a,b] ==> splitOn' ' ' (a ++ " " ++ b) == (a, b)
 
 propSplitOnMultiSplits :: NonEmptyList Char -> NonEmptyList Char -> Property
-propSplitOnMultiSplits (NonEmpty a) (NonEmpty b) = nospace ==> splitOn' ' ' (a ++ "  " ++ b) == (a, " " ++ b)
-  where nospace = nospace' a && nospace' b
-        nospace' l = ' ' `notElem` l
+propSplitOnMultiSplits (NonEmpty a) (NonEmpty b) = nospace [a,b] ==> splitOn' ' ' (a ++ "  " ++ b) == (a, " " ++ b)
 
 testBadPositions :: IO ()
 testBadPositions = do

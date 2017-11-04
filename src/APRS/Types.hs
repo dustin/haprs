@@ -247,9 +247,7 @@ message (Frame s _ _ (Body b))
   | head b /= ':' = Nothing
   | otherwise = let rc = readMaybe $ unpack ((dropAround (== ' ').subt' 1 9) b) :: Maybe Address
                     (bod:rest) = splitOn "{" (drop 11 b) in
-                  case rc of
-                    Nothing -> Nothing
-                    Just rc' -> Just $ Message s rc' bod (Data.Text.concat rest)
+                  rc >>= \r -> pure $ Message s r bod (Data.Text.concat rest)
 
 -- Source Dest Path Body
 data Frame = Frame Address Address [Text] Body

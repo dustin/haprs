@@ -126,12 +126,14 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                     let wantmsg = isJust $ fapmsg res
                                     let msg = message frame
                                     mn <- if not (isJust msg && wantmsg) then return 0 else do
-                                      let (Message sndr _ bod msgid) = fromJust msg
+                                      let (Message sndr rcpt bod msgid) = fromJust msg
                                       assertMaybeEqual ("msg sender: " ++ show b) f srcCallsign sndr
                                       assertEqual ("msg bod: " ++ show b) (fromJust . fapmsg $ res) (unpack bod)
                                       assertEqual ("msgid: " ++ show b) (fromJust . fapmsgid $ res) (unpack msgid)
+                                      -- This is kind of dumb, but there's nothing to compare to in input data
+                                      assertBool "rcpt strings" $ (show rcpt) /= ""
 
-                                      return 3
+                                      return 4
 
                                     return $ n + 3 + pn + mn
                                 ) (0::Int) parsed

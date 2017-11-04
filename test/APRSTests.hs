@@ -137,7 +137,7 @@ testBadPositions = do
   assertEqual "bad new pu" (position (Body "!12345678")) Nothing
   assertEqual "bad new pc" (position (Body "!x2345678")) Nothing
 
-testNoDupMapping :: (Bounded a, Ord a, Enum a, Show b, Ord b) => (a -> b) -> Assertion
+testNoDupMapping :: (Bounded a, Enum a, Show b, Ord b) => (a -> b) -> Assertion
 testNoDupMapping f = case foldr findDup (Right Set.empty) [minBound..] of
                        Left x -> assertString $ "Duplicate value found: " ++ show x
                        Right _ -> return ()

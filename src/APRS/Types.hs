@@ -76,7 +76,8 @@ identifyPacket '{' = UserDefined
 identifyPacket '}' = ThirdParty
 identifyPacket x = InvalidPacket x
 
-data Address = Address { _call :: !Text, _ssid :: !Text } deriving (Eq)
+-- Address Callsign SSID
+data Address = Address Text Text deriving (Eq)
 
 addrChars :: [Char]
 addrChars = ['A'..'Z'] ++ ['0'..'9']
@@ -250,21 +251,18 @@ message (Frame s _ _ (Body b))
                     Nothing -> Nothing
                     Just rc' -> Just $ Message s rc' bod (Data.Text.concat rest)
 
-data Frame = Frame { source :: Address
-                   , dest :: Address
-                   , path :: [Text]
-                   , body :: Body }
+-- Source Dest Path Body
+data Frame = Frame Address Address [Text] Body
            deriving (Eq)
 
 instance Read Frame where
   readsPrec _ x = [let (addrd, msgd) = splitOn' ':' x
                        (src, dest') = splitOn' '>' addrd
                        (dests, paths) = splitOn' ',' dest' in
-                      (Frame { path = map fromString $ words $ map (\c -> if c == ',' then ' ' else c) paths,
-                               dest = read dests,
-                               source = read src,
-                               body = Body (fromString msgd)
-                             }, "")]
+                      (Frame (read src) (read dests)
+                        (map fromString $ words $ map (\c -> if c == ',' then ' ' else c) paths)
+                        (Body (fromString msgd))
+                      , "")]
 
 instance Show Frame where
   show (Frame s d p b) =

@@ -99,10 +99,7 @@ instance Arbitrary Frame where
     src <- arbitrary ::Gen Address
     dst <- arbitrary ::Gen Address
     msg <- arbitrary ::Gen String
-    return Frame { source = src,
-                   dest = dst,
-                   APRS.Types.path = ["WIDE1-1", "WIDE2-1"],
-                   body = Body (fromString msg) }
+    return $ Frame src dst ["WIDE1-1", "WIDE2-1"] (Body (fromString msg))
 
 rframe :: String -> Frame
 rframe = read
@@ -110,6 +107,7 @@ rframe = read
 testChristmasMsg :: Assertion
 testChristmasMsg =
   assertEqual "christmas parsing" (raddr "KG6HWF") $ source $ rframe christmasMsg
+  where source (Frame s _ _ _) = s
 
 propValidAddress :: String -> String -> Property
 propValidAddress a s

@@ -160,7 +160,7 @@ matchCompressed = matchText compressedPositionRe
 newtype Velocity = Velocity (Double, Double) deriving (Eq)
 
 instance Show Velocity where
-  show (Velocity (course, speed)) = show speed ++ "kph @" ++ show course
+  show (Velocity (course, speed)) = show speed ++ " kph @" ++ (show.round) course ++ "°"
 
 -- data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
 -- lon, lat, velocity

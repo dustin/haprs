@@ -137,6 +137,9 @@ testBadPositions = do
   assertEqual "bad new pu" (position (Body "!12345678")) Nothing
   assertEqual "bad new pc" (position (Body "!x2345678")) Nothing
 
+testVelocityPrinting :: Assertion
+testVelocityPrinting = assertEqual "vel" "23.0 kph @273°" (show $ Velocity (273, 23))
+
 testNoDupMapping :: (Bounded a, Enum a, Show b, Ord b) => (a -> b) -> Assertion
 testNoDupMapping f = case foldr findDup (Right Set.empty) [minBound..] of
                        Left x -> assertString $ "Duplicate value found: " ++ show x
@@ -158,6 +161,8 @@ tests = [
   testGroup "base91" testBase91,
   testCase "bad positions" testBadPositions,
   testCase "no dup packet types" $ testNoDupMapping (identifyPacket.chr.fromIntegral :: Word8 -> PacketType),
+
+  testCase "velocity prints" $ testVelocityPrinting,
 
   testProperty "split splits on" propSplitOnSplits,
   testProperty "split splits on multi" propSplitOnMultiSplits

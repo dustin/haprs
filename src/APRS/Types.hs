@@ -115,11 +115,7 @@ addrParser = do
   either fail return $ address c ss
 
 instance Read Address where
-  readsPrec _ s = let parsed = parse' s in [(parsed, "")]
-    where parse' :: String -> Address
-          parse' s' = case A.parseOnly addrParser (fromString s') of
-                        Left x -> error x
-                        Right x -> x
+  readsPrec _ x = either error (\a -> [(a,"")]) $ A.parseOnly addrParser (fromString x)
 
 ctoi :: Char -> Int16
 ctoi = toEnum . fromEnum
@@ -269,9 +265,7 @@ frameParser = do
   return $ Frame src dest (splitOn "," path) (Body bod)
 
 instance Read Frame where
-  readsPrec _ x = case A.parseOnly frameParser (fromString x) of
-                    Left e -> error e
-                    Right f -> [(f, "")]
+  readsPrec _ x = either error (\f -> [(f,"")]) $ A.parseOnly frameParser (fromString x)
 
 instance Show Frame where
   show (Frame s d p b) =

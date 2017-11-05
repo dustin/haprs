@@ -33,6 +33,7 @@ import Data.Bits (xor, (.&.), shiftL)
 import Data.Int (Int16)
 import Text.Regex (Regex, mkRegex, matchRegex)
 import Text.Read (readMaybe)
+import qualified Data.Attoparsec.Text as A
 
 class Similar a where
   (≈) :: a -> a -> Bool
@@ -111,10 +112,18 @@ splitWith f s =
         | f x = (reverse l, r)
         | otherwise = go (x:l) r in go [] s
 
+addrParser :: A.Parser Address
+addrParser = do
+  c <- A.takeWhile (A.inClass addrChars)
+  ss <- (A.string "-" >> A.takeWhile (A.inClass $ fromString addrChars)) <|> A.string ""
+  return $ must $ address c ss
+
 instance Read Address where
-  readsPrec _ x = [let (l, r) = splitOn' '-' x
-                       (u, xtra) = splitWith (not . (`elem` addrChars)) r in
-                     (must $ address (fromString l) (fromString u), xtra)]
+  readsPrec _ s = let parsed = parse' s in [(parsed, "")]
+    where parse' :: String -> Address
+          parse' s' = case A.parseOnly addrParser (fromString s') of
+                        Left x -> error x
+                        Right x -> x
 
 ctoi :: Char -> Int16
 ctoi = toEnum . fromEnum
@@ -253,14 +262,20 @@ message (Frame s _ _ (Body b))
 data Frame = Frame Address Address [Text] Body
            deriving (Eq)
 
+frameParser :: A.Parser Frame
+frameParser = do
+  src <- addrParser
+  _ <- A.string ">"
+  dest <- addrParser
+  path <- (A.string "," >> A.takeTill (== ':')) <|> A.string "" -- path may not exist.
+  _ <- A.string ":"
+  bod <- A.takeText
+  return $ Frame src dest (splitOn "," path) (Body bod)
+
 instance Read Frame where
-  readsPrec _ x = [let (addrd, msgd) = splitOn' ':' x
-                       (src, dest') = splitOn' '>' addrd
-                       (dests, paths) = splitOn' ',' dest' in
-                      (Frame (read src) (read dests)
-                        (map fromString $ words $ map (\c -> if c == ',' then ' ' else c) paths)
-                        (Body (fromString msgd))
-                      , "")]
+  readsPrec _ x = case A.parseOnly frameParser (fromString x) of
+                    Left e -> error e
+                    Right f -> [(f, "")]
 
 instance Show Frame where
   show (Frame s d p b) =

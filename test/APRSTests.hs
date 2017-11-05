@@ -6,7 +6,7 @@ module APRSTests (tests) where
 import APRS.Types
 
 import Data.String (fromString)
-import Data.Either (isRight)
+import Data.Either (isRight, either)
 import Data.Word (Word8)
 import Data.Char (chr)
 import qualified Data.Text as T
@@ -25,6 +25,9 @@ arbitraryText chars range = do
     l <- choose range
     a <- vectorOf l $ elements chars
     return (fromString $ take l a)
+
+must :: Either String a -> a
+must = either undefined id
 
 newtype ArbitraryCall = ArbitraryCall T.Text deriving Show
 

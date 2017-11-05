@@ -3,7 +3,6 @@
 
 module APRS.Types
     ( PacketType
-    , must
     , Address
     , address
     , Similar
@@ -83,10 +82,6 @@ data Address = Address Text Text deriving (Eq)
 
 addrChars :: [Char]
 addrChars = ['A'..'Z'] ++ ['0'..'9']
-
-must :: Either String a -> a
-must (Left x) = error x
-must (Right x) = x
 
 address :: Text -> Text -> Either String Address
 address c s

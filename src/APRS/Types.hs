@@ -26,6 +26,7 @@ module APRS.Types
 import Prelude hiding (any, take, drop, head, takeWhile)
 import Control.Applicative ((<|>), liftA2)
 import Data.Char (isDigit)
+import Data.Either (either)
 import Data.String (fromString)
 import Data.Text (Text, any, take, drop, head, uncons, dropAround, splitOn,
                   takeWhile, length, index, intercalate, unpack, concat)
@@ -116,7 +117,7 @@ addrParser :: A.Parser Address
 addrParser = do
   c <- A.takeWhile (A.inClass addrChars)
   ss <- (A.string "-" >> A.takeWhile (A.inClass $ fromString addrChars)) <|> A.string ""
-  return $ must $ address c ss
+  either fail return $ address c ss
 
 instance Read Address where
   readsPrec _ s = let parsed = parse' s in [(parsed, "")]

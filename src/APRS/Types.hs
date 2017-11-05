@@ -22,6 +22,7 @@ module APRS.Types
 
 import Prelude hiding (any, take, drop, head, takeWhile)
 import Control.Applicative ((<|>), liftA2)
+import Control.Monad (replicateM)
 import Data.Char (isDigit)
 import Data.Either (either)
 import Data.String (fromString)
@@ -140,11 +141,31 @@ uncompressedPositionRe = mkRegex $ "([!=]|[/@\\*]\\d{6}[hz/])" ++
 
 matchUncompressed :: Text -> Maybe [String]
 matchUncompressed = matchText uncompressedPositionRe
-compressedPositionRe :: Regex
-compressedPositionRe = mkRegex $ "([!=/@])(" ++
-                       b91chars ++ "{4})(" ++ b91chars ++ "{4})(.)(..)(.)"
-matchCompressed :: Text -> Maybe [String]
-matchCompressed = matchText compressedPositionRe
+
+parseB91Seg :: A.Parser Double
+parseB91Seg = do
+  stuff <- replicateM 4 (A.satisfy (`elem` b91chars))
+  return $ (fromIntegral.decodeBase91.fromString) stuff
+
+parseCompressed :: A.Parser Position
+parseCompressed = do
+  _symbol <- A.satisfy (`elem` ['!', '=', '/', '@'])
+  b91a <- parseB91Seg
+  b91b <- parseB91Seg
+  _ <- A.anyChar
+  vel <- replicateM 2 A.anyChar
+  _ <- A.anyChar
+
+  return $ Position $ unc b91a b91b (fmap fromEnum vel)
+
+  where
+    unc m1 m2 m5 = (90 - (m1 / 380926), (-180) + (m2 / 190463), pcvel m5)
+    pcvel [a,b]
+      | a >= 33 && a <= 122 = let course = fromIntegral (a - 33) * 4
+                                  speed = 1.852 * ((1.08 ^ (b - 33)) - 1)
+                                  course' = if course == 0 then 360 else course in
+                                Just $ Velocity (course', speed)
+    pcvel _ = Nothing
 
 newtype Velocity = Velocity (Double, Double) deriving (Eq)
 
@@ -154,6 +175,9 @@ instance Show Velocity where
 -- data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
 -- lon, lat, velocity
 newtype Position = Position (Double, Double, Maybe Velocity) deriving (Eq, Show)
+
+eitherToMaybe :: Either a b -> Maybe b
+eitherToMaybe = either (\_ -> Nothing) Just
 
 position :: Body -> Maybe Position
 position bod@(Body bt)
@@ -167,11 +191,9 @@ position bod@(Body bt)
           | otherwise                                   = oldp bt
         newp t
           | isDigit (head t) = newPU t
-          | otherwise = newPC t
-        oldp t = oldPC (matchCompressed t) <|> oldPU (matchUncompressed t)
-        oldPC (Just [_m0, m1, m2, _m3, _m4, m5, _m6]) =
-          Just $ Position (unc m1 m2 (fmap fromEnum m5))
-        oldPC _ = Nothing
+          | otherwise = parseC t
+        oldp t = parseC t <|> oldPU (matchUncompressed t)
+        parseC t = eitherToMaybe $ A.parseOnly parseCompressed t
         oldPU (Just [_m0, _m1, m2, m3, m4, [m5], _m6, m7, m8, m9, [m10], _m11, m12]) =
           let numstrs = [m2, m3 ++ "." ++ m4, m7, m8 ++ "." ++ m9] in
             parseu numstrs m5 m10 (puvel $ fromString m12)
@@ -180,17 +202,6 @@ position bod@(Body bt)
           | Data.Text.length t < 19 = Nothing
           | otherwise = let numstrs = [subt 0 2 t, subt 2 5 t, subt 9 3 t, subt 12 5 t] in
                           parseu numstrs (t `index` 7) (t `index` 17) (puvel $ drop 19 t)
-        newPC t
-          | Data.Text.length t < 12 = Nothing
-          | otherwise = Just $ Position $ unc (subt 1 4 t) (subt 5 4 t) ((fmap fromEnum.subt 10 2) t)
-        b91f = fromIntegral.decodeBase91 :: String -> Double
-        unc m1 m2 m5 = (90 - (b91f m1 / 380926), (-180) + (b91f m2 / 190463), pcvel m5)
-        pcvel [a,b]
-          | a >= 33 && a <= 122 = let course = fromIntegral (a - 33) * 4
-                                      speed = 1.852 * ((1.08 ^ (b - 33)) - 1)
-                                      course' = if course == 0 then 360 else course in
-                                    Just $ Velocity (course', speed)
-        pcvel _ = Nothing
         parseu numstrs d1 d2 v =
           let numstrs' = map (map (\c -> if c == ' ' then '0' else c)) numstrs
               posamb = Prelude.length (filter (== ' ') $ Prelude.concat numstrs) `div` 2 in
@@ -254,7 +265,7 @@ frameParser = do
   return $ Frame src dest path (Body bod)
 
 instance Read Frame where
-  readsPrec _ x = either (\e -> error (show e ++ " " ++ x)) (\f -> [(f,"")]) $ A.parseOnly frameParser (fromString x)
+  readsPrec _ x = either error (\f -> [(f,"")]) $ A.parseOnly frameParser (fromString x)
 
 instance Show Frame where
   show (Frame s d p b) =

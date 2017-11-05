@@ -18,8 +18,6 @@ module APRS.Types
     , callPass
     , decodeBase91
     -- For testing
-    , splitWith
-    , splitOn'
     ) where
 
 import Prelude hiding (any, take, drop, head, takeWhile)
@@ -97,16 +95,6 @@ address c s
 instance Show Address where
   show (Address c "") = unpack c
   show (Address c s) = unpack c ++ "-" ++ unpack s
-
-splitOn' :: (Eq a) => a -> [a] -> ([a], [a])
-splitOn' c = splitWith (== c)
-
-splitWith :: (a -> Bool) -> [a] -> ([a], [a])
-splitWith f s =
-  let go l [] = (reverse l, [])
-      go l (x:r)
-        | f x = (reverse l, r)
-        | otherwise = go (x:l) r in go [] s
 
 addrParser :: A.Parser Address
 addrParser = do

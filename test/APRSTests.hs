@@ -122,15 +122,6 @@ propValidAddress a s
   | otherwise = collect "other" $ isRight addr
   where addr = address (fromString a) (fromString s)
 
-nospace :: [String] -> Bool
-nospace = (not.any (' ' `elem`))
-
-propSplitOnSplits :: NonEmptyList Char -> NonEmptyList Char -> Property
-propSplitOnSplits (NonEmpty a) (NonEmpty b) = nospace [a,b] ==> splitOn' ' ' (a ++ " " ++ b) == (a, b)
-
-propSplitOnMultiSplits :: NonEmptyList Char -> NonEmptyList Char -> Property
-propSplitOnMultiSplits (NonEmpty a) (NonEmpty b) = nospace [a,b] ==> splitOn' ' ' (a ++ "  " ++ b) == (a, " " ++ b)
-
 testBadPositions :: IO ()
 testBadPositions = do
   assertEqual "empty" (position (Body "")) Nothing
@@ -164,8 +155,5 @@ tests = [
   testCase "bad positions" testBadPositions,
   testCase "no dup packet types" $ testNoDupMapping (identifyPacket.chr.fromIntegral :: Word8 -> PacketType),
 
-  testCase "velocity prints" $ testVelocityPrinting,
-
-  testProperty "split splits on" propSplitOnSplits,
-  testProperty "split splits on multi" propSplitOnMultiSplits
+  testCase "velocity prints" $ testVelocityPrinting
   ]

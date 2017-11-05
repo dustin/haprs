@@ -247,13 +247,14 @@ frameParser = do
   src <- addrParser
   _ <- A.string ">"
   dest <- addrParser
-  path <- (A.string "," >> A.takeTill (== ':')) <|> A.string "" -- path may not exist.
+  _ <- A.string "," <|> A.string "" -- maybe comma
+  path <- A.sepBy (A.takeWhile (A.notInClass ",:")) (A.char ',')
   _ <- A.string ":"
   bod <- A.takeText
-  return $ Frame src dest (splitOn "," path) (Body bod)
+  return $ Frame src dest path (Body bod)
 
 instance Read Frame where
-  readsPrec _ x = either error (\f -> [(f,"")]) $ A.parseOnly frameParser (fromString x)
+  readsPrec _ x = either (\e -> error (show e ++ " " ++ x)) (\f -> [(f,"")]) $ A.parseOnly frameParser (fromString x)
 
 instance Show Frame where
   show (Frame s d p b) =

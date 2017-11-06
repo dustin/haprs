@@ -150,23 +150,23 @@ parsePosition = parsePosCompressed <|> parsePosUncompressed
 parsePosUncompressed :: A.Parser Position
 parsePosUncompressed = do
   -- _ts <- poshdr <|> timestamphdr
-  lat <- parseDir 2
-  _sym <- A.satisfy (A.inClass "0-9/\\A-z")
-  lon <- parseDir 3
+  lat <- parseDir "lat " 2
+  _sym <- A.satisfy (A.inClass "0-9/\\A-z") A.<?> "lat/lon separator"
+  lon <- parseDir "lon " 3
   v <- A.eitherP pvel (A.string "")
 
   return $ Position (lat,lon, either Just (const Nothing) v)
 
   where
-    parseDir :: Int -> A.Parser Double
-    parseDir n = do
-      cM <- replicateM n A.digit
-      cm <- A.many1 A.digit
-      cs1 <- A.many' A.space
-      _ <- A.string "."
-      cd <- A.many1 A.digit
-      cs2 <- A.many' A.space
-      cdir <- A.satisfy (`elem` ['N', 'S', 'E', 'W'])
+    parseDir :: String -> Int -> A.Parser Double
+    parseDir lbl n = do
+      cM <- replicateM n A.digit A.<?> (lbl ++ "first digits")
+      cm <- A.many1 A.digit A.<?> (lbl ++ "second digits")
+      cs1 <- A.many' A.space A.<?> (lbl ++ "first optional spaces")
+      _ <- A.string "." A.<?> (lbl ++ "decimal")
+      cd <- A.many1 A.digit A.<?> (lbl ++ "decimal digits")
+      cs2 <- A.many' A.space A.<?> (lbl ++ "second optional space")
+      cdir <- A.satisfy (`elem` ['N', 'S', 'E', 'W']) A.<?> (lbl ++ "direction")
 
       let amb = Prelude.length cs1 + Prelude.length cs2
       return $ (compPos cM cm cd + posamb amb) * psign cdir

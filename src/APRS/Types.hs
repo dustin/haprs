@@ -140,7 +140,7 @@ posamb _ = error "Invalid ambiguity"
 
 parseCoordinates :: A.Parser ((Double, Double), Maybe Velocity)
 parseCoordinates = do
-  _ts <- poshdr <|> timestamphdr
+  -- _ts <- poshdr <|> timestamphdr
   lat <- parseDir 2
   _sym <- A.satisfy (A.inClass "0-9/\\A-z")
   lon <- parseDir 3

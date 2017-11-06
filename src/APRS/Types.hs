@@ -161,15 +161,15 @@ parsePosUncompressed = do
     parseDir :: String -> Int -> A.Parser Double
     parseDir lbl n = do
       cM <- replicateM n A.digit A.<?> (lbl ++ "first digits")
-      cm <- A.many1 A.digit A.<?> (lbl ++ "second digits")
+      cm <- A.many' A.digit A.<?> (lbl ++ "second digits")
       cs1 <- A.many' A.space A.<?> (lbl ++ "first optional spaces")
       _ <- A.string "." A.<?> (lbl ++ "decimal")
-      cd <- A.many1 A.digit A.<?> (lbl ++ "decimal digits")
+      cd <- A.many' A.digit A.<?> (lbl ++ "decimal digits")
       cs2 <- A.many' A.space A.<?> (lbl ++ "second optional space")
       cdir <- A.satisfy (`elem` ['N', 'S', 'E', 'W']) A.<?> (lbl ++ "direction")
 
       let amb = Prelude.length cs1 + Prelude.length cs2
-      return $ (compPos cM cm cd + posamb amb) * psign cdir
+      return $ (compPos cM (cm ++ cs1) (cd ++ cs2) + posamb amb) * psign cdir
 
     psign 'S' = -1
     psign 'W' = -1
@@ -183,11 +183,11 @@ parsePosUncompressed = do
       return ts
 
     compPos :: String -> String -> String -> Double
-    compPos a b c = let a' = (read . Prelude.concat) [replspc a] :: Double
-                        b' = (read . Prelude.concat) [replspc b, ".", replspc c] :: Double
-                    in
-                      a' + (b' / 60)
+    compPos a b c = let a' = (rz . Prelude.concat) [replspc a]
+                        b' = (rz . Prelude.concat) [replspc b, ".", replspc c]
+                    in a' + (b' / 60)
     replspc = map (\c -> if c == ' ' then '0' else c)
+    rz = read :: String -> Double
 
     pvel :: A.Parser Velocity
     pvel = do

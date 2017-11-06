@@ -17,6 +17,11 @@ module APRS.Types
     , identifyPacket
     , callPass
     , decodeBase91
+    -- parsers
+    , parseAddr
+    , parseCoordinates
+    , parseCompressed
+    , parseFrame
     -- For testing
     ) where
 
@@ -95,14 +100,14 @@ instance Show Address where
   show (Address c "") = unpack c
   show (Address c s) = unpack c ++ "-" ++ unpack s
 
-addrParser :: A.Parser Address
-addrParser = do
+parseAddr :: A.Parser Address
+parseAddr = do
   c <- A.takeWhile (A.inClass addrChars)
   ss <- (A.string "-" >> A.takeWhile (A.inClass $ fromString addrChars)) <|> A.string ""
   either fail return $ address c ss
 
 instance Read Address where
-  readsPrec _ x = either error (\a -> [(a,"")]) $ A.parseOnly addrParser (fromString x)
+  readsPrec _ x = either error (\a -> [(a,"")]) $ A.parseOnly parseAddr (fromString x)
 
 ctoi :: Char -> Int16
 ctoi = toEnum . fromEnum
@@ -261,11 +266,11 @@ message (Frame s _ _ (Body b))
 data Frame = Frame Address Address [Text] Body
            deriving (Eq)
 
-frameParser :: A.Parser Frame
-frameParser = do
-  src <- addrParser
+parseFrame :: A.Parser Frame
+parseFrame = do
+  src <- parseAddr
   _ <- A.string ">"
-  dest <- addrParser
+  dest <- parseAddr
   _ <- A.string "," <|> A.string "" -- maybe comma
   path <- A.sepBy (A.takeWhile (A.notInClass ",:")) (A.char ',')
   _ <- A.string ":"
@@ -273,7 +278,7 @@ frameParser = do
   return $ Frame src dest path (Body bod)
 
 instance Read Frame where
-  readsPrec _ x = either error (\f -> [(f,"")]) $ A.parseOnly frameParser (fromString x)
+  readsPrec _ x = either error (\f -> [(f,"")]) $ A.parseOnly parseFrame (fromString x)
 
 instance Show Frame where
   show (Frame s d p b) =

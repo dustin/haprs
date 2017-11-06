@@ -143,7 +143,7 @@ posamb 3 = 5 / 60
 posamb 4 = 0.5
 posamb _ = error "Invalid ambiguity"
 
-parseCoordinates :: A.Parser ((Double, Double), Maybe Velocity)
+parseCoordinates :: A.Parser Position
 parseCoordinates = do
   -- _ts <- poshdr <|> timestamphdr
   lat <- parseDir 2
@@ -151,7 +151,7 @@ parseCoordinates = do
   lon <- parseDir 3
   v <- A.eitherP pvel (A.string "")
 
-  return ((lat,lon), either Just (const Nothing) v)
+  return $ Position (lat,lon, either Just (const Nothing) v)
 
   where
     parseDir :: Int -> A.Parser Double
@@ -241,9 +241,7 @@ position bod@(Body bt)
           | otherwise                                   = parse bt
         parse t = parseC t <|> parseU t
         parseC t = eitherToMaybe $ A.parseOnly parseCompressed t
-        parseU t = eitherToMaybe $ do
-          ((lon,lat), _amb) <- A.parseOnly parseCoordinates t
-          return $ Position (lon, lat, Nothing)
+        parseU t = eitherToMaybe $ A.parseOnly parseCoordinates t
 
 subt' :: Int -> Int -> Text -> Text
 subt' s n = take n.drop s

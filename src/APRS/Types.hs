@@ -21,16 +21,14 @@ module APRS.Types
     ) where
 
 import Prelude hiding (any, take, drop, head, takeWhile)
-import Control.Applicative ((<|>), liftA2)
+import Control.Applicative ((<|>))
 import Control.Monad (replicateM)
-import Data.Char (isDigit)
 import Data.Either (either)
 import Data.String (fromString)
 import Data.Text (Text, any, take, drop, head, uncons, dropAround, splitOn,
-                  takeWhile, length, index, intercalate, unpack, concat)
+                  length, intercalate, unpack, concat)
 import Data.Bits (xor, (.&.), shiftL)
 import Data.Int (Int16)
-import Text.Regex (Regex, mkRegex, matchRegex)
 import Text.Read (readMaybe)
 import qualified Data.Attoparsec.Text as A
 
@@ -124,28 +122,75 @@ instance Show Body where show (Body x) = unpack x
 pktType :: Body -> Maybe PacketType
 pktType (Body b) = identifyPacket . fst <$> uncons b
 
-coordField :: String
-coordField = "(\\d{1,3})([0-5 ][0-9 ])\\.([0-9 ]+)([NEWS])"
 b91chars :: String
 b91chars = "[!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\\^_`abcdefghijklmnopqrstuvwxyz{]"
-symbolTables :: String
-symbolTables = "[0-9/\\A-z]"
-
-matchText :: Regex -> Text -> Maybe [String]
-matchText r t = matchRegex r (unpack t)
-
-uncompressedPositionRe :: Regex
-uncompressedPositionRe = mkRegex $ "([!=]|[/@\\*]\\d{6}[hz/])" ++
-                         coordField ++ "(" ++ symbolTables ++ ")" ++
-                         coordField ++ "(.)([0-3][0-9]{2}/[0-9]{3})?"
-
-matchUncompressed :: Text -> Maybe [String]
-matchUncompressed = matchText uncompressedPositionRe
 
 parseB91Seg :: A.Parser Double
 parseB91Seg = do
   stuff <- replicateM 4 (A.satisfy (`elem` b91chars))
   return $ (fromIntegral.decodeBase91.fromString) stuff
+
+posamb :: Int -> Double
+posamb 0 = 0
+posamb 1 = 0.05 / 60
+posamb 2 = 0.5 / 60
+posamb 3 = 5 / 60
+posamb 4 = 0.5
+posamb _ = error "Invalid ambiguity"
+
+parseCoordinates :: A.Parser ((Double, Double), Maybe Velocity)
+parseCoordinates = do
+  _ts <- poshdr <|> timestamphdr
+  lat <- parseDir 2
+  _sym <- A.satisfy (A.inClass "0-9/\\A-z")
+  lon <- parseDir 3
+  v <- A.eitherP pvel (A.string "")
+
+  return ((lat,lon), either Just (const Nothing) v)
+
+  where
+    parseDir :: Int -> A.Parser Double
+    parseDir n = do
+      cM <- replicateM n A.digit
+      cm <- A.many1 A.digit
+      cs1 <- A.many' A.space
+      _ <- A.string "."
+      cd <- A.many1 A.digit
+      cs2 <- A.many' A.space
+      cdir <- A.satisfy (`elem` ['N', 'S', 'E', 'W'])
+
+      let amb = Prelude.length cs1 + Prelude.length cs2
+      return $ (compPos cM cm cd + posamb amb) * psign cdir
+
+    psign 'S' = -1
+    psign 'W' = -1
+    psign _ = 1
+
+    poshdr = A.satisfy (`elem` ['!', '=']) >> pure ""
+    timestamphdr = do
+      _p <- A.satisfy (`elem` ['/', ',', '@', '\\', '*'])
+      ts <- replicateM 6 A.digit
+      _ <- A.satisfy (`elem` ['h', 'z', '/'])
+      return ts
+
+    compPos :: String -> String -> String -> Double
+    compPos a b c = let a' = (read . Prelude.concat) [replspc a] :: Double
+                        b' = (read . Prelude.concat) [replspc b, ".", replspc c] :: Double
+                    in
+                      a' + (b' / 60)
+    replspc = map (\c -> if c == ' ' then '0' else c)
+
+    pvel :: A.Parser Velocity
+    pvel = do
+      _ <- A.anyChar
+      d1 <- A.satisfy (`elem` ['0', '1', '2', '3'])
+      d2 <- replicateM 2 A.digit
+      _ <- A.string "/"
+      d3 <- replicateM 3 A.digit
+
+      let a = read (d1:d2) :: Double
+      let b = (* 1.852) $ read d3 :: Double
+      return $ Velocity (a, b)
 
 parseCompressed :: A.Parser Position
 parseCompressed = do
@@ -177,7 +222,7 @@ instance Show Velocity where
 newtype Position = Position (Double, Double, Maybe Velocity) deriving (Eq, Show)
 
 eitherToMaybe :: Either a b -> Maybe b
-eitherToMaybe = either (\_ -> Nothing) Just
+eitherToMaybe = either (const Nothing) Just
 
 position :: Body -> Maybe Position
 position bod@(Body bt)
@@ -185,55 +230,18 @@ position bod@(Body bt)
   | otherwise = go $ pktType bod
   where go Nothing = Nothing
         go (Just t)
-          | t `elem` [PositionNoTSNoMsg, PositionNoTS]  = newp (drop 1 bt)
-          | t `elem` [PositionNoMsg, PositionMsg]       = newp (drop 8 bt)
-          | t == Object                                 = newp (drop 19 bt)
-          | otherwise                                   = oldp bt
-        newp t
-          | isDigit (head t) = newPU t
-          | otherwise = parseC t
-        oldp t = parseC t <|> oldPU (matchUncompressed t)
+          | t `elem` [PositionNoTSNoMsg, PositionNoTS]  = parse (drop 1 bt)
+          | t `elem` [PositionNoMsg, PositionMsg]       = parse (drop 8 bt)
+          | t == Object                                 = parse (drop 19 bt)
+          | otherwise                                   = parse bt
+        parse t = parseC t <|> parseU t
         parseC t = eitherToMaybe $ A.parseOnly parseCompressed t
-        oldPU (Just [_m0, _m1, m2, m3, m4, [m5], _m6, m7, m8, m9, [m10], _m11, m12]) =
-          let numstrs = [m2, m3 ++ "." ++ m4, m7, m8 ++ "." ++ m9] in
-            parseu numstrs m5 m10 (puvel $ fromString m12)
-        oldPU _ = Nothing
-        newPU t
-          | Data.Text.length t < 19 = Nothing
-          | otherwise = let numstrs = [subt 0 2 t, subt 2 5 t, subt 9 3 t, subt 12 5 t] in
-                          parseu numstrs (t `index` 7) (t `index` 17) (puvel $ drop 19 t)
-        parseu numstrs d1 d2 v =
-          let numstrs' = map (map (\c -> if c == ' ' then '0' else c)) numstrs
-              posamb = Prelude.length (filter (== ' ') $ Prelude.concat numstrs) `div` 2 in
-            case mapM readMaybe numstrs' of
-              Just [a1,a2,b1,b2] -> let a = a1 + (a2 / 60)
-                                        b = b1 + (b2 / 60)
-                                        offby = case posamb of
-                                          0 -> 0
-                                          1 -> 0.05 / 60
-                                          2 -> 0.5 / 60
-                                          3 -> 5 / 60
-                                          4 -> 0.5
-                                          _ -> error "Invalid ambiguity"
-                                        asig = if d1 == 'S' then -1 else 1
-                                        bsig = if d2 == 'W' then -1 else 1
-                                        a' = (a + offby) * asig
-                                        b' = (b + offby) * bsig in
-                                      Just $ Position (a', b', v)
-              _ -> Nothing
-        puvel :: Text -> Maybe Velocity
-        puvel x = let as = (unpack.takeWhile isDigit) x
-                      bs = (unpack.takeWhile isDigit) $ drop (1 + Prelude.length as) x
-                      a = readMaybe as :: Maybe Double
-                      b = (* 1.852) <$> readMaybe bs :: Maybe Double
-                  in
-                    Velocity <$> liftA2 (,) a b
+        parseU t = eitherToMaybe $ do
+          ((lon,lat), _amb) <- A.parseOnly parseCoordinates t
+          return $ Position (lon, lat, Nothing)
 
 subt' :: Int -> Int -> Text -> Text
 subt' s n = take n.drop s
-
-subt :: Int -> Int -> Text -> String
-subt s n t = unpack $ subt' s n t
 
 data Message = Message { msgSender :: Address
                        , msgRecipient :: Address

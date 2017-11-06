@@ -37,7 +37,7 @@ data FAPResult = FAPResult {
   , _posResolution :: Maybe Double
   , _posAmbiguity :: Maybe Double
   , body :: Maybe String
-  , _format :: Maybe String
+  , format :: Maybe String
   , _messaging :: Maybe Int
   , _origPacket :: Maybe String
   , _typ :: Maybe String
@@ -88,11 +88,11 @@ instance FromJSON FAPTest where
 ε :: Double
 ε = 0.001
 
-fapTest :: [FAPTest] -> TestTree
+fapTest :: [FAPTest] -> IO String
 fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Frame of
                                   Left e -> error (show e)
                                   Right f' -> (f,f')) fs in
-               testCaseInfo "FAP tests" $ do
+               do
                  asses <- foldM (\n (f, frame@(Frame s d _ b)) -> do
                                     assertMaybeEqual "src" f srcCallsign s
                                     assertMaybeEqual "dst" f dstCallsign d
@@ -147,4 +147,17 @@ tests = do
              Right x -> x
              Left x -> error ("decoding junk: " ++ show x)
 
-  return $ fapTest $ filter (\(FAPTest _ _ n m) -> (n == 0 && not m)) tj
+  let allfaps = filter (\(FAPTest _ _ n m) -> (n == 0 && not m)) tj
+  let compressed = filter (fapfmt $ Just "compressed") allfaps
+  let uncompressed = filter (fapfmt $ Just "uncompressed") allfaps
+  let nopos = filter (fapfmt $ Nothing) allfaps
+
+  return $ testGroup "FAP Tests" [
+    testCaseInfo "compressed" $ fapTest compressed,
+    testCaseInfo "uncompressed" $ fapTest uncompressed,
+    testCaseInfo "no pos" $ fapTest nopos
+    ]
+
+  where
+    fapfmt :: Maybe String -> FAPTest -> Bool
+    fapfmt x ft = x == (result ft >>= format)

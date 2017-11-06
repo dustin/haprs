@@ -19,8 +19,9 @@ module APRS.Types
     , decodeBase91
     -- parsers
     , parseAddr
-    , parseCoordinates
-    , parseCompressed
+    , parsePosition
+    , parsePosUncompressed
+    , parsePosCompressed
     , parseFrame
     -- For testing
     ) where
@@ -143,8 +144,11 @@ posamb 3 = 5 / 60
 posamb 4 = 0.5
 posamb _ = error "Invalid ambiguity"
 
-parseCoordinates :: A.Parser Position
-parseCoordinates = do
+parsePosition :: A.Parser Position
+parsePosition = parsePosCompressed <|> parsePosUncompressed
+
+parsePosUncompressed :: A.Parser Position
+parsePosUncompressed = do
   -- _ts <- poshdr <|> timestamphdr
   lat <- parseDir 2
   _sym <- A.satisfy (A.inClass "0-9/\\A-z")
@@ -197,8 +201,8 @@ parseCoordinates = do
       let b = (* 1.852) $ read d3 :: Double
       return $ Velocity (a, b)
 
-parseCompressed :: A.Parser Position
-parseCompressed = do
+parsePosCompressed :: A.Parser Position
+parsePosCompressed = do
   _symbol <- A.satisfy (`elem` ['!', '=', '/', '@'])
   b91a <- parseB91Seg
   b91b <- parseB91Seg
@@ -239,9 +243,7 @@ position bod@(Body bt)
           | t `elem` [PositionNoMsg, PositionMsg]       = parse (drop 8 bt)
           | t == Object                                 = parse (drop 19 bt)
           | otherwise                                   = parse bt
-        parse t = parseC t <|> parseU t
-        parseC t = eitherToMaybe $ A.parseOnly parseCompressed t
-        parseU t = eitherToMaybe $ A.parseOnly parseCoordinates t
+        parse = eitherToMaybe . A.parseOnly parsePosition
 
 subt' :: Int -> Int -> Text -> Text
 subt' s n = take n.drop s

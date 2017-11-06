@@ -145,11 +145,11 @@ posamb 4 = 0.5
 posamb _ = error "Invalid ambiguity"
 
 parsePosition :: A.Parser Position
-parsePosition = parsePosCompressed <|> parsePosUncompressed
+parsePosition = parsePosUncompressed <|> parsePosCompressed
 
 parsePosUncompressed :: A.Parser Position
 parsePosUncompressed = do
-  -- _ts <- poshdr <|> timestamphdr
+  _ts <- poshdr <|> timestamphdr
   lat <- parseDir "lat " 2
   _sym <- A.satisfy (A.inClass "0-9/\\A-z") A.<?> "lat/lon separator"
   lon <- parseDir "lon " 3
@@ -203,7 +203,8 @@ parsePosUncompressed = do
 
 parsePosCompressed :: A.Parser Position
 parsePosCompressed = do
-  _symbol <- A.satisfy (`elem` ['!', '=', '/', '@'])
+  _pre <- timething <|> plainpos
+  _sync <- A.anyChar
   b91a <- parseB91Seg
   b91b <- parseB91Seg
   _ <- A.anyChar
@@ -220,6 +221,14 @@ parsePosCompressed = do
                                   course' = if course == 0 then 360 else course in
                                 Just $ Velocity (course', speed)
     pcvel _ = Nothing
+    timething :: A.Parser Char
+    timething = do
+      _sym <- A.satisfy (`elem` ['/', '@'])
+      _ <- replicateM 6 A.digit
+      _ <- A.anyChar
+      return _sym
+    plainpos :: A.Parser Char
+    plainpos = A.satisfy (`elem` ['!', '='])
 
 newtype Velocity = Velocity (Double, Double) deriving (Eq)
 
@@ -239,9 +248,7 @@ position bod@(Body bt)
   | otherwise = go $ pktType bod
   where go Nothing = Nothing
         go (Just t)
-          | t `elem` [PositionNoTSNoMsg, PositionNoTS]  = parse (drop 1 bt)
-          | t `elem` [PositionNoMsg, PositionMsg]       = parse (drop 8 bt)
-          | t == Object                                 = parse (drop 19 bt)
+          | t == Object                                 = parse (drop 18 bt)
           | otherwise                                   = parse bt
         parse = eitherToMaybe . A.parseOnly parsePosition
 

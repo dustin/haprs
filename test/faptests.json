@@ -7979,7 +7979,7 @@
         "src": "OH7LZB-11>APRS,W4GR*,WIDE2-1,qAR,WA4DSY:$GPRMC,145526,A,3349.0378,N,08406.2617,W,23.726,27.9,121207,4.9,W*7A"
     },
     {
-        "misunderstood": true,
+        "misunderstood": false,
         "result": {
             "body": "'I',l \u001c>/ comment |!!!!!!!!!!!!!!|",
             "comment": "comment",
@@ -8188,7 +8188,7 @@
         "src": "OZ2BRN-4>5U2V08,OZ3RIN-3,OZ4DIA-2*,WIDE2-1,qAR,DB0KUE:`'O<l!{,,\"4R}"
     },
     {
-        "misunderstood": true,
+        "misunderstood": false,
         "result": {
             "body": "`c51!f?>/'1020 commeeeent",
             "comment": "commeeeent",

@@ -321,8 +321,7 @@ parseWParam = w 'c' WindDir
     w = w' 3
 
 parseWeather :: A.Parser [WeatherParam]
-parseWeather = do
-  A.many1 parseWParam
+parseWeather = A.many1 parseWParam
 
 -- Source Dest Path Body
 data Frame = Frame Address Address [Text] Body

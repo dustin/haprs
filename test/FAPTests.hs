@@ -104,15 +104,14 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                                                              return Nothing)
                                     let (Just (Position (plat, plon, vel))) = pos <|> Just (Position (0, 0, Nothing))
                                     let wantpos = isJust $ latitude res
-
-                                    pn <- if not (isJust pos && wantpos) then return 0 else do
+                                    pn <- if not wantpos then return 0 else do
                                       let elat = (fromMaybe 0.latitude) res
                                       let elon = (fromMaybe 0.longitude) res
                                       assertApproxEqual ("lat " ++ show b) ε elat plat
                                       assertApproxEqual ("lon " ++ show b) ε elon plon
 
                                       let wantvel = isJust $ speed res
-                                      vn <- if not (isJust vel && wantvel) then return 0 else do
+                                      vn <- if not wantvel then return 0 else do
                                         let (Velocity (crs, spd)) = fromJust vel
                                         let ecrs = (fromMaybe 0.course) res
                                         let espd = (fromMaybe 0.speed) res

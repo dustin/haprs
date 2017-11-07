@@ -29,10 +29,10 @@ module APRS.Types
 import Prelude hiding (any, take, drop, head, takeWhile)
 import Control.Applicative ((<|>))
 import Control.Monad (replicateM)
-import Data.Either (either)
+import Data.Either (either, rights)
 import Data.String (fromString)
 import Data.Text (Text, any, take, drop, head, dropAround, splitOn,
-                  length, intercalate, unpack, concat)
+                  length, intercalate, unpack, concat, tails)
 import Data.Bits (xor, (.&.), shiftL)
 import Data.Int (Int16)
 import Text.Read (readMaybe)
@@ -247,13 +247,12 @@ instance Show Velocity where
 -- lon, lat, velocity
 newtype Position = Position (Double, Double, Maybe Velocity) deriving (Eq, Show)
 
-eitherToMaybe :: Either a b -> Maybe b
-eitherToMaybe = either (const Nothing) Just
-
 position :: Body -> Maybe Position
 position (Body bt)
   | Data.Text.length bt < 6 = Nothing
-  | otherwise = (eitherToMaybe . A.parseOnly parsePosition) bt
+  | otherwise = case rights $ map (A.parseOnly parsePosition) $ Data.Text.tails bt of
+                  [] -> Nothing
+                  (x:_) -> Just x
 
 subt' :: Int -> Int -> Text -> Text
 subt' s n = take n.drop s

@@ -108,8 +108,8 @@ instance Show Address where
 
 parseAddr :: A.Parser Address
 parseAddr = do
-  c <- A.takeWhile (A.inClass addrChars)
-  ss <- (A.string "-" >> A.takeWhile (A.inClass $ fromString addrChars)) <|> A.string ""
+  c <- A.takeWhile (A.inClass "A-Z0-9")
+  ss <- (A.string "-" >> A.takeWhile (A.inClass "A-Z0-9")) <|> A.string ""
   either fail return $ address c ss
 
 instance Read Address where
@@ -333,7 +333,7 @@ parseFrame = do
   _ <- A.string ">"
   dest <- parseAddr
   _ <- A.string "," <|> A.string "" -- maybe comma
-  path <- A.sepBy (A.takeWhile (A.notInClass ",:")) (A.char ',')
+  path <- A.sepBy (A.takeWhile (\c -> not (c == ',' || c == ':'))) (A.char ',')
   _ <- A.string ":"
   bod <- A.takeText
   return $ Frame src dest path (Body bod)

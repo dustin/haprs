@@ -27,6 +27,7 @@ module APRS.Types
     , parseFrame
     , parseTimestamp
     , parseWeather
+    , parseMessage
     , findParse
     -- For testing
     ) where
@@ -36,11 +37,9 @@ import Control.Applicative ((<|>))
 import Control.Monad (replicateM)
 import Data.Either (either, rights)
 import Data.String (fromString)
-import Data.Text (Text, any, take, drop, head, dropAround, splitOn,
-                  length, intercalate, unpack, concat, tails)
+import Data.Text (Text, any, length, intercalate, unpack, tails)
 import Data.Bits (xor, (.&.), shiftL)
 import Data.Int (Int16)
-import Text.Read (readMaybe)
 import qualified Data.Attoparsec.Text as A
 
 class Similar a where
@@ -268,9 +267,6 @@ position (Body bt)
   | Data.Text.length bt < 6 = Nothing
   | otherwise = findParse parsePosition bt
 
-subt' :: Int -> Int -> Text -> Text
-subt' s n = take n.drop s
-
 data Message = Message { msgSender :: Address
                        , msgRecipient :: Address
                        , msgBody :: Text
@@ -282,13 +278,19 @@ findParse p s = case rights $ map (A.parseOnly p) $ Data.Text.tails s of
                   [] -> Nothing
                   (x:_) -> Just x
 
+parseMessage :: Address -> A.Parser Message
+parseMessage s = do
+  _ <- A.char ':' -- message indicator
+  rcpt <- parseAddr
+  _ <- A.many' A.space -- Technically, rpct is 9 characters with trailing space, but we're Posteling here a bit.
+  _ <- A.char ':' -- message separator
+  mtext <- A.many' (A.satisfy (`notElem` ['{', '|', '~']))
+  mid <- ("{" *> A.takeText) <|> A.string "" -- message ID is optional
+
+  return $ Message s rcpt (fromString mtext) mid
+
 message :: Frame -> Maybe Message
-message (Frame s _ _ (Body b))
-  | Data.Text.length b < 12 = Nothing
-  | head b /= ':' = Nothing
-  | otherwise = let rc = readMaybe $ unpack ((dropAround (== ' ').subt' 1 9) b) :: Maybe Address
-                    (bod:rest) = splitOn "{" (drop 11 b) in
-                  rc >>= \r -> pure $ Message s r bod (Data.Text.concat rest)
+message (Frame s _ _ (Body b)) = either (const Nothing) Just $ A.parseOnly (parseMessage s) b
 
 data WeatherParam = WindDir Int
                   | WindSpeed Int

@@ -221,12 +221,12 @@ parseTimestamp = dhmlocal <|> dhmzulu <|> hms <|> mdhm
 parsePosCompressed :: A.Parser Position
 parsePosCompressed = do
   ts <- timething <|> plainpos <|> obj
-  _sync <- A.anyChar
+  _sym <- A.anyChar
   b91a <- parseB91Seg A.<?> "first b91 seg"
   b91b <- parseB91Seg A.<?> "second b91 seg"
-  _ <- A.anyChar
+  _ <- A.anyChar -- symbol code
   vel <- replicateM 2 A.anyChar
-  _ <- A.anyChar
+  _ <- A.anyChar -- compression type
 
   return $ Position $ unc b91a b91b (fmap fromEnum vel) ts
 
@@ -240,15 +240,15 @@ parsePosCompressed = do
     pcvel _ = Nothing
     timething :: A.Parser Timestamp
     timething = do
-      _sym <- A.satisfy (`elem` ['/', '@'])
+      _ptyp <- A.satisfy (`elem` ['/', '@'])
       parseTimestamp
     plainpos :: A.Parser Timestamp
     plainpos = A.satisfy (`elem` ['!', '=']) >> pure Timeless
     obj :: A.Parser Timestamp
     obj = do
-      _ <- A.satisfy (== ';')
-      _ <- replicateM 9 A.anyChar
-      _sym <- A.satisfy (`elem` [';', '*'])
+      _ptyp <- A.satisfy (== ';')
+      _objname <- replicateM 9 A.anyChar
+      _objstate <- A.satisfy (`elem` ['_', '*']) -- killed, live
       parseTimestamp
 
 newtype Velocity = Velocity (Double, Double) deriving (Eq)

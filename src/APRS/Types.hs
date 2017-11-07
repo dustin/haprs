@@ -263,9 +263,7 @@ newtype Position = Position (Double, Double, Maybe Velocity, Timestamp) deriving
 position :: Body -> Maybe Position
 position (Body bt)
   | Data.Text.length bt < 6 = Nothing
-  | otherwise = case rights $ map (A.parseOnly parsePosition) $ Data.Text.tails bt of
-                  [] -> Nothing
-                  (x:_) -> Just x
+  | otherwise = findParse parsePosition bt
 
 subt' :: Int -> Int -> Text -> Text
 subt' s n = take n.drop s
@@ -275,6 +273,11 @@ data Message = Message { msgSender :: Address
                        , msgBody :: Text
                        , msgID :: Text
                        }
+
+findParse :: A.Parser a -> Text -> Maybe a
+findParse p s = case rights $ map (A.parseOnly p) $ Data.Text.tails s of
+                  [] -> Nothing
+                  (x:_) -> Just x
 
 message :: Frame -> Maybe Message
 message (Frame s _ _ (Body b))

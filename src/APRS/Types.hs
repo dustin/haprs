@@ -13,6 +13,7 @@ module APRS.Types
     , Velocity(..)
     , Message(..)
     , Timestamp(..)
+    , WeatherParam(..)
     , message
     , position
     , identifyPacket
@@ -25,6 +26,8 @@ module APRS.Types
     , parsePosCompressed
     , parseFrame
     , parseTimestamp
+    , parseWeather
+    , findParse
     -- For testing
     ) where
 
@@ -286,6 +289,40 @@ message (Frame s _ _ (Body b))
   | otherwise = let rc = readMaybe $ unpack ((dropAround (== ' ').subt' 1 9) b) :: Maybe Address
                     (bod:rest) = splitOn "{" (drop 11 b) in
                   rc >>= \r -> pure $ Message s r bod (Data.Text.concat rest)
+
+data WeatherParam = WindDir Int
+                  | WindSpeed Int
+                  | WindGust Int
+                  | Temp Int
+                  | RainLastHour Int
+                  | RainLast24Hours Int
+                  | RainToday Int
+                  | Humidity Int
+                  | Baro Int
+                  deriving (Show, Eq)
+
+parseWParam :: A.Parser WeatherParam
+parseWParam = w 'c' WindDir
+              <|> w 's' WindSpeed
+              <|> w 'g' WindGust
+              <|> w 't' Temp
+              <|> w 'r' RainLastHour
+              <|> w 'p' RainLast24Hours
+              <|> w 'P' RainToday
+              <|> w' 3 'h' Humidity
+              <|> w' 5 'h' Baro
+  where
+    w' :: Int -> Char -> (Int -> WeatherParam) -> A.Parser WeatherParam
+    w' i c wc = do
+      _ <- A.char c
+      deez <- replicateM i A.digit
+      return $ wc (read deez)
+
+    w = w' 3
+
+parseWeather :: A.Parser [WeatherParam]
+parseWeather = do
+  A.many1 parseWParam
 
 -- Source Dest Path Body
 data Frame = Frame Address Address [Text] Body

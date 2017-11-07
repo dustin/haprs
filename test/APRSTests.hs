@@ -151,6 +151,14 @@ testTimestampParser =
   ("10092345", Right $ MDHM (10, 9, 23, 45))
   ]
 
+testWeatherParser :: [TestTree]
+testWeatherParser =
+  map (\(a, want) -> testCase (show a) $ assertEqual "" (A.parseOnly parseWeather a) want) [
+  ("g005t077r000p000P000h50b09900wRSW", Right [WindGust 5,Temp 77,RainLastHour 0,RainLast24Hours 0,RainToday 0]),
+  ("c220s004g005t077r000p000P000h50b09900wRSW", Right [WindDir 220,WindSpeed 4,WindGust 5,Temp 77,RainLastHour 0,RainLast24Hours 0,RainToday 0])
+  ]
+
+
 tests :: [TestTree]
 tests = [
   testGroup "callPass"  testCallPass,
@@ -166,5 +174,6 @@ tests = [
   testCase "no dup packet types" $ testNoDupMapping (identifyPacket.chr.fromIntegral :: Word8 -> PacketType),
 
   testCase "velocity prints" testVelocityPrinting,
-  testGroup "timestamp parsing" testTimestampParser
+  testGroup "timestamp parsing" testTimestampParser,
+  testGroup "weather parsing" testWeatherParser
   ]

@@ -31,7 +31,7 @@ import Control.Applicative ((<|>))
 import Control.Monad (replicateM)
 import Data.Either (either)
 import Data.String (fromString)
-import Data.Text (Text, any, take, drop, head, uncons, dropAround, splitOn,
+import Data.Text (Text, any, take, drop, head, dropAround, splitOn,
                   length, intercalate, unpack, concat)
 import Data.Bits (xor, (.&.), shiftL)
 import Data.Int (Int16)
@@ -125,9 +125,6 @@ newtype Body = Body Text deriving (Eq)
 
 instance Show Body where show (Body x) = unpack x
 
-pktType :: Body -> Maybe PacketType
-pktType (Body b) = identifyPacket . fst <$> uncons b
-
 b91chars :: String
 b91chars = "[!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\\^_`abcdefghijklmnopqrstuvwxyz{]"
 
@@ -203,10 +200,10 @@ parsePosUncompressed = do
 
 parsePosCompressed :: A.Parser Position
 parsePosCompressed = do
-  _pre <- timething <|> plainpos
+  _pre <- timething <|> plainpos <|> obj
   _sync <- A.anyChar
-  b91a <- parseB91Seg
-  b91b <- parseB91Seg
+  b91a <- parseB91Seg A.<?> "first b91 seg"
+  b91b <- parseB91Seg A.<?> "second b91 seg"
   _ <- A.anyChar
   vel <- replicateM 2 A.anyChar
   _ <- A.anyChar
@@ -224,11 +221,22 @@ parsePosCompressed = do
     timething :: A.Parser Char
     timething = do
       _sym <- A.satisfy (`elem` ['/', '@'])
+      _ <- timestamp
+      return _sym
+    timestamp :: A.Parser String
+    timestamp = do
       _ <- replicateM 6 A.digit
       _ <- A.anyChar
-      return _sym
+      return ""
     plainpos :: A.Parser Char
     plainpos = A.satisfy (`elem` ['!', '='])
+    obj :: A.Parser Char
+    obj = do
+      _ <- A.satisfy (== ';')
+      _ <- replicateM 9 A.anyChar
+      sym <- A.satisfy (`elem` [';', '*'])
+      _ <- timestamp
+      return sym
 
 newtype Velocity = Velocity (Double, Double) deriving (Eq)
 
@@ -243,14 +251,9 @@ eitherToMaybe :: Either a b -> Maybe b
 eitherToMaybe = either (const Nothing) Just
 
 position :: Body -> Maybe Position
-position bod@(Body bt)
+position (Body bt)
   | Data.Text.length bt < 6 = Nothing
-  | otherwise = go $ pktType bod
-  where go Nothing = Nothing
-        go (Just t)
-          | t == Object                                 = parse (drop 18 bt)
-          | otherwise                                   = parse bt
-        parse = eitherToMaybe . A.parseOnly parsePosition
+  | otherwise = (eitherToMaybe . A.parseOnly parsePosition) bt
 
 subt' :: Int -> Int -> Text -> Text
 subt' s n = take n.drop s

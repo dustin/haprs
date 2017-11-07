@@ -12,6 +12,7 @@ module APRS.Types
     , Position(..)
     , Velocity(..)
     , Message(..)
+    , Timestamp(..)
     , message
     , position
     , identifyPacket
@@ -23,6 +24,7 @@ module APRS.Types
     , parsePosUncompressed
     , parsePosCompressed
     , parseFrame
+    , parseTimestamp
     -- For testing
     ) where
 
@@ -172,12 +174,10 @@ parsePosUncompressed = do
     psign 'W' = -1
     psign _ = 1
 
-    poshdr = A.satisfy (`elem` ['!', '=']) >> pure ""
+    poshdr = A.satisfy (`elem` ['!', '=']) >> pure Timeless
     timestamphdr = do
       _p <- A.satisfy (`elem` ['/', ',', '@', '\\', '*'])
-      ts <- replicateM 6 A.digit
-      _ <- A.satisfy (`elem` ['h', 'z', '/'])
-      return ts
+      parseTimestamp
 
     compPos :: String -> String -> String -> Double
     compPos a b c = let a' = (rz . Prelude.concat) [replspc a]
@@ -197,6 +197,26 @@ parsePosUncompressed = do
       let a = read (d1:d2) :: Double
       let b = (* 1.852) $ read d3 :: Double
       return $ Velocity (a, b)
+
+data Timestamp = DHMLocal (Int, Int, Int)
+               | DHMZulu (Int, Int, Int)
+               | HMS (Int, Int, Int)
+               | MDHM (Int, Int, Int, Int)
+               | Timeless
+  deriving (Show, Eq)
+
+parseTimestamp :: A.Parser Timestamp
+parseTimestamp = dhmlocal <|> dhmzulu <|> hms <|> mdhm
+  where
+    dhmlocal = n3 '/' >>= (pure.DHMLocal)
+    dhmzulu = n3 'z' >>= (pure.DHMZulu)
+    hms = n3 'h' >>= (pure.HMS)
+    mdhm = n 4 >>= \[m, d, h, mn] -> pure $ MDHM (m, d, h, mn)
+
+    n :: Int -> A.Parser [Int]
+    n x = replicateM x (replicateM 2 A.digit) >>= \digs -> return $ map read digs
+    n3 :: Char -> A.Parser (Int, Int, Int)
+    n3 ch = n 3 >>= \[a,b,c] -> A.char ch >> pure (a,b,c)
 
 parsePosCompressed :: A.Parser Position
 parsePosCompressed = do
@@ -221,13 +241,8 @@ parsePosCompressed = do
     timething :: A.Parser Char
     timething = do
       _sym <- A.satisfy (`elem` ['/', '@'])
-      _ <- timestamp
+      _ <- parseTimestamp
       return _sym
-    timestamp :: A.Parser String
-    timestamp = do
-      _ <- replicateM 6 A.digit
-      _ <- A.anyChar
-      return ""
     plainpos :: A.Parser Char
     plainpos = A.satisfy (`elem` ['!', '='])
     obj :: A.Parser Char
@@ -235,7 +250,7 @@ parsePosCompressed = do
       _ <- A.satisfy (== ';')
       _ <- replicateM 9 A.anyChar
       sym <- A.satisfy (`elem` [';', '*'])
-      _ <- timestamp
+      _ <- parseTimestamp
       return sym
 
 newtype Velocity = Velocity (Double, Double) deriving (Eq)

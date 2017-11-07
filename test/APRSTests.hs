@@ -5,16 +5,17 @@ module APRSTests (tests) where
 
 import APRS.Types
 
-import Data.String (fromString)
-import Data.Either (isRight, either)
-import Data.Word (Word8)
 import Data.Char (chr)
-import qualified Data.Text as T
-import qualified Data.Set as Set
+import Data.Either (isRight, either)
+import Data.String (fromString)
+import Data.Word (Word8)
 import Test.QuickCheck
 import Test.Tasty
-import Test.Tasty.QuickCheck as QC
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck as QC
+import qualified Data.Attoparsec.Text as A
+import qualified Data.Set as Set
+import qualified Data.Text as T
 
 
 addrChars :: [Char]
@@ -141,6 +142,15 @@ testNoDupMapping f = case foldr findDup (Right Set.empty) [minBound..] of
                                        Right True -> Left p
                                        _ -> Set.insert p <$> s
 
+testTimestampParser :: [TestTree]
+testTimestampParser =
+  map (\(a, want) -> testCase (show a ++ " -> " ++ show want) $ assertEqual "" (A.parseOnly parseTimestamp a) want) [
+  ("092345z", Right $ DHMZulu (9, 23, 45)),
+  ("092345/", Right $ DHMLocal (9, 23, 45)),
+  ("234517h", Right $ HMS (23, 45, 17)),
+  ("10092345", Right $ MDHM (10, 9, 23, 45))
+  ]
+
 tests :: [TestTree]
 tests = [
   testGroup "callPass"  testCallPass,
@@ -155,5 +165,6 @@ tests = [
   testCase "bad positions" testBadPositions,
   testCase "no dup packet types" $ testNoDupMapping (identifyPacket.chr.fromIntegral :: Word8 -> PacketType),
 
-  testCase "velocity prints" $ testVelocityPrinting
+  testCase "velocity prints" testVelocityPrinting,
+  testGroup "timestamp parsing" testTimestampParser
   ]

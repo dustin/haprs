@@ -335,7 +335,7 @@ parseFrame = do
   _ <- A.string ">"
   dest <- parseAddr
   _ <- A.string "," <|> A.string "" -- maybe comma
-  path <- A.sepBy (A.takeWhile (\c -> not (c == ',' || c == ':'))) (A.char ',')
+  path <- A.sepBy (A.takeWhile (`notElem` [',', ':'])) (A.char ',')
   _ <- A.string ":"
   bod <- A.takeText
   return $ Frame src dest path (Body bod)

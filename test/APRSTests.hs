@@ -153,9 +153,12 @@ testTimestampParser =
 
 testWeatherParser :: [TestTree]
 testWeatherParser =
-  map (\(a, want) -> testCase (show a) $ assertEqual "" (A.parseOnly parseWeather a) want) [
-  ("g005t077r000p000P000h50b09900wRSW", Right [WindGust 5,Temp 77,RainLastHour 0,RainLast24Hours 0,RainToday 0]),
-  ("c220s004g005t077r000p000P000h50b09900wRSW", Right [WindDir 220,WindSpeed 4,WindGust 5,Temp 77,RainLastHour 0,RainLast24Hours 0,RainToday 0])
+  map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly parseWeather a)) [
+  ("g005t077r000p000P000h50b09900wRSW", Right [WindGust 5,Temp 77,RainLastHour 0,
+                                               RainLast24Hours 0,RainToday 0,Humidity 50,Baro 990]),
+  ("c220s004g005t077r000p000P000h50b09900wRSW", Right [WindDir 220,WindSpeed 4,WindGust 5,Temp 77,
+                                                       RainLastHour 0,RainLast24Hours 0,RainToday 0,
+                                                       Humidity 50,Baro 990])
   ]
 
 

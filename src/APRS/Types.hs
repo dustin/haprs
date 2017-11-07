@@ -309,8 +309,8 @@ parseWParam = w 'c' WindDir
               <|> w 'r' RainLastHour
               <|> w 'p' RainLast24Hours
               <|> w 'P' RainToday
-              <|> w' 3 'h' Humidity
-              <|> w' 5 'h' Baro
+              <|> w' 2 'h' Humidity
+              <|> w' 4 'b' Baro
   where
     w' :: Int -> Char -> (Int -> WeatherParam) -> A.Parser WeatherParam
     w' i c wc = do

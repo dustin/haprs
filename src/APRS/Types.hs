@@ -148,13 +148,13 @@ parsePosition = parsePosUncompressed <|> parsePosCompressed
 
 parsePosUncompressed :: A.Parser Position
 parsePosUncompressed = do
-  _ts <- poshdr <|> timestamphdr
+  ts <- poshdr <|> timestamphdr
   lat <- parseDir "lat " 2
   _sym <- A.satisfy (A.inClass "0-9/\\A-z") A.<?> "lat/lon separator"
   lon <- parseDir "lon " 3
   v <- A.eitherP pvel (A.string "")
 
-  return $ Position (lat,lon, either Just (const Nothing) v)
+  return $ Position (lat,lon, either Just (const Nothing) v, ts)
 
   where
     parseDir :: String -> Int -> A.Parser Double
@@ -220,7 +220,7 @@ parseTimestamp = dhmlocal <|> dhmzulu <|> hms <|> mdhm
 
 parsePosCompressed :: A.Parser Position
 parsePosCompressed = do
-  _pre <- timething <|> plainpos <|> obj
+  ts <- timething <|> plainpos <|> obj
   _sync <- A.anyChar
   b91a <- parseB91Seg A.<?> "first b91 seg"
   b91b <- parseB91Seg A.<?> "second b91 seg"
@@ -228,30 +228,28 @@ parsePosCompressed = do
   vel <- replicateM 2 A.anyChar
   _ <- A.anyChar
 
-  return $ Position $ unc b91a b91b (fmap fromEnum vel)
+  return $ Position $ unc b91a b91b (fmap fromEnum vel) ts
 
   where
-    unc m1 m2 m5 = (90 - (m1 / 380926), (-180) + (m2 / 190463), pcvel m5)
+    unc m1 m2 m5 ts = (90 - (m1 / 380926), (-180) + (m2 / 190463), pcvel m5, ts)
     pcvel [a,b]
       | a >= 33 && a <= 122 = let course = fromIntegral (a - 33) * 4
                                   speed = 1.852 * ((1.08 ^ (b - 33)) - 1)
                                   course' = if course == 0 then 360 else course in
                                 Just $ Velocity (course', speed)
     pcvel _ = Nothing
-    timething :: A.Parser Char
+    timething :: A.Parser Timestamp
     timething = do
       _sym <- A.satisfy (`elem` ['/', '@'])
-      _ <- parseTimestamp
-      return _sym
-    plainpos :: A.Parser Char
-    plainpos = A.satisfy (`elem` ['!', '='])
-    obj :: A.Parser Char
+      parseTimestamp
+    plainpos :: A.Parser Timestamp
+    plainpos = A.satisfy (`elem` ['!', '=']) >> pure Timeless
+    obj :: A.Parser Timestamp
     obj = do
       _ <- A.satisfy (== ';')
       _ <- replicateM 9 A.anyChar
-      sym <- A.satisfy (`elem` [';', '*'])
-      _ <- parseTimestamp
-      return sym
+      _sym <- A.satisfy (`elem` [';', '*'])
+      parseTimestamp
 
 newtype Velocity = Velocity (Double, Double) deriving (Eq)
 
@@ -260,7 +258,7 @@ instance Show Velocity where
 
 -- data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
 -- lon, lat, velocity
-newtype Position = Position (Double, Double, Maybe Velocity) deriving (Eq, Show)
+newtype Position = Position (Double, Double, Maybe Velocity, Timestamp) deriving (Eq, Show)
 
 position :: Body -> Maybe Position
 position (Body bt)

@@ -5,7 +5,6 @@ module FAPTests (tests) where
 import APRS.Types
 
 import Control.Exception (catch, SomeException, evaluate)
-import Control.Applicative ((<|>))
 import Control.Monad (foldM)
 import Data.Aeson
 import Data.Maybe
@@ -102,9 +101,9 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                     pos <- catch (evaluate $ position b) (\e -> do
                                                                              let _ = (e :: SomeException)
                                                                              return Nothing)
-                                    let (Just (Position (plat, plon, vel))) = pos <|> Just (Position (0, 0, Nothing))
                                     let wantpos = isJust $ latitude res
                                     pn <- if not wantpos then return 0 else do
+                                      let (Just (Position (plat, plon, vel, _ts))) = pos
                                       let elat = (fromMaybe 0.latitude) res
                                       let elon = (fromMaybe 0.longitude) res
                                       assertApproxEqual ("lat " ++ show b) ε elat plat

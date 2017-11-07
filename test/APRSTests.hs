@@ -151,14 +151,19 @@ testTimestampParser =
   ("10092345", Right $ MDHM (10, 9, 23, 45))
   ]
 
+  -- EIWX11>APRS,qAS,WXSVR-EI:@181800z5147.88N/00815.00W_180/006g...t054r000p...P...b10140h88ROCHES POINT, RECENT DRIZZLE [http://www.met.ie]
+
+
 testWeatherParser :: [TestTree]
 testWeatherParser =
   map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly parseWeather a)) [
   ("g005t077r000p000P000h50b09900wRSW", Right [WindGust 5,Temp 77,RainLastHour 0,
-                                               RainLast24Hours 0,RainToday 0,Humidity 50,Baro 990]),
+                                               RainLast24Hours 0,RainToday 0,Humidity 50,Baro 9900]),
   ("c220s004g005t077r000p000P000h50b09900wRSW", Right [WindDir 220,WindSpeed 4,WindGust 5,Temp 77,
                                                        RainLastHour 0,RainLast24Hours 0,RainToday 0,
-                                                       Humidity 50,Baro 990])
+                                                       Humidity 50,Baro 9900]),
+  ("g...t054r000p...P...b10140h88", Right [NoData 'g', Temp 54, RainLastHour 0, NoData 'p', NoData 'P',
+                                           Baro 10140, Humidity 88])
   ]
 
 

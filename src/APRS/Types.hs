@@ -301,6 +301,7 @@ data WeatherParam = WindDir Int
                   | RainToday Int
                   | Humidity Int
                   | Baro Int
+                  | NoData Char
                   deriving (Show, Eq)
 
 parseWParam :: A.Parser WeatherParam
@@ -312,13 +313,15 @@ parseWParam = w 'c' WindDir
               <|> w 'p' RainLast24Hours
               <|> w 'P' RainToday
               <|> w' 2 'h' Humidity
-              <|> w' 4 'b' Baro
+              <|> w' 5 'b' Baro
   where
     w' :: Int -> Char -> (Int -> WeatherParam) -> A.Parser WeatherParam
     w' i c wc = do
       _ <- A.char c
-      deez <- replicateM i A.digit
-      return $ wc (read deez)
+      wgood i wc <|> wnodata i c
+
+    wgood i wc = replicateM i A.digit >>= \deez -> return $ wc (read deez)
+    wnodata i c = replicateM i (A.satisfy (`elem` ['.', ' '])) >> return (NoData c)
 
     w = w' 3
 

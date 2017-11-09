@@ -166,6 +166,34 @@ testWeatherParser =
                                            Baro 10140, Humidity 88])
   ]
 
+testMegaParser :: [TestTree]
+testMegaParser =
+  map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly megaParser a)) [
+  ("!4903.50N/07201.75W-Test 001234",
+   Right (PositionPacket PositionNoTSNoMsg (49.05833333333333,-72.02916666666667) Nothing)),
+  ("!4903.50N/07201.75W-Test /A=001234", -- TODO:  Parse out the altitude
+   Right (PositionPacket PositionNoTSNoMsg (49.05833333333333,-72.02916666666667) Nothing)),
+  ("!49  .  N/072  .  W-",
+   Right (PositionPacket PositionNoTSNoMsg (49.5,-72.5) Nothing)),
+  ("/092345z4903.50N/07201.75W>Test1234",
+   Right (PositionPacket PositionNoMsg (49.05833333333333,-72.02916666666667) (Just (DHMZulu (9,23,45))))),
+  ("@092345/4903.50N/07201.75W>Test1234",
+   Right (PositionPacket PositionMsg (49.05833333333333,-72.02916666666667) (Just (DHMLocal (9,23,45))))),
+  ("=/5L!!<*e7> sTComment",
+   Right (PositionPacket PositionNoTS (61.85929288103201,-178.82142988401947) Nothing)),
+  ("@092345z/5L!!<*e7>{?! ",
+   Right (PositionPacket PositionMsg (61.85929288103201,-178.82142988401947) (Just (DHMZulu (9,23,45))))),
+  (";LEADER   _092345z4903.50N/07201.75W>088/036",
+   Right (ObjectPacket "LEADER   " (49.05833333333333,-72.02916666666667) (DHMZulu (9,23,45)) "")),
+  (";LEADER   *092345z/5L!!<*e7>7P[ ",
+   Right (ObjectPacket "LEADER   " (61.85929288103201,-178.82142988401947) (DHMZulu (9,23,45)) "[ ")),
+  (")AID #2!4903.50N/07201.75WA",
+    Right (ItemPacket "AID #2" (49.05833333333333,-72.02916666666667) "A")),
+  (")G/WB4APR!53  .  N\\002  .  Wd", Right (ItemPacket "G/WB4APR" (53.5,-2.5) "d")),
+  (")MOBIL!\\5L!!<*e79 sT", Right (ItemPacket "MOBIL" (-27.162446249402777,-178.82142988401947) "T"))
+  ]
+
+
 
 tests :: [TestTree]
 tests = [
@@ -183,5 +211,6 @@ tests = [
 
   testCase "velocity prints" testVelocityPrinting,
   testGroup "timestamp parsing" testTimestampParser,
-  testGroup "weather parsing" testWeatherParser
+  testGroup "weather parsing" testWeatherParser,
+  testGroup "mega parser" testMegaParser
   ]

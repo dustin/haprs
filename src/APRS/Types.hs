@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wno-type-defaults #-}
 
 module APRS.Types
-    ( PacketType
+    ( PacketType(..)
     , Address
     , address
     , Similar
@@ -19,6 +19,8 @@ module APRS.Types
     , identifyPacket
     , callPass
     , decodeBase91
+    -- New parser
+    , APRSPacket(..)
     -- parsers
     , parseAddr
     , parsePosition
@@ -28,13 +30,14 @@ module APRS.Types
     , parseTimestamp
     , parseWeather
     , parseMessage
+    , megaParser
     , findParse
     -- For testing
     ) where
 
 import Prelude hiding (any, take, drop, head, takeWhile)
 import Control.Applicative ((<|>))
-import Control.Monad (replicateM)
+import Control.Monad (replicateM, guard)
 import Data.Either (either, rights)
 import Data.String (fromString)
 import Data.Text (Text, any, length, intercalate, unpack, tails)
@@ -150,13 +153,13 @@ parsePosition = parsePosUncompressed <|> parsePosCompressed
 
 parsePosUncompressed :: A.Parser Position
 parsePosUncompressed = do
-  ts <- poshdr <|> timestamphdr
+  _ts <- poshdr <|> timestamphdr
   lat <- parseDir "lat " 2
   _sym <- A.satisfy (A.inClass "0-9/\\A-z") A.<?> "lat/lon separator"
   lon <- parseDir "lon " 3
   v <- A.eitherP pvel (A.string "")
 
-  return $ Position (lat,lon, either Just (const Nothing) v, ts)
+  return $ Position (lat,lon, either Just (const Nothing) v)
 
   where
     parseDir :: String -> Int -> A.Parser Double
@@ -222,7 +225,7 @@ parseTimestamp = dhmlocal <|> dhmzulu <|> hms <|> mdhm
 
 parsePosCompressed :: A.Parser Position
 parsePosCompressed = do
-  ts <- timething <|> plainpos <|> obj
+  _ts <- timething <|> plainpos <|> obj
   _sym <- A.anyChar
   b91a <- parseB91Seg A.<?> "first b91 seg"
   b91b <- parseB91Seg A.<?> "second b91 seg"
@@ -230,10 +233,10 @@ parsePosCompressed = do
   vel <- replicateM 2 A.anyChar
   _ <- A.anyChar -- compression type
 
-  return $ Position $ unc b91a b91b (fmap fromEnum vel) ts
+  return $ Position $ unc b91a b91b (fmap fromEnum vel)
 
   where
-    unc m1 m2 m5 ts = (90 - (m1 / 380926), (-180) + (m2 / 190463), pcvel m5, ts)
+    unc m1 m2 m5 = (90 - (m1 / 380926), (-180) + (m2 / 190463), pcvel m5)
     pcvel [a,b]
       | a >= 33 && a <= 122 = let course = fromIntegral (a - 33) * 4
                                   speed = 1.852 * ((1.08 ^ (b - 33)) - 1)
@@ -260,7 +263,7 @@ instance Show Velocity where
 
 -- data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
 -- lon, lat, velocity
-newtype Position = Position (Double, Double, Maybe Velocity, Timestamp) deriving (Eq, Show)
+newtype Position = Position (Double, Double, Maybe Velocity) deriving (Eq, Show)
 
 position :: Body -> Maybe Position
 position (Body bt)
@@ -272,6 +275,7 @@ data Message = Message { msgSender :: Address
                        , msgBody :: Text
                        , msgID :: Text
                        }
+               deriving (Show)
 
 findParse :: A.Parser a -> Text -> Maybe a
 findParse p s = case rights $ map (A.parseOnly p) $ Data.Text.tails s of
@@ -354,3 +358,143 @@ decodeBase91 :: String -> Int
 decodeBase91 s@[_,_,_,_] =
   foldl (\a (c, i) -> i * ((toEnum . fromEnum $ c) -33) + a) 0 $ zip s [91^x | x <- [3,2..0]]
 decodeBase91 _ = 0
+
+{-
+• Position
+• Direction Finding
+• Objects and Items
+• Weather
+• Telemetry
+• Messages, Bulletins and Announcements
+• Queries
+• Responses
+• Status
+• Other
+-}
+
+data APRSData = APRSData Text deriving (Show, Eq)
+
+-- TODO:  Include extensions from page 27 in position packets
+data APRSPacket = PositionPacket PacketType (Double, Double) (Maybe Timestamp)
+                | ObjectPacket Text (Double, Double) Timestamp Text
+                | ItemPacket Text (Double, Double) Text
+                deriving (Show, Eq)
+
+megaParser :: A.Parser APRSPacket
+megaParser = do
+  parsePositionPacket
+  <|> parseObjectPacket
+  <|> parseItemPacket
+
+{-
+|       | No MSG | MSG |
+| NO TS | !      | =   |
+| TS    | /      | @   |
+-}
+
+parsePosition' :: A.Parser Position
+parsePosition' = parsePosUncompressed' <|> parsePosCompressed'
+
+parsePosCompressed' :: A.Parser Position
+parsePosCompressed' = do
+  b91a <- parseB91Seg A.<?> "first b91 seg"
+  b91b <- parseB91Seg A.<?> "second b91 seg"
+  _ <- A.anyChar -- symbol code
+  vel <- replicateM 2 A.anyChar
+  _ <- A.anyChar -- compression type
+
+  return $ Position $ unc b91a b91b (fmap fromEnum vel)
+
+  where
+    unc m1 m2 m5 = (90 - (m1 / 380926), (-180) + (m2 / 190463), pcvel m5)
+    pcvel [a,b]
+      | a >= 33 && a <= 122 = let course = fromIntegral (a - 33) * 4
+                                  speed = 1.852 * ((1.08 ^ (b - 33)) - 1)
+                                  course' = if course == 0 then 360 else course in
+                                Just $ Velocity (course', speed)
+    pcvel _ = Nothing
+
+parsePosUncompressed' :: A.Parser Position
+parsePosUncompressed' = do
+  lat <- parseDir "lat " 2
+  _sym <- A.satisfy (A.inClass "0-9/\\A-z") A.<?> "lat/lon separator"
+  lon <- parseDir "lon " 3
+  v <- A.eitherP pvel (A.string "")
+
+  return $ Position (lat,lon, either Just (const Nothing) v)
+
+  where
+    parseDir :: String -> Int -> A.Parser Double
+    parseDir lbl n = do
+      cM <- replicateM n A.digit A.<?> (lbl ++ "first digits")
+      cm <- A.many' A.digit A.<?> (lbl ++ "second digits")
+      cs1 <- A.many' A.space A.<?> (lbl ++ "first optional spaces")
+      _ <- A.string "." A.<?> (lbl ++ "decimal")
+      cd <- A.many' A.digit A.<?> (lbl ++ "decimal digits")
+      cs2 <- A.many' A.space A.<?> (lbl ++ "second optional space")
+      cdir <- A.satisfy (`elem` ['N', 'S', 'E', 'W']) A.<?> (lbl ++ "direction")
+
+      let amb = Prelude.length cs1 + Prelude.length cs2
+      return $ (compPos cM (cm ++ cs1) (cd ++ cs2) + posamb amb) * psign cdir
+
+    psign 'S' = -1
+    psign 'W' = -1
+    psign _ = 1
+
+    compPos :: String -> String -> String -> Double
+    compPos a b c = let a' = (rz . Prelude.concat) [replspc a]
+                        b' = (rz . Prelude.concat) [replspc b, ".", replspc c]
+                    in a' + (b' / 60)
+    replspc = map (\c -> if c == ' ' then '0' else c)
+    rz = read :: String -> Double
+
+    pvel :: A.Parser Velocity
+    pvel = do
+      _ <- A.anyChar
+      d1 <- A.satisfy (`elem` ['0', '1', '2', '3'])
+      d2 <- replicateM 2 A.digit
+      _ <- A.string "/"
+      d3 <- replicateM 3 A.digit
+
+      let a = read (d1:d2) :: Double
+      let b = (* 1.852) $ read d3 :: Double
+      return $ Velocity (a, b)
+
+
+parsePositionPacket :: A.Parser APRSPacket
+parsePositionPacket = do
+  "!" *> parseNoTS '!'
+    <|> "=" *> parseNoTS '='
+    <|> "/" *> parseTS '/'
+    <|> "@" *> parseTS '@'
+
+  where
+    parseNoTS :: Char -> A.Parser APRSPacket
+    parseNoTS c = do
+      (Position (lat,lon,_)) <- parsePosition'
+      return $ PositionPacket (identifyPacket c) (lat,lon) Nothing
+    parseTS :: Char -> A.Parser APRSPacket
+    parseTS c = do
+      ts <- parseTimestamp
+      (Position (lat,lon,_)) <- parsePosition'
+      return $ PositionPacket (identifyPacket c) (lat,lon) (Just ts)
+
+parseObjectPacket :: A.Parser APRSPacket
+parseObjectPacket = do
+  _ <- A.satisfy (== ';')
+  name <- replicateM 9 A.anyChar
+  _objstate <- A.satisfy (`elem` ['_', '*']) -- killed, live
+  ts <- parseTimestamp
+  (Position (lat,lon,_)) <- parsePosition'
+  comment <- A.takeText
+  return $ ObjectPacket (fromString name) (lat, lon) ts comment
+
+parseItemPacket :: A.Parser APRSPacket
+parseItemPacket = do
+  _ <- A.satisfy (== ')')
+  name <- A.takeTill (\c -> c == '_' || c == '!')
+  guard $ Data.Text.length name >= 3 && Data.Text.length name <= 9
+  _objstate <- A.satisfy (`elem` ['_', '!']) -- killed, live
+  (Position (lat,lon,_)) <- parsePosition'
+  comment <- A.takeText
+  return $ ItemPacket name (lat, lon) comment

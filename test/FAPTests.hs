@@ -103,7 +103,7 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                                                              return Nothing)
                                     let wantpos = isJust $ latitude res
                                     pn <- if not wantpos then return 0 else do
-                                      let (Just (Position (plat, plon, vel, _ts))) = pos
+                                      let (Just (Position (plat, plon, vel))) = pos
                                       let elat = (fromMaybe 0.latitude) res
                                       let elon = (fromMaybe 0.longitude) res
                                       assertApproxEqual ("lat " ++ show b) ε elat plat

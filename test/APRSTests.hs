@@ -184,7 +184,7 @@ testMegaParser =
   ("@092345z/5L!!<*e7>{?! ",
    Right (PositionPacket PositionMsg (61.85929288103201,-178.82142988401947) (Just (DHMZulu (9,23,45))))),
   (";LEADER   _092345z4903.50N/07201.75W>088/036",
-   Right (ObjectPacket "LEADER   " (49.05833333333333,-72.02916666666667) (DHMZulu (9,23,45)) "")),
+   Right (ObjectPacket "LEADER   " (49.05833333333333,-72.02916666666667) (DHMZulu (9,23,45)) ">088/036")),
   (";LEADER   *092345z/5L!!<*e7>7P[ ",
    Right (ObjectPacket "LEADER   " (61.85929288103201,-178.82142988401947) (DHMZulu (9,23,45)) "[ ")),
   (")AID #2!4903.50N/07201.75WA",

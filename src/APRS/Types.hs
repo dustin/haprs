@@ -400,28 +400,21 @@ parsePosCompressed' = do
   b91a <- parseB91Seg A.<?> "first b91 seg"
   b91b <- parseB91Seg A.<?> "second b91 seg"
   _ <- A.anyChar -- symbol code
-  vel <- replicateM 2 A.anyChar
+  _vel <- replicateM 2 A.anyChar
   _ <- A.anyChar -- compression type
 
-  return $ Position $ unc b91a b91b (fmap fromEnum vel)
+  return $ Position $ unc b91a b91b
 
   where
-    unc m1 m2 m5 = (90 - (m1 / 380926), (-180) + (m2 / 190463), pcvel m5)
-    pcvel [a,b]
-      | a >= 33 && a <= 122 = let course = fromIntegral (a - 33) * 4
-                                  speed = 1.852 * ((1.08 ^ (b - 33)) - 1)
-                                  course' = if course == 0 then 360 else course in
-                                Just $ Velocity (course', speed)
-    pcvel _ = Nothing
+    unc m1 m2 = (90 - (m1 / 380926), (-180) + (m2 / 190463), Nothing)
 
 parsePosUncompressed' :: A.Parser Position
 parsePosUncompressed' = do
   lat <- parseDir "lat " 2
   _sym <- A.satisfy (A.inClass "0-9/\\A-z") A.<?> "lat/lon separator"
   lon <- parseDir "lon " 3
-  v <- A.eitherP pvel (A.string "")
 
-  return $ Position (lat,lon, either Just (const Nothing) v)
+  return $ Position (lat,lon, Nothing)
 
   where
     parseDir :: String -> Int -> A.Parser Double
@@ -447,18 +440,6 @@ parsePosUncompressed' = do
                     in a' + (b' / 60)
     replspc = map (\c -> if c == ' ' then '0' else c)
     rz = read :: String -> Double
-
-    pvel :: A.Parser Velocity
-    pvel = do
-      _ <- A.anyChar
-      d1 <- A.satisfy (`elem` ['0', '1', '2', '3'])
-      d2 <- replicateM 2 A.digit
-      _ <- A.string "/"
-      d3 <- replicateM 3 A.digit
-
-      let a = read (d1:d2) :: Double
-      let b = (* 1.852) $ read d3 :: Double
-      return $ Velocity (a, b)
 
 
 parsePositionPacket :: A.Parser APRSPacket

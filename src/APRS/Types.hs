@@ -410,7 +410,7 @@ parsePosExtension = do
       p <- A.digit
       h <- A.digit
       g <- A.digit
-      d <- A.digit
+      d <- A.satisfy (A.inClass "0-8")
 
       let d' = ((toEnum . digitToInt) d) :: Directivity
 

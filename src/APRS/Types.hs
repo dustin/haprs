@@ -115,7 +115,7 @@ instance Show Address where
 parseAddr :: A.Parser Address
 parseAddr = do
   c <- A.takeWhile (A.inClass "A-Z0-9")
-  ss <- (A.string "-" >> A.takeWhile (A.inClass "A-Z0-9")) <|> A.string ""
+  ss <- (A.string "-" >> A.takeWhile (A.inClass "A-Z0-9")) <|> pure ""
   either fail return $ address c ss
 
 instance Read Address where
@@ -161,7 +161,7 @@ parsePosUncompressed = do
   lat <- parseDir "lat " 2
   _sym <- A.satisfy (A.inClass "0-9/\\A-z") A.<?> "lat/lon separator"
   lon <- parseDir "lon " 3
-  v <- A.eitherP pvel (A.string "")
+  v <- A.eitherP pvel (pure "")
 
   return $ Position (lat,lon, either Just (const Nothing) v)
 
@@ -293,7 +293,7 @@ parseMessage s = do
   _ <- A.many' A.space -- Technically, rpct is 9 characters with trailing space, but we're Posteling here a bit.
   _ <- A.char ':' -- message separator
   mtext <- A.many' (A.satisfy (`notElem` ['{', '|', '~']))
-  mid <- ("{" *> A.takeText) <|> A.string "" -- message ID is optional
+  mid <- ("{" *> A.takeText) <|> pure "" -- message ID is optional
 
   return $ Message s rcpt (fromString mtext) mid
 
@@ -345,7 +345,7 @@ parseFrame = do
   src <- parseAddr
   _ <- A.string ">"
   dest <- parseAddr
-  _ <- A.string "," <|> A.string "" -- maybe comma
+  _ <- A.string "," <|> pure "" -- maybe comma
   path <- A.sepBy (A.takeWhile (`notElem` [',', ':'])) (A.char ',')
   _ <- A.string ":"
   bod <- A.takeText

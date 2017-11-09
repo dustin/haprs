@@ -171,27 +171,28 @@ testMegaParser =
   map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly megaParser a)) [
   ("!4903.50N/07201.75W-Test 001234",
    Right (PositionPacket PositionNoTSNoMsg (Symbol '/' '-')
-          (49.05833333333333,-72.02916666666667) Nothing PosENone)),
+          (49.05833333333333,-72.02916666666667) Nothing PosENone "Test 001234")),
   ("!0000.00N\\00000.00W-Unknown pos",
    Right (PositionPacket PositionNoTSNoMsg (Symbol '\\' '-')
-          (0,0) Nothing PosENone)),
+          (0,0) Nothing PosENone "Unknown pos")),
   ("!4903.50N/07201.75W-Test /A=001234", -- TODO:  Parse out the altitude (1234 feet, anywhere in comment)
    Right (PositionPacket PositionNoTSNoMsg (Symbol '/' '-')
-          (49.05833333333333,-72.02916666666667) Nothing PosENone)),
+          (49.05833333333333,-72.02916666666667) Nothing PosENone "Test /A=001234")),
   ("!49  .  N/072  .  W-",
    Right (PositionPacket PositionNoTSNoMsg (Symbol '/' '-')
-          (49.5,-72.5) Nothing PosENone)),
+          (49.5,-72.5) Nothing PosENone "")),
   ("/092345z4903.50N/07201.75W>Test1234",
    Right (PositionPacket PositionNoMsg (Symbol '/' '>')
-          (49.05833333333333,-72.02916666666667) (Just (DHMZulu (9,23,45))) PosENone)),
+          (49.05833333333333,-72.02916666666667) (Just (DHMZulu (9,23,45))) PosENone "Test1234")),
   ("@092345/4903.50N/07201.75W>Test1234",
    Right (PositionPacket PositionMsg (Symbol '/' '>')
-          (49.05833333333333,-72.02916666666667) (Just (DHMLocal (9,23,45))) PosENone)),
+          (49.05833333333333,-72.02916666666667) (Just (DHMLocal (9,23,45))) PosENone "Test1234")),
   ("=/5L!!<*e7> sTComment",
-   Right (PositionPacket PositionNoTS (Symbol '=' '7') (61.85929288103201,-178.82142988401947) Nothing PosENone)),
+   Right (PositionPacket PositionNoTS (Symbol '=' '7')
+          (61.85929288103201,-178.82142988401947) Nothing PosENone "TComment")),
   ("@092345z/5L!!<*e7>{?! ",
    Right (PositionPacket PositionMsg (Symbol '@' '7')
-          (61.85929288103201,-178.82142988401947) (Just (DHMZulu (9,23,45))) PosENone)),
+          (61.85929288103201,-178.82142988401947) (Just (DHMZulu (9,23,45))) PosENone "! ")),
   (";LEADER   _092345z4903.50N/07201.75W>088/036",
    Right (ObjectPacket (Symbol '/' '>')
           "LEADER   " (49.05833333333333,-72.02916666666667) (DHMZulu (9,23,45)) "088/036")),
@@ -207,10 +208,11 @@ testMegaParser =
   -- Some samples from FAP
   ("!4526.66NI01104.68E#PHG21306/- Lnx APRS Srv - sez. ARI VR EST",
    Right (PositionPacket PositionNoTSNoMsg (Symbol 'I' '#')
-          (45.44433333333333,11.078) Nothing (PosEPHG 4 20 3 Omni))),
+          (45.44433333333333,11.078) Nothing (PosEPHG 4 20 3 Omni) "6/- Lnx APRS Srv - sez. ARI VR EST")),
   ("/055816h5134.38N/00019.47W>155/023!W26!/A=000188 14.3V 27C HDOP01.0 SATS09",
    Right (PositionPacket PositionNoMsg (Symbol '/' '>')
-          (51.573,-0.32449999999999996) (Just (HMS (5,58,16))) (PosECourseSpeed 155 43)))
+          (51.573,-0.32449999999999996) (Just (HMS (5,58,16))) (PosECourseSpeed 155 43)
+          "!W26!/A=000188 14.3V 27C HDOP01.0 SATS09"))
   ]
 
 

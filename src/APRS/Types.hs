@@ -419,7 +419,7 @@ parsePosExtension = do
 data Symbol = Symbol Char Char deriving (Show, Eq)
 
 -- TODO:  Include extensions from page 27 in position packets
-data APRSPacket = PositionPacket PacketType Symbol (Double, Double) (Maybe Timestamp) PosExtension
+data APRSPacket = PositionPacket PacketType Symbol (Double, Double) (Maybe Timestamp) PosExtension Text
                 | ObjectPacket Symbol Text (Double, Double) Timestamp Text
                 | ItemPacket Symbol Text (Double, Double) Text
                 deriving (Show, Eq)
@@ -489,23 +489,18 @@ parsePosUncompressed' = do
 
 parsePositionPacket :: A.Parser APRSPacket
 parsePositionPacket = do
-  "!" *> parseNoTS '!'
-    <|> "=" *> parseNoTS '='
-    <|> "/" *> parseTS '/'
-    <|> "@" *> parseTS '@'
+  pre <- A.satisfy (`elem` ['!', '=', '/', '@'])
+  ts <- maybeTS pre
+  (sym, (Position (lat,lon,_))) <- parsePosition' pre
+  posE <- parsePosExtension
+  com <- A.takeText
+  return $ PositionPacket (identifyPacket pre) sym (lat,lon) ts posE com
 
   where
-    parseNoTS :: Char -> A.Parser APRSPacket
-    parseNoTS c = do
-      (sym, (Position (lat,lon,_))) <- parsePosition' c
-      posE <- parsePosExtension
-      return $ PositionPacket (identifyPacket c) sym (lat,lon) Nothing posE
-    parseTS :: Char -> A.Parser APRSPacket
-    parseTS c = do
-      ts <- parseTimestamp
-      (sym, (Position (lat,lon,_))) <- parsePosition' c
-      posE <- parsePosExtension
-      return $ PositionPacket (identifyPacket c) sym (lat,lon) (Just ts) posE
+    maybeTS :: Char -> A.Parser (Maybe Timestamp)
+    maybeTS '!' = pure Nothing
+    maybeTS '=' = pure Nothing
+    maybeTS _ = pure.Just =<< parseTimestamp
 
 parseObjectPacket :: A.Parser APRSPacket
 parseObjectPacket = do

@@ -21,6 +21,9 @@ module APRS.Types
     , decodeBase91
     -- New parser
     , APRSPacket(..)
+    , PosExtension(..)
+    , Symbol(..)
+    , Directivity(..)
     -- parsers
     , parseAddr
     , parsePosition
@@ -40,6 +43,7 @@ import Control.Applicative ((<|>))
 import Control.Monad (replicateM, guard)
 import Data.Either (either, rights)
 import Data.String (fromString)
+import Data.Char (digitToInt)
 import Data.Text (Text, any, length, intercalate, unpack, tails)
 import Data.Bits (xor, (.&.), shiftL)
 import Data.Int (Int16)
@@ -374,10 +378,52 @@ decodeBase91 _ = 0
 
 data APRSData = APRSData Text deriving (Show, Eq)
 
+data PosExtension = PosECourseSpeed Int Int
+                  | PosEPHG Int Int Int Directivity
+                  | PosERNG
+                  | PosEDFS
+                  | PosETypeDesc
+                  | PosENone
+                  deriving (Show, Eq)
+
+data Directivity = Omni | DirNE | DirE | DirSE | DirS | DirSW | DirW | DirNW | DirN
+                 deriving (Show, Eq, Ord, Enum, Bounded)
+
+parsePosExtension :: A.Parser PosExtension
+parsePosExtension = do
+  parseCrsSpd
+    <|> parsePHG
+    <|> pure PosENone
+
+  where
+    parseCrsSpd = do
+      crs <- replicateM 3 A.digit
+      _ <- A.char '/'
+      spd <- replicateM 3 A.digit
+      let c = read crs :: Int
+      let s = read spd :: Int
+      guard $ c > 0 && c < 361
+      return $ PosECourseSpeed (if c == 360 then 0 else c) (ceiling $ fromIntegral s * 1.852)
+
+    parsePHG = do
+      _ <- A.string "PHG"
+      p <- A.digit
+      h <- A.digit
+      g <- A.digit
+      d <- A.digit
+
+      let p' = [0, 1, 4, 9, 16, 25, 36, 49, 64, 81] !! (digitToInt p)
+      let h' = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120] !! (digitToInt h)
+      let d' = ((toEnum . digitToInt) d) :: Directivity
+
+      return $ PosEPHG p' h' (digitToInt g) d'
+
+data Symbol = Symbol Char Char deriving (Show, Eq)
+
 -- TODO:  Include extensions from page 27 in position packets
-data APRSPacket = PositionPacket PacketType (Double, Double) (Maybe Timestamp)
-                | ObjectPacket Text (Double, Double) Timestamp Text
-                | ItemPacket Text (Double, Double) Text
+data APRSPacket = PositionPacket PacketType Symbol (Double, Double) (Maybe Timestamp) PosExtension
+                | ObjectPacket Symbol Text (Double, Double) Timestamp Text
+                | ItemPacket Symbol Text (Double, Double) Text
                 deriving (Show, Eq)
 
 megaParser :: A.Parser APRSPacket
@@ -392,29 +438,30 @@ megaParser = do
 | TS    | /      | @   |
 -}
 
-parsePosition' :: A.Parser Position
-parsePosition' = parsePosUncompressed' <|> parsePosCompressed'
+parsePosition' :: Char -> A.Parser (Symbol, Position)
+parsePosition' tbl = parsePosUncompressed' <|> parsePosCompressed' tbl
 
-parsePosCompressed' :: A.Parser Position
-parsePosCompressed' = do
+parsePosCompressed' :: Char -> A.Parser (Symbol, Position)
+parsePosCompressed' tbl = do
   b91a <- parseB91Seg A.<?> "first b91 seg"
   b91b <- parseB91Seg A.<?> "second b91 seg"
-  _ <- A.anyChar -- symbol code
+  sym <- A.anyChar -- symbol code
   _vel <- replicateM 2 A.anyChar
   _ <- A.anyChar -- compression type
 
-  return $ Position $ unc b91a b91b
+  return (Symbol tbl sym, Position $ unc b91a b91b)
 
   where
     unc m1 m2 = (90 - (m1 / 380926), (-180) + (m2 / 190463), Nothing)
 
-parsePosUncompressed' :: A.Parser Position
+parsePosUncompressed' :: A.Parser (Symbol, Position)
 parsePosUncompressed' = do
   lat <- parseDir "lat " 2
-  _sym <- A.satisfy (A.inClass "0-9/\\A-z") A.<?> "lat/lon separator"
+  tbl <- A.satisfy (A.inClass "0-9/\\A-Za-j") A.<?> "lat/lon separator (tbl)"
   lon <- parseDir "lon " 3
+  sym <- A.anyChar A.<?> "lat/lon separator (sym)"
 
-  return $ Position (lat,lon, Nothing)
+  return (Symbol tbl sym, Position (lat,lon, Nothing))
 
   where
     parseDir :: String -> Int -> A.Parser Double
@@ -452,13 +499,15 @@ parsePositionPacket = do
   where
     parseNoTS :: Char -> A.Parser APRSPacket
     parseNoTS c = do
-      (Position (lat,lon,_)) <- parsePosition'
-      return $ PositionPacket (identifyPacket c) (lat,lon) Nothing
+      (sym, (Position (lat,lon,_))) <- parsePosition' c
+      posE <- parsePosExtension
+      return $ PositionPacket (identifyPacket c) sym (lat,lon) Nothing posE
     parseTS :: Char -> A.Parser APRSPacket
     parseTS c = do
       ts <- parseTimestamp
-      (Position (lat,lon,_)) <- parsePosition'
-      return $ PositionPacket (identifyPacket c) (lat,lon) (Just ts)
+      (sym, (Position (lat,lon,_))) <- parsePosition' c
+      posE <- parsePosExtension
+      return $ PositionPacket (identifyPacket c) sym (lat,lon) (Just ts) posE
 
 parseObjectPacket :: A.Parser APRSPacket
 parseObjectPacket = do
@@ -466,9 +515,9 @@ parseObjectPacket = do
   name <- replicateM 9 A.anyChar
   _objstate <- A.satisfy (`elem` ['_', '*']) -- killed, live
   ts <- parseTimestamp
-  (Position (lat,lon,_)) <- parsePosition'
+  (sym, (Position (lat,lon,_))) <- parsePosition' ';'
   comment <- A.takeText
-  return $ ObjectPacket (fromString name) (lat, lon) ts comment
+  return $ ObjectPacket sym (fromString name) (lat, lon) ts comment
 
 parseItemPacket :: A.Parser APRSPacket
 parseItemPacket = do
@@ -476,6 +525,6 @@ parseItemPacket = do
   name <- A.takeTill (\c -> c == '_' || c == '!')
   guard $ Data.Text.length name >= 3 && Data.Text.length name <= 9
   _objstate <- A.satisfy (`elem` ['_', '!']) -- killed, live
-  (Position (lat,lon,_)) <- parsePosition'
+  (sym, (Position (lat,lon,_))) <- parsePosition' ')'
   comment <- A.takeText
-  return $ ItemPacket name (lat, lon) comment
+  return $ ItemPacket sym name (lat, lon) comment

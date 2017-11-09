@@ -40,7 +40,7 @@ module APRS.Types
 
 import Prelude hiding (any, take, drop, head, takeWhile)
 import Control.Applicative ((<|>))
-import Control.Monad (replicateM, guard)
+import Control.Monad (replicateM, replicateM_, guard)
 import Data.Either (either, rights)
 import Data.String (fromString)
 import Data.Char (digitToInt)
@@ -329,7 +329,7 @@ parseWParam = w 'c' WindDir
       wgood i wc <|> wnodata i c
 
     wgood i wc = replicateM i A.digit >>= \deez -> return $ wc (read deez)
-    wnodata i c = replicateM i (A.satisfy (`elem` ['.', ' '])) >> return (NoData c)
+    wnodata i c = replicateM_ i (A.satisfy (`elem` ['.', ' '])) >> return (NoData c)
 
     w = w' 3
 
@@ -376,8 +376,6 @@ decodeBase91 _ = 0
 • Other
 -}
 
-data APRSData = APRSData Text deriving (Show, Eq)
-
 data PosExtension = PosECourseSpeed Int Int
                   | PosEPHG Int Int Int Directivity
                   | PosERNG
@@ -390,10 +388,9 @@ data Directivity = Omni | DirNE | DirE | DirSE | DirS | DirSW | DirW | DirNW | D
                  deriving (Show, Eq, Ord, Enum, Bounded)
 
 parsePosExtension :: A.Parser PosExtension
-parsePosExtension = do
-  parseCrsSpd
-    <|> parsePHG
-    <|> pure PosENone
+parsePosExtension = parseCrsSpd
+                    <|> parsePHG
+                    <|> pure PosENone
 
   where
     parseCrsSpd = do
@@ -412,9 +409,9 @@ parsePosExtension = do
       g <- A.digit
       d <- A.satisfy (A.inClass "0-8")
 
-      let d' = ((toEnum . digitToInt) d) :: Directivity
+      let d' = (toEnum . digitToInt) d :: Directivity
 
-      return $ PosEPHG (digitToInt p ^ 2) (10 * 2 ^ (digitToInt h)) (digitToInt g) d'
+      return $ PosEPHG (digitToInt p ^ 2) (10 * 2 ^ digitToInt h) (digitToInt g) d'
 
 data Symbol = Symbol Char Char deriving (Show, Eq)
 
@@ -425,10 +422,9 @@ data APRSPacket = PositionPacket PacketType Symbol (Double, Double) (Maybe Times
                 deriving (Show, Eq)
 
 megaParser :: A.Parser APRSPacket
-megaParser = do
-  parsePositionPacket
-  <|> parseObjectPacket
-  <|> parseItemPacket
+megaParser = parsePositionPacket
+             <|> parseObjectPacket
+             <|> parseItemPacket
 
 {-
 |       | No MSG | MSG |
@@ -491,7 +487,7 @@ parsePositionPacket :: A.Parser APRSPacket
 parsePositionPacket = do
   pre <- A.satisfy (`elem` ['!', '=', '/', '@'])
   ts <- maybeTS pre
-  (sym, (Position (lat,lon,_))) <- parsePosition' pre
+  (sym, Position (lat,lon,_)) <- parsePosition' pre
   posE <- parsePosExtension
   com <- A.takeText
   return $ PositionPacket (identifyPacket pre) sym (lat,lon) ts posE com
@@ -508,7 +504,7 @@ parseObjectPacket = do
   name <- replicateM 9 A.anyChar
   _objstate <- A.satisfy (`elem` ['_', '*']) -- killed, live
   ts <- parseTimestamp
-  (sym, (Position (lat,lon,_))) <- parsePosition' ';'
+  (sym, Position (lat,lon,_)) <- parsePosition' ';'
   comment <- A.takeText
   return $ ObjectPacket sym (fromString name) (lat, lon) ts comment
 
@@ -518,6 +514,6 @@ parseItemPacket = do
   name <- A.takeTill (\c -> c == '_' || c == '!')
   guard $ Data.Text.length name >= 3 && Data.Text.length name <= 9
   _objstate <- A.satisfy (`elem` ['_', '!']) -- killed, live
-  (sym, (Position (lat,lon,_))) <- parsePosition' ')'
+  (sym, Position (lat,lon,_)) <- parsePosition' ')'
   comment <- A.takeText
   return $ ItemPacket sym name (lat, lon) comment

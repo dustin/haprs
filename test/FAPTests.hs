@@ -129,7 +129,7 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                       assertEqual ("msg bod: " ++ show b) (fromJust . fapmsg $ res) (unpack bod)
                                       assertEqual ("msgid: " ++ show b) (fromJust . fapmsgid $ res) (unpack msgid)
                                       -- This is kind of dumb, but there's nothing to compare to in input data
-                                      assertBool "rcpt strings" $ (show rcpt) /= ""
+                                      assertBool "rcpt strings" $ show rcpt /= ""
 
                                       return 4
 
@@ -148,7 +148,7 @@ tests = do
   let allfaps = filter (\(FAPTest _ _ n m) -> (n == 0 && not m)) tj
   let compressed = filter (fapfmt $ Just "compressed") allfaps
   let uncompressed = filter (fapfmt $ Just "uncompressed") allfaps
-  let nopos = filter (fapfmt $ Nothing) allfaps
+  let nopos = filter (fapfmt Nothing) allfaps
 
   return $ testGroup "FAP Tests" [
     testCaseInfo "compressed" $ fapTest compressed,

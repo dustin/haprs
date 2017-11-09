@@ -412,11 +412,9 @@ parsePosExtension = do
       g <- A.digit
       d <- A.digit
 
-      let p' = [0, 1, 4, 9, 16, 25, 36, 49, 64, 81] !! (digitToInt p)
-      let h' = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120] !! (digitToInt h)
       let d' = ((toEnum . digitToInt) d) :: Directivity
 
-      return $ PosEPHG p' h' (digitToInt g) d'
+      return $ PosEPHG (digitToInt p ^ 2) (10 * 2 ^ (digitToInt h)) (digitToInt g) d'
 
 data Symbol = Symbol Char Char deriving (Show, Eq)
 

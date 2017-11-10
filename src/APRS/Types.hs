@@ -218,9 +218,9 @@ data Timestamp = DHMLocal (Int, Int, Int)
 parseTimestamp :: A.Parser Timestamp
 parseTimestamp = dhmlocal <|> dhmzulu <|> hms <|> mdhm
   where
-    dhmlocal = n3 '/' >>= (pure.DHMLocal)
-    dhmzulu = n3 'z' >>= (pure.DHMZulu)
-    hms = n3 'h' >>= (pure.HMS)
+    dhmlocal = DHMLocal <$> n3 '/'
+    dhmzulu = DHMZulu <$> n3 'z'
+    hms = HMS <$> n3 'h'
     mdhm = n 4 >>= \[m, d, h, mn] -> pure $ MDHM (m, d, h, mn)
 
     n :: Int -> A.Parser [Int]
@@ -508,7 +508,7 @@ parsePositionPacket = do
     maybeTS :: Char -> A.Parser (Maybe Timestamp)
     maybeTS '!' = pure Nothing
     maybeTS '=' = pure Nothing
-    maybeTS _ = pure.Just =<< parseTimestamp
+    maybeTS _ = Just <$> parseTimestamp
 
 parseObjectPacket :: A.Parser APRSPacket
 parseObjectPacket = do

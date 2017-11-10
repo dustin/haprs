@@ -520,6 +520,8 @@ parseItemPacket = do
   comment <- A.takeText
   return $ ItemPacket sym name (lat, lon) comment
 
+-- Examples that aren't recognized properly:
+--   @092345z/5L!!<*e7 _7P[g005t077r000p000P000h50b09900wRSW
 parseWeatherPacket :: A.Parser APRSPacket
 parseWeatherPacket = do
   c <- A.satisfy (`elem` ['_', '/', '!', '@', '='])

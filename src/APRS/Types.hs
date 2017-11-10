@@ -574,8 +574,7 @@ parseMessagePacket = do
 
   where
     parseMI :: A.Parser (MessageInfo, Text) -- returns the message ID
-    parseMI = do
-      parseACKNAK "ack" MessageACK <|> parseACKNAK "rej" MessageNAK <|> parseMsg
+    parseMI = parseACKNAK "ack" MessageACK <|> parseACKNAK "rej" MessageNAK <|> parseMsg
 
     parseACKNAK :: Text -> MessageInfo -> A.Parser (MessageInfo, Text)
     parseACKNAK pre i = do
@@ -590,4 +589,4 @@ parseMessagePacket = do
     parseMsg = do
       mtext <- A.many' (A.satisfy (`notElem` ['{', '|', '~']))
       mid <- ("{" *> A.takeText) <|> pure "" -- message ID is optional
-      return $ (Message' (fromString mtext), mid)
+      return (Message' (fromString mtext), mid)

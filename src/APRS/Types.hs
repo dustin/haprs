@@ -24,6 +24,7 @@ module APRS.Types
     , PosExtension(..)
     , Symbol(..)
     , Directivity(..)
+    , MessageInfo(..)
     -- parsers
     , parseAddr
     , parsePosition
@@ -44,7 +45,7 @@ import Control.Monad (replicateM, replicateM_, guard)
 import Data.Either (either, rights)
 import Data.String (fromString)
 import Data.Char (digitToInt)
-import Data.Text (Text, any, length, intercalate, unpack, tails)
+import Data.Text (Text, any, all, length, intercalate, unpack, tails)
 import Data.Bits (xor, (.&.), shiftL)
 import Data.Int (Int16)
 import qualified Data.Attoparsec.Text as A
@@ -415,12 +416,18 @@ parsePosExtension = parseCrsSpd
 
 data Symbol = Symbol Char Char deriving (Show, Eq)
 
+data MessageInfo = Message' Text
+                 | MessageACK
+                 | MessageNAK
+                   deriving (Show, Eq)
+
 -- TODO:  Include extensions from page 27 in position packets
 data APRSPacket = PositionPacket PacketType Symbol (Double, Double) (Maybe Timestamp) PosExtension Text
                 | ObjectPacket Symbol Text (Double, Double) Timestamp Text
                 | ItemPacket Symbol Text (Double, Double) Text
                 | WeatherPacket (Maybe Timestamp) (Maybe (Double, Double)) [WeatherParam] Text
                 | StatusPacket (Maybe Timestamp) Text
+                | MessagePacket Address MessageInfo Text -- includes sequence number
                 deriving (Show, Eq)
 
 megaParser :: A.Parser APRSPacket
@@ -429,6 +436,7 @@ megaParser = parseWeatherPacket
              <|> parseObjectPacket
              <|> parseItemPacket
              <|> parseStatusPacket
+             <|> parseMessagePacket
 
 {-
 |       | No MSG | MSG |
@@ -553,3 +561,33 @@ parseStatusPacket = do
   ts <- (parseTimestamp >>= \t -> return (Just t)) <|> pure Nothing
   msg <- A.many1 (A.satisfy (`notElem` ['|', '~']))
   return $ StatusPacket ts (fromString msg)
+
+parseMessagePacket :: A.Parser APRSPacket
+parseMessagePacket = do
+  _ <- A.char ':' -- message indicator
+  rcpt <- parseAddr
+  _ <- A.many' A.space -- Technically, rpct is 9 characters with trailing space, but we're Posteling here a bit.
+  _ <- A.char ':' -- message separator
+  (mi, mid) <- parseMI
+
+  return $ MessagePacket rcpt mi mid
+
+  where
+    parseMI :: A.Parser (MessageInfo, Text) -- returns the message ID
+    parseMI = do
+      parseACKNAK "ack" MessageACK <|> parseACKNAK "rej" MessageNAK <|> parseMsg
+
+    parseACKNAK :: Text -> MessageInfo -> A.Parser (MessageInfo, Text)
+    parseACKNAK pre i = do
+      _ <- A.string pre
+      msgid <- A.takeText
+      guard $ msgid /= ""
+      guard $ Data.Text.length msgid <= 5
+      guard $ Data.Text.all (A.inClass "A-z0-9") msgid
+      return (i, msgid)
+
+    parseMsg :: A.Parser (MessageInfo, Text)
+    parseMsg = do
+      mtext <- A.many' (A.satisfy (`notElem` ['{', '|', '~']))
+      mid <- ("{" *> A.takeText) <|> pure "" -- message ID is optional
+      return $ (Message' (fromString mtext), mid)

@@ -10,6 +10,8 @@ import Data.Aeson
 import Data.Maybe
 import Data.Text (unpack)
 import Text.Read (readEither)
+import Data.Either (isRight)
+import qualified Data.Attoparsec.Text as A
 import qualified Data.ByteString.Lazy as B
 
 import Test.Tasty
@@ -87,6 +89,19 @@ instance FromJSON FAPTest where
 ε :: Double
 ε = 0.001
 
+megaParserTest :: [FAPTest] -> IO String
+megaParserTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Frame of
+                                              Left e -> error (show e)
+                                              Right f' -> (f,f')) fs in
+                      do
+                        assess <- foldM (\n (_f, _frame@(Frame _s _d _ (Body b))) -> do
+                                            let bodyP = A.parseOnly megaParser b
+                                            assertBool (show b) $ isRight bodyP
+                                            return $ n + 1
+                                        ) (0::Int) parsed
+                        return $ show assess ++ " assertions run"
+
+
 fapTest :: [FAPTest] -> IO String
 fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Frame of
                                   Left e -> error (show e)
@@ -153,7 +168,10 @@ tests = do
   return $ testGroup "FAP Tests" [
     testCaseInfo "compressed" $ fapTest compressed,
     testCaseInfo "uncompressed" $ fapTest uncompressed,
-    testCaseInfo "no pos" $ fapTest nopos
+    testCaseInfo "no pos" $ fapTest nopos,
+
+    testCaseInfo "megaparse compressed" $ megaParserTest compressed,
+    testCaseInfo "megaparse uncompressed" $ megaParserTest compressed
     ]
 
   where

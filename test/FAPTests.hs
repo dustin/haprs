@@ -98,7 +98,6 @@ megaParserTest (InvalidPacket '$') x = megaSkip x
 megaParserTest (InvalidPacket '\'') x = megaSkip x
 megaParserTest (InvalidPacket 'h') x = megaSkip x
 megaParserTest MessagePkt x = megaSkip x
-megaParserTest Status x = megaSkip x
 megaParserTest Telemetry x = megaSkip x
 megaParserTest CurrentMicE x = megaSkip x
 megaParserTest _ fs = let parsed = map (\f -> case readEither (src f) :: Either String Frame of

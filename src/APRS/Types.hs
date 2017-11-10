@@ -420,6 +420,7 @@ data APRSPacket = PositionPacket PacketType Symbol (Double, Double) (Maybe Times
                 | ObjectPacket Symbol Text (Double, Double) Timestamp Text
                 | ItemPacket Symbol Text (Double, Double) Text
                 | WeatherPacket (Maybe Timestamp) (Maybe (Double, Double)) [WeatherParam] Text
+                | StatusPacket (Maybe Timestamp) Text
                 deriving (Show, Eq)
 
 megaParser :: A.Parser APRSPacket
@@ -427,6 +428,7 @@ megaParser = parseWeatherPacket
              <|> parsePositionPacket
              <|> parseObjectPacket
              <|> parseItemPacket
+             <|> parseStatusPacket
 
 {-
 |       | No MSG | MSG |
@@ -544,3 +546,10 @@ parseWeatherPacket = do
       _ <- A.char '/'
       wdir <- replicateM 3 A.digit
       return (read wspd, read wdir)
+
+parseStatusPacket :: A.Parser APRSPacket
+parseStatusPacket = do
+  _ <- A.char '>'
+  ts <- (parseTimestamp >>= \t -> return (Just t)) <|> pure Nothing
+  msg <- A.many1 (A.satisfy (`notElem` ['|', '~']))
+  return $ StatusPacket ts (fromString msg)

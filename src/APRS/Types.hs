@@ -39,7 +39,7 @@ module APRS.Types
     -- For testing
     ) where
 
-import Prelude hiding (any, take, drop, head, takeWhile)
+import Prelude hiding (any)
 import Control.Applicative ((<|>))
 import Control.Monad (replicateM, replicateM_, guard)
 import Data.Either (either, rights)

@@ -202,8 +202,17 @@ testMegaParser =
   (")AID #2!4903.50N/07201.75WA",
     Right (ItemPacket (Symbol '/' 'A') "AID #2" (49.05833333333333,-72.02916666666667) "")),
   (")G/WB4APR!53  .  N\\002  .  Wd", Right (ItemPacket (Symbol '\\' 'd') "G/WB4APR" (53.5,-2.5) "")),
-  (")MOBIL!\\5L!!<*e79 sT", Right (ItemPacket (Symbol ')' '7') 
+  (")MOBIL!\\5L!!<*e79 sT", Right (ItemPacket (Symbol ')' '7')
                                     "MOBIL" (-27.162446249402777,-178.82142988401947) "T")),
+  ("_10090556c220s004g005t077r000p000P000h50b09900wRSW",
+   Right (WeatherPacket (Just (MDHM (10,9,5,56))) Nothing
+          [WindDir 220,WindSpeed 4,WindGust 5,Temp 77,RainLastHour 0,
+           RainLast24Hours 0,RainToday 0,Humidity 50,Baro 9900] "wRSW")),
+  ("!4903.50N/07201.75W_220/004g005t077r000p000P000h50b09900wRSW",
+   Right (WeatherPacket Nothing (Just (49.05833333333333,-72.02916666666667))
+          [WindGust 5,Temp 77,RainLastHour 0,RainLast24Hours 0,
+           RainToday 0,Humidity 50,Baro 9900] "wRSW")),
+
 
   -- Some samples from FAP
   ("!4526.66NI01104.68E#PHG21306/- Lnx APRS Srv - sez. ARI VR EST",

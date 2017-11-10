@@ -419,10 +419,12 @@ data Symbol = Symbol Char Char deriving (Show, Eq)
 data APRSPacket = PositionPacket PacketType Symbol (Double, Double) (Maybe Timestamp) PosExtension Text
                 | ObjectPacket Symbol Text (Double, Double) Timestamp Text
                 | ItemPacket Symbol Text (Double, Double) Text
+                | WeatherPacket (Maybe Timestamp) (Maybe (Double, Double)) [WeatherParam] Text
                 deriving (Show, Eq)
 
 megaParser :: A.Parser APRSPacket
-megaParser = parsePositionPacket
+megaParser = parseWeatherPacket
+             <|> parsePositionPacket
              <|> parseObjectPacket
              <|> parseItemPacket
 
@@ -517,3 +519,26 @@ parseItemPacket = do
   (sym, Position (lat,lon,_)) <- parsePosition' ')'
   comment <- A.takeText
   return $ ItemPacket sym name (lat, lon) comment
+
+parseWeatherPacket :: A.Parser APRSPacket
+parseWeatherPacket = do
+  c <- A.satisfy (`elem` ['_', '/', '!', '@', '='])
+  ts <- (parseTimestamp >>= \t -> return (Just t)) <|> pure Nothing
+  pos <- if c `elem` ['_', '='] then pure Nothing else ppos
+  _w <- wind <|> pure (0,0)
+  wp <- parseWeather
+  rest <- A.takeText
+  return $ WeatherPacket ts pos wp rest
+
+  where
+    ppos :: A.Parser (Maybe (Double, Double))
+    ppos = do
+      (_, Position (lat,lon,_)) <- parsePosition' 'x'
+      return $ Just (lat,lon)
+
+    wind :: A.Parser (Int, Int)
+    wind = do
+      wspd <- replicateM 3 A.digit
+      _ <- A.char '/'
+      wdir <- replicateM 3 A.digit
+      return (read wspd, read wdir)

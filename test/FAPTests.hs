@@ -101,7 +101,6 @@ megaParserTest MessagePkt x = megaSkip x
 megaParserTest Status x = megaSkip x
 megaParserTest Telemetry x = megaSkip x
 megaParserTest CurrentMicE x = megaSkip x
-megaParserTest WeatherNoPos x = megaSkip x
 megaParserTest _ fs = let parsed = map (\f -> case readEither (src f) :: Either String Frame of
                                                 Left e -> error (show e)
                                                 Right f' -> (f,f')) fs in

@@ -39,15 +39,16 @@ module APRS.Types
     -- For testing
     ) where
 
-import Prelude hiding (any)
 import Control.Applicative ((<|>))
 import Control.Monad (replicateM, replicateM_, guard)
-import Data.Either (either, rights)
-import Data.String (fromString)
-import Data.Char (digitToInt)
-import Data.Text (Text, any, all, length, intercalate, unpack, tails)
 import Data.Bits (xor, (.&.), shiftL)
+import Data.Char (digitToInt)
+import Data.Either (either, rights)
 import Data.Int (Int16)
+import Data.String (fromString)
+import Data.Text (Text, any, all, length, intercalate, unpack, tails)
+import Numeric (readInt)
+import Prelude hiding (any)
 import qualified Data.Attoparsec.Text as A
 
 class Similar a where
@@ -428,6 +429,7 @@ data APRSPacket = PositionPacket PacketType Symbol (Double, Double) (Maybe Times
                 | WeatherPacket (Maybe Timestamp) (Maybe (Double, Double)) [WeatherParam] Text
                 | StatusPacket (Maybe Timestamp) Text
                 | MessagePacket Address MessageInfo Text -- includes sequence number
+                | TelemetryPacket Text [Int] Text -- seq, vals, comment
                 deriving (Show, Eq)
 
 megaParser :: A.Parser APRSPacket
@@ -437,6 +439,7 @@ megaParser = parseWeatherPacket
              <|> parseItemPacket
              <|> parseStatusPacket
              <|> parseMessagePacket
+             <|> parseTelemetry
 
 {-
 |       | No MSG | MSG |
@@ -590,3 +593,28 @@ parseMessagePacket = do
       mtext <- A.many' (A.satisfy (`notElem` ['{', '|', '~']))
       mid <- ("{" *> A.takeText) <|> pure "" -- message ID is optional
       return (Message' (fromString mtext), mid)
+
+parseTelemetry :: A.Parser APRSPacket
+parseTelemetry = do
+  _ <- A.string "T#"
+  s <- parseSeq
+  vals <- replicateM 5 num
+  bits <- replicateM 8 (A.satisfy (`elem` ['0', '1']))
+  let [(bits', "")] = readInt 2 (`elem` ['0', '1']) (\c -> if c == '0' then 0 else 1) bits
+  rest <- A.takeText
+
+  return $ TelemetryPacket s (vals ++ [bits']) rest
+
+  where
+    num :: A.Parser Int
+    num = do
+      n <- replicateM 3 A.digit
+      _ <- A.char ','
+      return $ read n
+
+    parseSeq :: A.Parser Text
+    parseSeq = ("MIC" *> (A.string "," <|> pure "") >> pure "MIC") <|> do
+      s <- replicateM 3 A.anyChar
+      _ <- A.string ","
+      return (fromString s)
+

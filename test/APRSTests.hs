@@ -214,13 +214,13 @@ testMegaParser =
            RainToday 0,Humidity 50,Baro 9900] "wRSW")),
 
   ("T#MIC199,000,255,073,123,01101001",
-    Right (TelemetryPacket "MIC" [199,0,255,73,123,105] "")),
+    Right (TelemetryPacket "MIC" [199,0,255,73,123] 105 "")),
   ("T#MIC,199,000,255,073,123,01101001",
-    Right (TelemetryPacket "MIC" [199,0,255,73,123,105] "")),
+    Right (TelemetryPacket "MIC" [199,0,255,73,123] 105 "")),
   ("T#005,199,000,255,073,123,01101001",
-    Right (TelemetryPacket "005" [199,0,255,73,123,105] "")),
+    Right (TelemetryPacket "005" [199,0,255,73,123] 105 "")),
   ("T#005,199,000,255,073,123,01101001 with a comment",
-    Right (TelemetryPacket "005" [199,0,255,73,123,105] " with a comment")),
+    Right (TelemetryPacket "005" [199,0,255,73,123] 105 " with a comment")),
 
 
   -- Some samples from FAP

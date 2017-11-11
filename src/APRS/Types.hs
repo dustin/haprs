@@ -45,6 +45,7 @@ import Data.Bits (xor, (.&.), shiftL)
 import Data.Char (digitToInt)
 import Data.Either (either, rights)
 import Data.Int (Int16)
+import Data.Word (Word8)
 import Data.String (fromString)
 import Data.Text (Text, any, all, length, intercalate, unpack, tails)
 import Numeric (readInt)
@@ -429,7 +430,7 @@ data APRSPacket = PositionPacket PacketType Symbol (Double, Double) (Maybe Times
                 | WeatherPacket (Maybe Timestamp) (Maybe (Double, Double)) [WeatherParam] Text
                 | StatusPacket (Maybe Timestamp) Text
                 | MessagePacket Address MessageInfo Text -- includes sequence number
-                | TelemetryPacket Text [Int] Text -- seq, vals, comment
+                | TelemetryPacket Text [Double] Word8 Text -- seq, vals, bits, comment
                 deriving (Show, Eq)
 
 megaParser :: A.Parser APRSPacket
@@ -598,20 +599,14 @@ parseTelemetry :: A.Parser APRSPacket
 parseTelemetry = do
   _ <- A.string "T#"
   s <- parseSeq
-  vals <- replicateM 5 num
+  vals <- replicateM 5 (A.double <* ",")
   bits <- replicateM 8 (A.satisfy (`elem` ['0', '1']))
   let [(bits', "")] = readInt 2 (`elem` ['0', '1']) (\c -> if c == '0' then 0 else 1) bits
   rest <- A.takeText
 
-  return $ TelemetryPacket s (vals ++ [bits']) rest
+  return $ TelemetryPacket s vals (fromInteger bits') rest
 
   where
-    num :: A.Parser Int
-    num = do
-      n <- replicateM 3 A.digit
-      _ <- A.char ','
-      return $ read n
-
     parseSeq :: A.Parser Text
     parseSeq = ("MIC" *> (A.string "," <|> pure "") >> pure "MIC") <|> do
       s <- replicateM 3 A.anyChar

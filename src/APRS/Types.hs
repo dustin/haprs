@@ -220,14 +220,11 @@ findParse p s = case rights $ map (A.parseOnly p) $ Data.Text.tails s of
 
 parseMessage :: Address -> A.Parser Message
 parseMessage s = do
-  _ <- A.char ':' -- message indicator
-  rcpt <- parseAddr
-  _ <- A.many' A.space -- Technically, rpct is 9 characters with trailing space, but we're Posteling here a bit.
-  _ <- A.char ':' -- message separator
-  mtext <- A.many' (A.satisfy (`notElem` ['{', '|', '~']))
-  mid <- ("{" *> A.takeText) <|> pure "" -- message ID is optional
-
-  return $ Message s rcpt (fromString mtext) mid
+  (MessagePacket rcpt mi mid) <- megaParser
+  let mtxt = case mi of
+               (Message' t) -> t
+               _ -> ""
+  return $ Message s rcpt mtxt mid
 
 message :: Frame -> Maybe Message
 message (Frame s _ _ (Body b)) = either (const Nothing) Just $ A.parseOnly (parseMessage s) b

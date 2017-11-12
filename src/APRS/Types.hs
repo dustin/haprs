@@ -379,7 +379,7 @@ decodeBase91 _ = 0
 • Other
 -}
 
-data PosExtension = PosECourseSpeed Int Int
+data PosExtension = PosECourseSpeed Int Double
                   | PosEPHG Int Int Int Directivity
                   | PosERNG
                   | PosEDFS
@@ -403,7 +403,7 @@ parsePosExtension = parseCrsSpd
       let c = read crs :: Int
       let s = read spd :: Int
       guard $ c > 0 && c < 361
-      return $ PosECourseSpeed (if c == 360 then 0 else c) (ceiling $ fromIntegral s * 1.852)
+      return $ PosECourseSpeed (if c == 360 then 0 else c) (fromIntegral s * 1.852)
 
     parsePHG = do
       _ <- A.string "PHG"

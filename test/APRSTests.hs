@@ -229,7 +229,7 @@ testMegaParser =
           (45.44433333333333,11.078) Nothing (PosEPHG 4 20 3 Omni) "6/- Lnx APRS Srv - sez. ARI VR EST")),
   ("/055816h5134.38N/00019.47W>155/023!W26!/A=000188 14.3V 27C HDOP01.0 SATS09",
    Right (PositionPacket PositionNoMsg (Symbol '/' '>')
-          (51.573,-0.32449999999999996) (Just (HMS (5,58,16))) (PosECourseSpeed 155 43)
+          (51.573,-0.32449999999999996) (Just (HMS (5,58,16))) (PosECourseSpeed 155 42.596000000000004)
           "!W26!/A=000188 14.3V 27C HDOP01.0 SATS09")),
   (":OH7LZB   :Testing, 1 2 3{1", Right (MessagePacket (raddr "OH7LZB")
                                          (Message' "Testing, 1 2 3") "1")),

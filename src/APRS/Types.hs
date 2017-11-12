@@ -25,11 +25,9 @@ module APRS.Types
     , Symbol(..)
     , Directivity(..)
     , MessageInfo(..)
+    , position'
     -- parsers
     , parseAddr
-    , parsePosition
-    , parsePosUncompressed
-    , parsePosCompressed
     , parseFrame
     , parseTimestamp
     , parseWeather
@@ -44,6 +42,7 @@ import Control.Monad (replicateM, replicateM_, guard)
 import Data.Bits (xor, (.&.), shiftL)
 import Data.Char (digitToInt)
 import Data.Either (either, rights)
+import Data.Maybe (isJust)
 import Data.Int (Int16)
 import Data.Word (Word8)
 import Data.String (fromString)
@@ -155,60 +154,23 @@ posamb 3 = 5 / 60
 posamb 4 = 0.5
 posamb _ = error "Invalid ambiguity"
 
+position' :: APRSPacket -> Maybe (Double, Double, PosExtension)
+position' (PositionPacket _ _ (lat,lon) _ ext _) = Just (lat, lon, ext)
+position' (ObjectPacket _ _ (lat,lon) _ _)       = Just (lat, lon, PosENone)
+position' (ItemPacket _ _ (lat,lon) _)           = Just (lat, lon, PosENone)
+position' (WeatherPacket _ (Just (lat,lon)) _ _) = Just (lat, lon, PosENone)
+position' _                                      = Nothing
+
 parsePosition :: A.Parser Position
-parsePosition = parsePosUncompressed <|> parsePosCompressed
-
-parsePosUncompressed :: A.Parser Position
-parsePosUncompressed = do
-  _ts <- poshdr <|> timestamphdr
-  lat <- parseDir "lat " 2
-  _sym <- A.satisfy (A.inClass "0-9/\\A-z") A.<?> "lat/lon separator"
-  lon <- parseDir "lon " 3
-  v <- A.eitherP pvel (pure "")
-
-  return $ Position (lat,lon, either Just (const Nothing) v)
-
-  where
-    parseDir :: String -> Int -> A.Parser Double
-    parseDir lbl n = do
-      cM <- replicateM n A.digit A.<?> (lbl ++ "first digits")
-      cm <- A.many' A.digit A.<?> (lbl ++ "second digits")
-      cs1 <- A.many' A.space A.<?> (lbl ++ "first optional spaces")
-      _ <- A.string "." A.<?> (lbl ++ "decimal")
-      cd <- A.many' A.digit A.<?> (lbl ++ "decimal digits")
-      cs2 <- A.many' A.space A.<?> (lbl ++ "second optional space")
-      cdir <- A.satisfy (`elem` ['N', 'S', 'E', 'W']) A.<?> (lbl ++ "direction")
-
-      let amb = Prelude.length cs1 + Prelude.length cs2
-      return $ (compPos cM (cm ++ cs1) (cd ++ cs2) + posamb amb) * psign cdir
-
-    psign 'S' = -1
-    psign 'W' = -1
-    psign _ = 1
-
-    poshdr = A.satisfy (`elem` ['!', '=']) >> pure Timeless
-    timestamphdr = do
-      _p <- A.satisfy (`elem` ['/', ',', '@', '\\', '*'])
-      parseTimestamp
-
-    compPos :: String -> String -> String -> Double
-    compPos a b c = let a' = (rz . Prelude.concat) [replspc a]
-                        b' = (rz . Prelude.concat) [replspc b, ".", replspc c]
-                    in a' + (b' / 60)
-    replspc = map (\c -> if c == ' ' then '0' else c)
-    rz = read :: String -> Double
-
-    pvel :: A.Parser Velocity
-    pvel = do
-      _ <- A.anyChar
-      d1 <- A.satisfy (`elem` ['0', '1', '2', '3'])
-      d2 <- replicateM 2 A.digit
-      _ <- A.string "/"
-      d3 <- replicateM 3 A.digit
-
-      let a = read (d1:d2) :: Double
-      let b = (* 1.852) $ read d3 :: Double
-      return $ Velocity (a, b)
+parsePosition = do
+  parsed <- megaParser
+  let loc = position' parsed
+  guard $ isJust loc
+  let (Just (lat,lon,ext)) = loc
+  let vel = case ext of
+              PosECourseSpeed c s -> Just (Velocity (fromIntegral c, s))
+              _ -> Nothing
+  return $ Position (lat, lon, vel)
 
 data Timestamp = DHMLocal (Int, Int, Int)
                | DHMZulu (Int, Int, Int)
@@ -229,39 +191,6 @@ parseTimestamp = dhmlocal <|> dhmzulu <|> hms <|> mdhm
     n x = replicateM x (replicateM 2 A.digit) >>= \digs -> return $ map read digs
     n3 :: Char -> A.Parser (Int, Int, Int)
     n3 ch = n 3 >>= \[a,b,c] -> A.char ch >> pure (a,b,c)
-
-parsePosCompressed :: A.Parser Position
-parsePosCompressed = do
-  _ts <- timething <|> plainpos <|> obj
-  _sym <- A.anyChar
-  b91a <- parseB91Seg A.<?> "first b91 seg"
-  b91b <- parseB91Seg A.<?> "second b91 seg"
-  _ <- A.anyChar -- symbol code
-  vel <- replicateM 2 A.anyChar
-  _ <- A.anyChar -- compression type
-
-  return $ Position $ unc b91a b91b (fmap fromEnum vel)
-
-  where
-    unc m1 m2 m5 = (90 - (m1 / 380926), (-180) + (m2 / 190463), pcvel m5)
-    pcvel [a,b]
-      | a >= 33 && a <= 122 = let course = fromIntegral (a - 33) * 4
-                                  speed = 1.852 * ((1.08 ^ (b - 33)) - 1)
-                                  course' = if course == 0 then 360 else course in
-                                Just $ Velocity (course', speed)
-    pcvel _ = Nothing
-    timething :: A.Parser Timestamp
-    timething = do
-      _ptyp <- A.satisfy (`elem` ['/', '@'])
-      parseTimestamp
-    plainpos :: A.Parser Timestamp
-    plainpos = A.satisfy (`elem` ['!', '=']) >> pure Timeless
-    obj :: A.Parser Timestamp
-    obj = do
-      _ptyp <- A.satisfy (== ';')
-      _objname <- replicateM 9 A.anyChar
-      _objstate <- A.satisfy (`elem` ['_', '*']) -- killed, live
-      parseTimestamp
 
 newtype Velocity = Velocity (Double, Double) deriving (Eq)
 
@@ -628,4 +557,3 @@ parseTelemetry = do
       s <- replicateM 3 A.anyChar
       _ <- A.string ","
       return (fromString s)
-

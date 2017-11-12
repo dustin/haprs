@@ -448,11 +448,12 @@ megaParser = parseWeatherPacket
 | TS    | /      | @   |
 -}
 
-parsePosition' :: Char -> A.Parser (Symbol, Position)
-parsePosition' tbl = parsePosUncompressed' <|> parsePosCompressed' tbl
+parsePosition' :: A.Parser (Symbol, Position)
+parsePosition' = parsePosUncompressed' <|> parsePosCompressed'
 
-parsePosCompressed' :: Char -> A.Parser (Symbol, Position)
-parsePosCompressed' tbl = do
+parsePosCompressed' :: A.Parser (Symbol, Position)
+parsePosCompressed' = do
+  tbl <- A.anyChar
   b91a <- parseB91Seg A.<?> "first b91 seg"
   b91b <- parseB91Seg A.<?> "second b91 seg"
   sym <- A.anyChar -- symbol code
@@ -512,7 +513,7 @@ parsePositionPacket :: A.Parser APRSPacket
 parsePositionPacket = do
   pre <- A.satisfy (`elem` ['!', '=', '/', '@']) <|> bangjunk
   ts <- maybeTS pre
-  (sym, Position (lat,lon,_)) <- parsePosition' pre
+  (sym, Position (lat,lon,_)) <- parsePosition'
   posE <- parsePosExtension
   com <- A.takeText
   return $ PositionPacket (identifyPacket pre) sym (lat,lon) ts posE com
@@ -535,7 +536,7 @@ parseObjectPacket = do
   name <- replicateM 9 A.anyChar
   _objstate <- A.satisfy (`elem` ['_', '*']) -- killed, live
   ts <- parseTimestamp
-  (sym, Position (lat,lon,_)) <- parsePosition' ';'
+  (sym, Position (lat,lon,_)) <- parsePosition'
   comment <- A.takeText
   return $ ObjectPacket sym (fromString name) (lat, lon) ts comment
 
@@ -545,7 +546,7 @@ parseItemPacket = do
   name <- A.takeTill (\c -> c == '_' || c == '!')
   guard $ Data.Text.length name >= 3 && Data.Text.length name <= 9
   _objstate <- A.satisfy (`elem` ['_', '!']) -- killed, live
-  (sym, Position (lat,lon,_)) <- parsePosition' ')'
+  (sym, Position (lat,lon,_)) <- parsePosition'
   comment <- A.takeText
   return $ ItemPacket sym name (lat, lon) comment
 
@@ -564,7 +565,7 @@ parseWeatherPacket = do
   where
     ppos :: A.Parser (Maybe (Double, Double))
     ppos = do
-      (_, Position (lat,lon,_)) <- parsePosition' 'x'
+      (_, Position (lat,lon,_)) <- parsePosition'
       return $ Just (lat,lon)
 
     wind :: A.Parser (Int, Int)

@@ -188,22 +188,22 @@ testMegaParser =
    Right (PositionPacket PositionMsg (Symbol '/' '>')
           (49.05833333333333,-72.02916666666667) (Just (DHMLocal (9,23,45))) PosENone "Test1234")),
   ("=/5L!!<*e7> sTComment",
-   Right (PositionPacket PositionNoTS (Symbol '=' '7')
-          (61.85929288103201,-178.82142988401947) Nothing PosENone "TComment")),
+   Right (PositionPacket PositionNoTS (Symbol '/' '>')
+          (49.5,-72.75000393777269) Nothing PosENone "Comment")),
   ("@092345z/5L!!<*e7>{?! ",
-   Right (PositionPacket PositionMsg (Symbol '@' '7')
-          (61.85929288103201,-178.82142988401947) (Just (DHMZulu (9,23,45))) PosENone "! ")),
+   Right (PositionPacket PositionMsg (Symbol '/' '>')
+          (49.5,-72.75000393777269) (Just (DHMZulu (9,23,45))) PosENone " ")),
   (";LEADER   _092345z4903.50N/07201.75W>088/036",
    Right (ObjectPacket (Symbol '/' '>')
           "LEADER   " (49.05833333333333,-72.02916666666667) (DHMZulu (9,23,45)) "088/036")),
   (";LEADER   *092345z/5L!!<*e7>7P[ ",
-   Right (ObjectPacket (Symbol ';' '7')
-          "LEADER   " (61.85929288103201,-178.82142988401947) (DHMZulu (9,23,45)) "[ ")),
+   Right (ObjectPacket (Symbol '/' '>')
+          "LEADER   " (49.5,-72.75000393777269) (DHMZulu (9,23,45)) " ")),
   (")AID #2!4903.50N/07201.75WA",
     Right (ItemPacket (Symbol '/' 'A') "AID #2" (49.05833333333333,-72.02916666666667) "")),
   (")G/WB4APR!53  .  N\\002  .  Wd", Right (ItemPacket (Symbol '\\' 'd') "G/WB4APR" (53.5,-2.5) "")),
-  (")MOBIL!\\5L!!<*e79 sT", Right (ItemPacket (Symbol ')' '7')
-                                    "MOBIL" (-27.162446249402777,-178.82142988401947) "T")),
+  (")MOBIL!\\5L!!<*e79 sT", Right (ItemPacket (Symbol '\\' '9')
+                                    "MOBIL" (49.5,-72.75000393777269) "")),
   ("_10090556c220s004g005t077r000p000P000h50b09900wRSW",
    Right (WeatherPacket (Just (MDHM (10,9,5,56))) Nothing
           [WindDir 220,WindSpeed 4,WindGust 5,Temp 77,RainLastHour 0,
@@ -236,11 +236,13 @@ testMegaParser =
   (":OH7LZB   :Testing, 1 2 3", Right (MessagePacket (raddr "OH7LZB")
                                        (Message' "Testing, 1 2 3") "")),
   (":OH7LZB   :ack1", Right (MessagePacket (raddr "OH7LZB") MessageACK "1")),
-  (":OH7LZB   :rej1", Right (MessagePacket (raddr "OH7LZB") MessageNAK "1"))
+  (":OH7LZB   :rej1", Right (MessagePacket (raddr "OH7LZB") MessageNAK "1")),
+
+  ("!I0-X;T_Wv&{-Aigate testing",
+   Right (PositionPacket PositionNoTSNoMsg (Symbol 'I' '&')
+          (60.052010101699544,24.504507437140035) Nothing PosENone "igate testing"))
 
   ]
-
-
 
 tests :: [TestTree]
 tests = [

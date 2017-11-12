@@ -435,12 +435,12 @@ data APRSPacket = PositionPacket PacketType Symbol (Double, Double) (Maybe Times
 
 megaParser :: A.Parser APRSPacket
 megaParser = parseWeatherPacket
-             <|> parsePositionPacket
              <|> parseObjectPacket
              <|> parseItemPacket
              <|> parseStatusPacket
              <|> parseMessagePacket
              <|> parseTelemetry
+             <|> parsePositionPacket
 
 {-
 |       | No MSG | MSG |
@@ -499,9 +499,18 @@ parsePosUncompressed' = do
     rz = read :: String -> Double
 
 
+{-
+Note: There is one exception to the requirement for the Data Type Identifier
+to be the first character in the Information field — this is the Position without
+Timestamp (indicated by the ! DTI). The ! character may occur anywhere
+up to and including the 40th character position in the Information field. This
+variability is required to support X1J TNC digipeaters which have a string of
+unmodifiable text at the beginning of the field.
+-}
+
 parsePositionPacket :: A.Parser APRSPacket
 parsePositionPacket = do
-  pre <- A.satisfy (`elem` ['!', '=', '/', '@'])
+  pre <- A.satisfy (`elem` ['!', '=', '/', '@']) <|> bangjunk
   ts <- maybeTS pre
   (sym, Position (lat,lon,_)) <- parsePosition' pre
   posE <- parsePosExtension
@@ -513,6 +522,12 @@ parsePositionPacket = do
     maybeTS '!' = pure Nothing
     maybeTS '=' = pure Nothing
     maybeTS _ = Just <$> parseTimestamp
+
+    bangjunk :: A.Parser Char
+    bangjunk = do
+      pre <- A.takeTill (== '!')
+      guard $ Data.Text.length pre <= 40
+      A.char '!'
 
 parseObjectPacket :: A.Parser APRSPacket
 parseObjectPacket = do

@@ -96,7 +96,6 @@ megaSkip x = return $ "SKIPPED " ++ (show.length) x
 megaParserTest :: PacketType -> [FAPTest] -> IO String
 megaParserTest (InvalidPacket '$') x = megaSkip x
 megaParserTest (InvalidPacket '\'') x = megaSkip x
-megaParserTest (InvalidPacket 'h') x = megaSkip x
 megaParserTest CurrentMicE x = megaSkip x
 megaParserTest _ fs = let parsed = map (\f -> case readEither (src f) :: Either String Frame of
                                                 Left e -> error (show e)

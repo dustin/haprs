@@ -117,7 +117,7 @@ instance Show Address where
 parseAddr :: A.Parser Address
 parseAddr = do
   c <- A.takeWhile (A.inClass "A-Z0-9")
-  ss <- (A.string "-" >> A.takeWhile (A.inClass "A-Z0-9")) <|> pure ""
+  ss <- ("-" *> A.takeWhile (A.inClass "A-Z0-9")) <|> pure ""
   either fail return $ address c ss
 
 instance Read Address where
@@ -272,11 +272,11 @@ data Frame = Frame Address Address [Text] Body
 parseFrame :: A.Parser Frame
 parseFrame = do
   src <- parseAddr
-  _ <- A.string ">"
+  _ <- A.char '>'
   dest <- parseAddr
   _ <- A.string "," <|> pure "" -- maybe comma
   path <- A.sepBy (A.takeWhile (`notElem` [',', ':'])) (A.char ',')
-  _ <- A.string ":"
+  _ <- A.char ':'
   bod <- A.takeText
   return $ Frame src dest path (Body bod)
 
@@ -406,7 +406,7 @@ parsePosUncompressed' = do
       cM <- replicateM n A.digit A.<?> (lbl ++ "first digits")
       cm <- A.many' A.digit A.<?> (lbl ++ "second digits")
       cs1 <- A.many' A.space A.<?> (lbl ++ "first optional spaces")
-      _ <- A.string "." A.<?> (lbl ++ "decimal")
+      _ <- A.char '.' A.<?> (lbl ++ "decimal")
       cd <- A.many' A.digit A.<?> (lbl ++ "decimal digits")
       cs2 <- A.many' A.space A.<?> (lbl ++ "second optional space")
       cdir <- A.satisfy (`elem` ['N', 'S', 'E', 'W']) A.<?> (lbl ++ "direction")
@@ -552,5 +552,5 @@ parseTelemetry = do
     parseSeq :: A.Parser Text
     parseSeq = ("MIC" *> (A.string "," <|> pure "") >> pure "MIC") <|> do
       s <- replicateM 3 A.anyChar
-      _ <- A.string ","
+      _ <- A.char ','
       return (fromString s)

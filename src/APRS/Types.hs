@@ -8,7 +8,6 @@ module APRS.Types
     , Similar
     , (≈)
     , Frame(..)
-    , Body(..)
     , Position(..)
     , Timestamp(..)
     , WeatherParam(..)
@@ -127,10 +126,6 @@ callPass (Address a _) =
 instance Similar Address where
   (≈) (Address a _) (Address b _) = a == b
 
-newtype Body = Body Text deriving (Eq)
-
-instance Show Body where show (Body x) = unpack x
-
 b91chars :: String
 b91chars = "[!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\\^_`abcdefghijklmnopqrstuvwxyz{]"
 
@@ -215,7 +210,7 @@ parseWeather :: A.Parser [WeatherParam]
 parseWeather = A.many1 parseWParam
 
 -- Source Dest Path Body
-data Frame = Frame Address Address [Text] Body
+data Frame = Frame Address Address [Text] Text
            deriving (Eq)
 
 parseFrame :: A.Parser Frame
@@ -227,14 +222,14 @@ parseFrame = do
   path <- A.sepBy (A.takeWhile (`notElem` [',', ':'])) (A.char ',')
   _ <- A.char ':'
   bod <- A.takeText
-  return $ Frame src dest path (Body bod)
+  return $ Frame src dest path bod
 
 instance Read Frame where
   readsPrec _ x = either error (\f -> [(f,"")]) $ A.parseOnly parseFrame (fromString x)
 
 instance Show Frame where
   show (Frame s d p b) =
-    show s ++ ">" ++ show d ++ "," ++ (unpack.intercalate ",") p ++ ":" ++ show b
+    show s ++ ">" ++ show d ++ "," ++ (unpack.intercalate ",") p ++ ":" ++ unpack b
 
 decodeBase91 :: String -> Int
 decodeBase91 s@[_,_,_,_] =

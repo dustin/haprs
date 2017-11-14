@@ -100,7 +100,7 @@ megaParserTest _ fs = let parsed = map (\f -> case readEither (src f) :: Either 
                                                 Left e -> error (show e)
                                                 Right f' -> (f,f')) fs in
                         do
-                          assess <- foldM (\n (_f, _frame@(Frame _s _d _ (Body b))) -> do
+                          assess <- foldM (\n (_f, _frame@(Frame _s _d _ b)) -> do
                                               let bodyP = A.parseOnly megaParser b
                                               assertBool (show b) $ isRight bodyP
                                               return $ n + 1
@@ -113,15 +113,16 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                   Left e -> error (show e)
                                   Right f' -> (f,f')) fs in
                do
-                 asses <- foldM (\n (f, (Frame s d _ b@(Body b'))) -> do
+                 asses <- foldM (\n (f, (Frame s d _ b)) -> do
                                     assertMaybeEqual "src" f srcCallsign s
                                     assertMaybeEqual "dst" f dstCallsign d
-                                    assertMaybeEqual "body" f FAPTests.body b
+                                    assertEqual ("body: " ++ unpack b) (fromJust (FAPTests.body =<< result f))
+                                      (unpack b)
 
                                     let res = (fromJust.result) f
                                     let wantpos = isJust $ latitude res
                                     pn <- if not wantpos then return 0 else do
-                                      let (Right mparsed) = A.parseOnly megaParser b'
+                                      let (Right mparsed) = A.parseOnly megaParser b
                                       let pos = position mparsed
                                       let (Just (Position (plat, plon, vel))) = pos
                                       let elat = (fromMaybe 0.latitude) res
@@ -143,7 +144,7 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                       return (2 + vn)
 
                                     let wantmsg = fapmsg res
-                                    let gotmsg = either (const Nothing) Just (A.parseOnly megaParser b')
+                                    let gotmsg = either (const Nothing) Just (A.parseOnly megaParser b)
                                     mn <- if not (isJust gotmsg && isJust wantmsg) then return 0 else do
                                       let (Just (MessagePacket rcpt (Message t) msgid)) = gotmsg
                                       -- assertMaybeEqual ("msg sender: " ++ show b) f srcCallsign sndr

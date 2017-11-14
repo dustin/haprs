@@ -103,7 +103,7 @@ instance Arbitrary Frame where
     src <- arbitrary ::Gen Address
     dst <- arbitrary ::Gen Address
     msg <- arbitrary ::Gen String
-    return $ Frame src dst ["WIDE1-1", "WIDE2-1"] (Body (fromString msg))
+    return $ Frame src dst ["WIDE1-1", "WIDE2-1"] (fromString msg)
 
 rframe :: String -> Frame
 rframe = read

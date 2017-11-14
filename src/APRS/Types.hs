@@ -173,6 +173,8 @@ parseTimestamp = dhmlocal <|> dhmzulu <|> hms <|> mdhm
 
 -- data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
 -- lon, lat, velocity
+-- TODO: Perhaps stuff some extensions in here to cover PosExtension
+-- as well as compression type and ambiguity.
 newtype Position = Position (Double, Double, PosExtension) deriving (Eq, Show)
 
 data WeatherParam = WindDir Int
@@ -253,9 +255,9 @@ decodeBase91 _ = 0
 
 data PosExtension = PosECourseSpeed Int Double
                   | PosEPHG Int Int Int Directivity
-                  | PosERNG
-                  | PosEDFS
-                  | PosETypeDesc
+                  | PosERNG -- TODO
+                  | PosEDFS -- TODO
+                  | PosETypeDesc -- TODO
                   | PosENone
                   deriving (Show, Eq)
 

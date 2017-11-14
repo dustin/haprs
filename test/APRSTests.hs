@@ -230,7 +230,14 @@ testMegaParser =
 
   ("!I0-X;T_Wv&{-Aigate testing",
    Right (PositionPacket PositionNoTSNoMsg (Symbol 'I' '&')
-          (Position (60.052010101699544,24.504507437140035,PosENone)) Nothing "igate testing"))
+          (Position (60.052010101699544,24.504507437140035,PosENone)) Nothing "igate testing")),
+
+  -- This came from the FAP samples, but from everything I can find,
+  -- the FAP sample has interepreted the data incorrectly.
+  ("!!00000066013D000028710166--------0158053201200210",
+   Right (WeatherPacket Nothing Nothing
+          [WindSpeed 0,WindDir 66,RainLast24Hours 0,Baro 2871,RainToday 120] ""))
+
 
   ]
 

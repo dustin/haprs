@@ -35,10 +35,12 @@ import Control.Monad (replicateM, replicateM_, guard)
 import Data.Bits (xor, (.&.), shiftL)
 import Data.Char (digitToInt)
 import Data.Either (either)
+import Data.Maybe (catMaybes)
 import Data.Int (Int16)
 import Data.Word (Word8)
 import Data.String (fromString)
 import Data.Text (Text, any, all, length, intercalate, unpack)
+import Text.Read (readMaybe)
 import Numeric (readInt)
 import Prelude hiding (any)
 import qualified Data.Attoparsec.Text as A
@@ -431,7 +433,45 @@ parseItemPacket = do
 -- Examples that aren't recognized properly:
 --   @092345z/5L!!<*e7 _7P[g005t077r000p000P000h50b09900wRSW
 parseWeatherPacket :: A.Parser APRSPacket
-parseWeatherPacket = do
+parseWeatherPacket = parseUltimeter <|> parseStandardWeather
+
+{-
+1. Wind Speed (0.1 kph)
+2. Wind Direction (0-255)
+3. Outdoor Temp (0.1 deg F)
+4. Rain* Long Term Total (0.01 inches)
+5. Barometer (0.1 mbar)
+6. Indoor Temp (0.1 deg F)
+7. Outdoor Humidity (0.1%)
+8. Indoor Humidity (0.1%)
+9. Date (day of year)     -- TODO
+10. Time (minute of day)  -- TODO
+11. Today's Rain Total (0.01 inches)*
+12. 1 Minute Wind Speed Average (0.1kph)*
+-}
+
+
+-- This is data logger mode.  There's also a || for packet mode.  See
+-- http://www.peetbros.com/shop/custom.aspx?recid=29
+-- TODO:  Ensure consistent units
+parseUltimeter :: A.Parser APRSPacket
+parseUltimeter = do
+  _ <- A.string "!!"
+  vals <- replicateM 12 aValue
+  let funs = [(Just.)WindSpeed, (Just.)WindDir, (Just.)Temp, (Just.)RainLast24Hours,
+              (Just.)Baro, ignore, (Just.)Humidity, ignore, ignore, ignore,
+              (Just.)RainToday, ignore]
+  let params = zipWith (<$>) funs vals
+  return $ WeatherPacket Nothing Nothing (catMaybes.catMaybes $ params) ""
+
+  where aValue :: A.Parser (Maybe Int)
+        aValue = do
+          digs <- replicateM 4 (A.satisfy $ A.inClass ("A-F0-9-"))
+          return $ readMaybe digs
+        ignore = const Nothing
+
+parseStandardWeather :: A.Parser APRSPacket
+parseStandardWeather = do
   c <- A.satisfy (`elem` ['_', '/', '!', '@', '='])
   ts <- (parseTimestamp >>= \t -> return (Just t)) <|> pure Nothing
   pos <- if c `elem` ['_', '='] then pure Nothing else ppos

@@ -350,11 +350,11 @@ megaParser = parseWeatherPacket
 | TS    | /      | @   |
 -}
 
-parsePosition' :: A.Parser (Symbol, Position)
-parsePosition' = parsePosUncompressed' <|> parsePosCompressed'
+parsePosition :: A.Parser (Symbol, Position)
+parsePosition = parsePosUncompressed <|> parsePosCompressed
 
-parsePosCompressed' :: A.Parser (Symbol, Position)
-parsePosCompressed' = do
+parsePosCompressed :: A.Parser (Symbol, Position)
+parsePosCompressed = do
   tbl <- A.anyChar
   b91a <- parseB91Seg A.<?> "first b91 seg"
   b91b <- parseB91Seg A.<?> "second b91 seg"
@@ -375,8 +375,8 @@ parsePosCompressed' = do
     pcvel _ = PosENone
 
 
-parsePosUncompressed' :: A.Parser (Symbol, Position)
-parsePosUncompressed' = do
+parsePosUncompressed :: A.Parser (Symbol, Position)
+parsePosUncompressed = do
   lat <- parseDir "lat " 2
   tbl <- A.satisfy (A.inClass "0-9/\\A-Za-j") A.<?> "lat/lon separator (tbl)"
   lon <- parseDir "lon " 3
@@ -424,7 +424,7 @@ parsePositionPacket :: A.Parser APRSPacket
 parsePositionPacket = do
   pre <- A.satisfy (`elem` ['!', '=', '/', '@']) <|> bangjunk
   ts <- maybeTS pre
-  (sym, Position (lat,lon,posE)) <- parsePosition'
+  (sym, Position (lat,lon,posE)) <- parsePosition
   com <- A.takeText
   return $ PositionPacket (identifyPacket pre) sym (lat,lon) ts posE com
 
@@ -446,7 +446,7 @@ parseObjectPacket = do
   name <- replicateM 9 A.anyChar
   _objstate <- A.satisfy (`elem` ['_', '*']) -- killed, live
   ts <- parseTimestamp
-  (sym, Position (lat,lon,_)) <- parsePosition'
+  (sym, Position (lat,lon,_)) <- parsePosition
   comment <- A.takeText
   return $ ObjectPacket sym (fromString name) (lat, lon) ts comment
 
@@ -456,7 +456,7 @@ parseItemPacket = do
   name <- A.takeTill (\c -> c == '_' || c == '!')
   guard $ Data.Text.length name >= 3 && Data.Text.length name <= 9
   _objstate <- A.satisfy (`elem` ['_', '!']) -- killed, live
-  (sym, Position (lat,lon,_)) <- parsePosition'
+  (sym, Position (lat,lon,_)) <- parsePosition
   comment <- A.takeText
   return $ ItemPacket sym name (lat, lon) comment
 
@@ -475,7 +475,7 @@ parseWeatherPacket = do
   where
     ppos :: A.Parser (Maybe (Double, Double, PosExtension))
     ppos = do
-      (_, Position (lat,lon,ext)) <- parsePosition'
+      (_, Position (lat,lon,ext)) <- parsePosition
       return $ Just (lat,lon,ext)
 
     wind :: A.Parser (Int, Int)

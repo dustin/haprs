@@ -479,7 +479,7 @@ parseUltimeter = do
 parseStandardWeather :: A.Parser APRSPacket
 parseStandardWeather = do
   c <- A.satisfy (`elem` ['_', '/', '!', '@', '='])
-  ts <- (parseTimestamp >>= \t -> return (Just t)) <|> pure Nothing
+  ts <- (parseTimestamp >>= pure.Just) <|> pure Nothing
   pos <- if c `elem` ['_', '='] then pure Nothing else ppos
   _w <- wind <|> pure (0,0) -- TODO:  Do something with this parsed wind
   wp <- parseWeather
@@ -502,7 +502,7 @@ parseStandardWeather = do
 parseStatusPacket :: A.Parser APRSPacket
 parseStatusPacket = do
   _ <- A.char '>'
-  ts <- (parseTimestamp >>= \t -> return (Just t)) <|> pure Nothing
+  ts <- (parseTimestamp >>= pure.Just) <|> pure Nothing
   msg <- A.many1 (A.satisfy (`notElem` ['|', '~']))
   return $ StatusPacket ts (fromString msg)
 

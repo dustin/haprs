@@ -155,7 +155,6 @@ data Timestamp = DHMLocal (Int, Int, Int)
                | DHMZulu (Int, Int, Int)
                | HMS (Int, Int, Int)
                | MDHM (Int, Int, Int, Int)
-               | Timeless
   deriving (Show, Eq)
 
 parseTimestamp :: A.Parser Timestamp

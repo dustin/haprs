@@ -113,7 +113,7 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                   Left e -> error (show e)
                                   Right f' -> (f,f')) fs in
                do
-                 asses <- foldM (\n (f, (Frame s d _ b)) -> do
+                 asses <- foldM (\n (f, Frame s d _ b) -> do
                                     assertMaybeEqual "src" f srcCallsign s
                                     assertMaybeEqual "dst" f dstCallsign d
                                     assertEqual ("body: " ++ unpack b) (fromJust (FAPTests.body =<< result f))

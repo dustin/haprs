@@ -33,12 +33,12 @@ must = either undefined id
 newtype ArbitraryCall = ArbitraryCall T.Text deriving Show
 
 instance Arbitrary ArbitraryCall where
-  arbitrary = pure.ArbitraryCall =<< arbitraryText addrChars (1, 12)
+  arbitrary = ArbitraryCall <$> arbitraryText addrChars (1, 12)
 
 newtype ArbitrarySSID = ArbitrarySSID T.Text deriving Show
 
 instance Arbitrary ArbitrarySSID where
-  arbitrary = pure.ArbitrarySSID =<< arbitraryText addrChars (0, 6)
+  arbitrary = ArbitrarySSID <$> arbitraryText addrChars (0, 6)
 
 instance Arbitrary Address where
   arbitrary = do

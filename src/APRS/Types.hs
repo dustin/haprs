@@ -468,11 +468,11 @@ parseUltimeter = do
               (Just.)Baro, ignore, (Just.)Humidity, ignore, ignore, ignore,
               (Just.)RainToday, ignore]
   let params = zipWith (=<<) funs vals
-  return $ WeatherPacket Nothing Nothing (catMaybes $ params) ""
+  return $ WeatherPacket Nothing Nothing (catMaybes params) ""
 
   where aValue :: A.Parser (Maybe Int)
         aValue = do
-          digs <- replicateM 4 (A.satisfy $ A.inClass ("A-F0-9-"))
+          digs <- replicateM 4 (A.satisfy $ A.inClass "A-F0-9-")
           return $ readMaybe digs
         ignore = const Nothing
 

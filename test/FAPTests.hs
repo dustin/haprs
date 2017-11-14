@@ -121,9 +121,11 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
 
                                     let res = (fromJust.result) f
                                     let wantpos = isJust $ latitude res
+                                    let mparsed = A.parseOnly megaParser b
+                                    assertEqual ("pos: want v. got: " ++ unpack b) wantpos (haspos mparsed)
                                     pn <- if not wantpos then return 0 else do
-                                      let (Right mparsed) = A.parseOnly megaParser b
-                                      let pos = position mparsed
+                                      let (Right mparsed') = mparsed
+                                      let pos = position mparsed'
                                       let (Just (Position (plat, plon, vel))) = pos
                                       let elat = (fromMaybe 0.latitude) res
                                       let elon = (fromMaybe 0.longitude) res
@@ -144,7 +146,7 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                       return (2 + vn)
 
                                     let wantmsg = fapmsg res
-                                    let gotmsg = either (const Nothing) Just (A.parseOnly megaParser b)
+                                    let gotmsg = either (const Nothing) Just mparsed
                                     mn <- if not (isJust gotmsg && isJust wantmsg) then return 0 else do
                                       let (Just (MessagePacket rcpt (Message t) msgid)) = gotmsg
                                       -- assertMaybeEqual ("msg sender: " ++ show b) f srcCallsign sndr
@@ -155,10 +157,12 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
 
                                       return 3
 
-                                    return $ n + 3 + pn + mn
+                                    return $ n + 4 + pn + mn
                                 ) (0::Int) parsed
                  return $ show asses ++ " assertions run"
   where assertMaybeEqual lbl f a b = assertEqual lbl (fromJust (a =<< result f)) (show b)
+        haspos (Right x) = isJust $ position x
+        haspos _ = False
 
 tests :: IO TestTree
 tests = do

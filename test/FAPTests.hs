@@ -4,7 +4,6 @@ module FAPTests (tests) where
 
 import APRS.Types
 
-import Control.Exception (catch, SomeException, evaluate)
 import Control.Monad (foldM)
 import Data.Aeson
 import Data.Maybe
@@ -114,15 +113,14 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                   Left e -> error (show e)
                                   Right f' -> (f,f')) fs in
                do
-                 asses <- foldM (\n (f, frame@(Frame s d _ b)) -> do
+                 asses <- foldM (\n (f, frame@(Frame s d _ b@(Body b'))) -> do
                                     assertMaybeEqual "src" f srcCallsign s
                                     assertMaybeEqual "dst" f dstCallsign d
                                     assertMaybeEqual "body" f FAPTests.body b
 
                                     let res = (fromJust.result) f
-                                    pos <- catch (evaluate $ position b) (\e -> do
-                                                                             let _ = (e :: SomeException)
-                                                                             return Nothing)
+                                    let (Right mparsed) = A.parseOnly megaParser b'
+                                    let pos = position mparsed
                                     let wantpos = isJust $ latitude res
                                     pn <- if not wantpos then return 0 else do
                                       let (Just (Position (plat, plon, vel))) = pos

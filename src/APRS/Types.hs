@@ -15,7 +15,6 @@ module APRS.Types
     , Timestamp(..)
     , WeatherParam(..)
     , message
-    , position
     , identifyPacket
     , callPass
     , decodeBase91
@@ -25,7 +24,7 @@ module APRS.Types
     , Symbol(..)
     , Directivity(..)
     , MessageInfo(..)
-    , position'
+    , position
     -- parsers
     , parseAddr
     , parseFrame
@@ -33,7 +32,6 @@ module APRS.Types
     , parseWeather
     , parseMessage
     , megaParser
-    , findParse
     -- For testing
     ) where
 
@@ -41,12 +39,11 @@ import Control.Applicative ((<|>))
 import Control.Monad (replicateM, replicateM_, guard)
 import Data.Bits (xor, (.&.), shiftL)
 import Data.Char (digitToInt)
-import Data.Either (either, rights)
-import Data.Maybe (isJust)
+import Data.Either (either)
 import Data.Int (Int16)
 import Data.Word (Word8)
 import Data.String (fromString)
-import Data.Text (Text, any, all, length, intercalate, unpack, tails)
+import Data.Text (Text, any, all, length, intercalate, unpack)
 import Numeric (readInt)
 import Prelude hiding (any)
 import qualified Data.Attoparsec.Text as A
@@ -154,20 +151,12 @@ posamb 3 = 5 / 60
 posamb 4 = 0.5
 posamb _ = error "Invalid ambiguity"
 
-position' :: APRSPacket -> Maybe (Double, Double, PosExtension)
-position' (PositionPacket _ _ (lat,lon) _ ext _) = Just (lat, lon, ext)
-position' (ObjectPacket _ _ (lat,lon) _ _)       = Just (lat, lon, PosENone)
-position' (ItemPacket _ _ (lat,lon) _)           = Just (lat, lon, PosENone)
-position' (WeatherPacket _ (Just (lat,lon,ext)) _ _) = Just (lat, lon, ext)
-position' _                                      = Nothing
-
-parsePosition :: A.Parser Position
-parsePosition = do
-  parsed <- megaParser
-  let loc = position' parsed
-  guard $ isJust loc
-  let (Just (lat,lon,ext)) = loc
-  return $ Position (lat, lon, ext)
+position :: APRSPacket -> Maybe Position
+position (PositionPacket _ _ (lat,lon) _ ext _)     = Just $ Position (lat, lon, ext)
+position (ObjectPacket _ _ (lat,lon) _ _)           = Just $ Position (lat, lon, PosENone)
+position (ItemPacket _ _ (lat,lon) _)               = Just $ Position (lat, lon, PosENone)
+position (WeatherPacket _ (Just (lat,lon,ext)) _ _) = Just $ Position (lat, lon, ext)
+position _                                          = Nothing
 
 data Timestamp = DHMLocal (Int, Int, Int)
                | DHMZulu (Int, Int, Int)
@@ -198,22 +187,12 @@ instance Show Velocity where
 -- lon, lat, velocity
 newtype Position = Position (Double, Double, PosExtension) deriving (Eq, Show)
 
-position :: Body -> Maybe Position
-position (Body bt)
-  | Data.Text.length bt < 6 = Nothing
-  | otherwise = findParse parsePosition bt
-
 data Message = Message { msgSender :: Address
                        , msgRecipient :: Address
                        , msgBody :: Text
                        , msgID :: Text
                        }
                deriving (Show)
-
-findParse :: A.Parser a -> Text -> Maybe a
-findParse p s = case rights $ map (A.parseOnly p) $ Data.Text.tails s of
-                  [] -> Nothing
-                  (x:_) -> Just x
 
 parseMessage :: Address -> A.Parser Message
 parseMessage s = do

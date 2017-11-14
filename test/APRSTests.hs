@@ -123,14 +123,6 @@ propValidAddress a s
   | otherwise = collect "other" $ isRight addr
   where addr = address (fromString a) (fromString s)
 
-testBadPositions :: IO ()
-testBadPositions = do
-  assertEqual "empty" (position (Body "")) Nothing
-  assertEqual "!" (position (Body "!")) Nothing
-  assertEqual "x" (position (Body "x")) Nothing
-  assertEqual "bad new pu" (position (Body "!12345678")) Nothing
-  assertEqual "bad new pc" (position (Body "!x2345678")) Nothing
-
 testVelocityPrinting :: Assertion
 testVelocityPrinting = assertEqual "vel" "23.0 kph @273°" (show $ Velocity (273, 23))
 
@@ -255,7 +247,6 @@ tests = [
   testProperty "frame round trips" (prop_roundtrips :: Frame -> Bool),
   localOption (QC.QuickCheckTests 1000) $ testProperty "address validation" propValidAddress,
   testGroup "base91" testBase91,
-  testCase "bad positions" testBadPositions,
   testCase "no dup packet types" $ testNoDupMapping (identifyPacket.chr.fromIntegral :: Word8 -> PacketType),
 
   testCase "velocity prints" testVelocityPrinting,

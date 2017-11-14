@@ -151,11 +151,11 @@ posamb 4 = 0.5
 posamb _ = error "Invalid ambiguity"
 
 position :: APRSPacket -> Maybe Position
-position (PositionPacket _ _ (lat,lon) _ ext _)     = Just $ Position (lat, lon, ext)
-position (ObjectPacket _ _ (lat,lon) _ _)           = Just $ Position (lat, lon, PosENone)
-position (ItemPacket _ _ (lat,lon) _)               = Just $ Position (lat, lon, PosENone)
-position (WeatherPacket _ (Just (lat,lon,ext)) _ _) = Just $ Position (lat, lon, ext)
-position _                                          = Nothing
+position (PositionPacket _ _ pos _ _)     = Just $ pos
+position (ObjectPacket _ _ (lat,lon) _ _) = Just $ Position (lat, lon, PosENone)
+position (ItemPacket _ _ (lat,lon) _)     = Just $ Position (lat, lon, PosENone)
+position (WeatherPacket _ mpos _ _)       = mpos
+position _                                = Nothing
 
 data Timestamp = DHMLocal (Int, Int, Int)
                | DHMZulu (Int, Int, Int)
@@ -320,10 +320,10 @@ data MessageInfo = Message' Text
                    deriving (Show, Eq)
 
 -- TODO:  Include extensions from page 27 in position packets
-data APRSPacket = PositionPacket PacketType Symbol (Double, Double) (Maybe Timestamp) PosExtension Text
+data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Text
                 | ObjectPacket Symbol Text (Double, Double) Timestamp Text
                 | ItemPacket Symbol Text (Double, Double) Text
-                | WeatherPacket (Maybe Timestamp) (Maybe (Double, Double, PosExtension)) [WeatherParam] Text
+                | WeatherPacket (Maybe Timestamp) (Maybe Position) [WeatherParam] Text
                 | StatusPacket (Maybe Timestamp) Text
                 | MessagePacket Address MessageInfo Text -- includes sequence number
                 | TelemetryPacket Text [Double] Word8 Text -- seq, vals, bits, comment
@@ -418,9 +418,9 @@ parsePositionPacket :: A.Parser APRSPacket
 parsePositionPacket = do
   pre <- A.satisfy (`elem` ['!', '=', '/', '@']) <|> bangjunk
   ts <- maybeTS pre
-  (sym, Position (lat,lon,posE)) <- parsePosition
+  (sym, pos) <- parsePosition
   com <- A.takeText
-  return $ PositionPacket (identifyPacket pre) sym (lat,lon) ts posE com
+  return $ PositionPacket (identifyPacket pre) sym pos ts com
 
   where
     maybeTS :: Char -> A.Parser (Maybe Timestamp)
@@ -467,10 +467,10 @@ parseWeatherPacket = do
   return $ WeatherPacket ts pos wp rest
 
   where
-    ppos :: A.Parser (Maybe (Double, Double, PosExtension))
+    ppos :: A.Parser (Maybe Position)
     ppos = do
-      (_, Position (lat,lon,ext)) <- parsePosition
-      return $ Just (lat,lon,ext)
+      (_, p) <- parsePosition
+      return $ Just p
 
     wind :: A.Parser (Int, Int)
     wind = do

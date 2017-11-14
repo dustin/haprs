@@ -160,28 +160,28 @@ testMegaParser =
   map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly megaParser a)) [
   ("!4903.50N/07201.75W-Test 001234",
    Right (PositionPacket PositionNoTSNoMsg (Symbol '/' '-')
-          (49.05833333333333,-72.02916666666667) Nothing PosENone "Test 001234")),
+          (Position (49.05833333333333,-72.02916666666667,PosENone)) Nothing "Test 001234")),
   ("!0000.00N\\00000.00W-Unknown pos",
    Right (PositionPacket PositionNoTSNoMsg (Symbol '\\' '-')
-          (0,0) Nothing PosENone "Unknown pos")),
+          (Position (0,0,PosENone)) Nothing "Unknown pos")),
   ("!4903.50N/07201.75W-Test /A=001234", -- TODO:  Parse out the altitude (1234 feet, anywhere in comment)
    Right (PositionPacket PositionNoTSNoMsg (Symbol '/' '-')
-          (49.05833333333333,-72.02916666666667) Nothing PosENone "Test /A=001234")),
+          (Position (49.05833333333333,-72.02916666666667,PosENone)) Nothing "Test /A=001234")),
   ("!49  .  N/072  .  W-",
    Right (PositionPacket PositionNoTSNoMsg (Symbol '/' '-')
-          (49.5,-72.5) Nothing PosENone "")),
+          (Position (49.5,-72.5,PosENone)) Nothing "")),
   ("/092345z4903.50N/07201.75W>Test1234",
    Right (PositionPacket PositionNoMsg (Symbol '/' '>')
-          (49.05833333333333,-72.02916666666667) (Just (DHMZulu (9,23,45))) PosENone "Test1234")),
+          (Position (49.05833333333333,-72.02916666666667,PosENone)) (Just (DHMZulu (9,23,45))) "Test1234")),
   ("@092345/4903.50N/07201.75W>Test1234",
    Right (PositionPacket PositionMsg (Symbol '/' '>')
-          (49.05833333333333,-72.02916666666667) (Just (DHMLocal (9,23,45))) PosENone "Test1234")),
+          (Position (49.05833333333333,-72.02916666666667,PosENone)) (Just (DHMLocal (9,23,45))) "Test1234")),
   ("=/5L!!<*e7> sTComment",
    Right (PositionPacket PositionNoTS (Symbol '/' '>')
-          (49.5,-72.75000393777269) Nothing PosENone "Comment")),
+          (Position (49.5,-72.75000393777269,PosENone)) Nothing "Comment")),
   ("@092345z/5L!!<*e7>{?! ",
    Right (PositionPacket PositionMsg (Symbol '/' '>')
-          (49.5,-72.75000393777269) (Just (DHMZulu (9,23,45))) PosENone " ")),
+          (Position (49.5,-72.75000393777269,PosENone)) (Just (DHMZulu (9,23,45))) " ")),
   (";LEADER   _092345z4903.50N/07201.75W>088/036",
    Right (ObjectPacket (Symbol '/' '>') -- this one eats the 088/036 course/speed
           "LEADER   " (49.05833333333333,-72.02916666666667) (DHMZulu (9,23,45)) "")),
@@ -198,7 +198,7 @@ testMegaParser =
           [WindDir 220,WindSpeed 4,WindGust 5,Temp 77,RainLastHour 0,
            RainLast24Hours 0,RainToday 0,Humidity 50,Baro 9900] "wRSW")),
   ("!4903.50N/07201.75W_220/004g005t077r000p000P000h50b09900wRSW",
-   Right (WeatherPacket Nothing (Just (49.05833333333333,-72.02916666666667,PosECourseSpeed 220 7.408))
+   Right (WeatherPacket Nothing (Just (Position (49.05833333333333,-72.02916666666667,PosECourseSpeed 220 7.408)))
           [WindGust 5,Temp 77,RainLastHour 0,RainLast24Hours 0,
            RainToday 0,Humidity 50,Baro 9900] "wRSW")),
 
@@ -215,10 +215,10 @@ testMegaParser =
   -- Some samples from FAP
   ("!4526.66NI01104.68E#PHG21306/- Lnx APRS Srv - sez. ARI VR EST",
    Right (PositionPacket PositionNoTSNoMsg (Symbol 'I' '#')
-          (45.44433333333333,11.078) Nothing (PosEPHG 4 20 3 Omni) "6/- Lnx APRS Srv - sez. ARI VR EST")),
+          (Position (45.44433333333333,11.078,PosEPHG 4 20 3 Omni)) Nothing "6/- Lnx APRS Srv - sez. ARI VR EST")),
   ("/055816h5134.38N/00019.47W>155/023!W26!/A=000188 14.3V 27C HDOP01.0 SATS09",
    Right (PositionPacket PositionNoMsg (Symbol '/' '>')
-          (51.573,-0.32449999999999996) (Just (HMS (5,58,16))) (PosECourseSpeed 155 42.596000000000004)
+          (Position (51.573,-0.32449999999999996,PosECourseSpeed 155 42.596000000000004)) (Just (HMS (5,58,16)))
           "!W26!/A=000188 14.3V 27C HDOP01.0 SATS09")),
   (":OH7LZB   :Testing, 1 2 3{1", Right (MessagePacket (raddr "OH7LZB")
                                          (Message' "Testing, 1 2 3") "1")),
@@ -229,7 +229,7 @@ testMegaParser =
 
   ("!I0-X;T_Wv&{-Aigate testing",
    Right (PositionPacket PositionNoTSNoMsg (Symbol 'I' '&')
-          (60.052010101699544,24.504507437140035) Nothing PosENone "igate testing"))
+          (Position (60.052010101699544,24.504507437140035,PosENone)) Nothing "igate testing"))
 
   ]
 

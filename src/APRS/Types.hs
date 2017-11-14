@@ -329,7 +329,7 @@ parsePosCompressed = do
   b91b <- parseB91Seg
   sym <- A.anyChar -- symbol code
   vel <- replicateM 2 A.anyChar
-  _ <- A.anyChar -- compression type
+  _ <- A.anyChar -- TODO:  compression type
 
   return (Symbol tbl sym, Position $ unc b91a b91b $ pcvel $ map fromEnum vel)
 
@@ -413,7 +413,7 @@ parseObjectPacket :: A.Parser APRSPacket
 parseObjectPacket = do
   _ <- A.satisfy (== ';')
   name <- replicateM 9 A.anyChar
-  _objstate <- A.satisfy (`elem` ['_', '*']) -- killed, live
+  _objstate <- A.satisfy (`elem` ['_', '*']) -- TODO:  killed, live
   ts <- parseTimestamp
   (sym, Position (lat,lon,_)) <- parsePosition
   comment <- A.takeText
@@ -424,7 +424,7 @@ parseItemPacket = do
   _ <- A.satisfy (== ')')
   name <- A.takeTill (\c -> c == '_' || c == '!')
   guard $ Data.Text.length name >= 3 && Data.Text.length name <= 9
-  _objstate <- A.satisfy (`elem` ['_', '!']) -- killed, live
+  _objstate <- A.satisfy (`elem` ['_', '!']) -- TODO:  killed, live
   (sym, Position (lat,lon,_)) <- parsePosition
   comment <- A.takeText
   return $ ItemPacket sym name (Position (lat, lon, PosENone)) comment
@@ -474,7 +474,7 @@ parseStandardWeather = do
   c <- A.satisfy (`elem` ['_', '/', '!', '@', '='])
   ts <- (parseTimestamp >>= \t -> return (Just t)) <|> pure Nothing
   pos <- if c `elem` ['_', '='] then pure Nothing else ppos
-  _w <- wind <|> pure (0,0)
+  _w <- wind <|> pure (0,0) -- TODO:  Do something with this parsed wind
   wp <- parseWeather
   rest <- A.takeText
   return $ WeatherPacket ts pos wp rest

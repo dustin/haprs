@@ -131,15 +131,16 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                       assertApproxEqual ("lat " ++ show b) ε elat plat
                                       assertApproxEqual ("lon " ++ show b) ε elon plon
 
-                                      let wantvel = isJust (speed res) && isJust vel
+                                      let wantvel = isJust (speed res)
                                       vn <- if not wantvel then return 0 else do
+                                        assertBool (show b) $ isJust vel
                                         let (Velocity (crs, spd)) = fromJust vel
                                         let ecrs = (fromMaybe 0.course) res
                                         let espd = (fromMaybe 0.speed) res
                                         assertApproxEqual ("course " ++ show b) ε ecrs crs
                                         assertApproxEqual ("speed " ++ show b) ε espd spd
 
-                                        return 2
+                                        return 3
 
                                       return (2 + vn)
 

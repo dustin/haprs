@@ -158,7 +158,7 @@ position' :: APRSPacket -> Maybe (Double, Double, PosExtension)
 position' (PositionPacket _ _ (lat,lon) _ ext _) = Just (lat, lon, ext)
 position' (ObjectPacket _ _ (lat,lon) _ _)       = Just (lat, lon, PosENone)
 position' (ItemPacket _ _ (lat,lon) _)           = Just (lat, lon, PosENone)
-position' (WeatherPacket _ (Just (lat,lon)) _ _) = Just (lat, lon, PosENone)
+position' (WeatherPacket _ (Just (lat,lon,ext)) _ _) = Just (lat, lon, ext)
 position' _                                      = Nothing
 
 parsePosition :: A.Parser Position
@@ -353,7 +353,7 @@ data MessageInfo = Message' Text
 data APRSPacket = PositionPacket PacketType Symbol (Double, Double) (Maybe Timestamp) PosExtension Text
                 | ObjectPacket Symbol Text (Double, Double) Timestamp Text
                 | ItemPacket Symbol Text (Double, Double) Text
-                | WeatherPacket (Maybe Timestamp) (Maybe (Double, Double)) [WeatherParam] Text
+                | WeatherPacket (Maybe Timestamp) (Maybe (Double, Double, PosExtension)) [WeatherParam] Text
                 | StatusPacket (Maybe Timestamp) Text
                 | MessagePacket Address MessageInfo Text -- includes sequence number
                 | TelemetryPacket Text [Double] Word8 Text -- seq, vals, bits, comment
@@ -374,31 +374,40 @@ megaParser = parseWeatherPacket
 | TS    | /      | @   |
 -}
 
-parsePosition' :: A.Parser (Symbol, Position)
+parsePosition' :: A.Parser (Symbol, Position, PosExtension)
 parsePosition' = parsePosUncompressed' <|> parsePosCompressed'
 
-parsePosCompressed' :: A.Parser (Symbol, Position)
+parsePosCompressed' :: A.Parser (Symbol, Position, PosExtension)
 parsePosCompressed' = do
   tbl <- A.anyChar
   b91a <- parseB91Seg A.<?> "first b91 seg"
   b91b <- parseB91Seg A.<?> "second b91 seg"
   sym <- A.anyChar -- symbol code
-  _vel <- replicateM 2 A.anyChar
+  vel <- replicateM 2 A.anyChar
   _ <- A.anyChar -- compression type
 
-  return (Symbol tbl sym, Position $ unc b91a b91b)
+  return (Symbol tbl sym, Position $ unc b91a b91b, pcvel $ map fromEnum vel)
 
   where
     unc m1 m2 = (90 - (m1 / 380926), (-180) + (m2 / 190463), Nothing)
+    pcvel :: [Int] -> PosExtension
+    pcvel [a,b]
+      | a >= 33 && a <= 122 = let course = fromIntegral (a - 33) * 4
+                                  speed = 1.852 * ((1.08 ^ (b - 33)) - 1)
+                                  course' = if course == 0 then 360 else course in
+                                PosECourseSpeed course' speed
+    pcvel _ = PosENone
 
-parsePosUncompressed' :: A.Parser (Symbol, Position)
+
+parsePosUncompressed' :: A.Parser (Symbol, Position, PosExtension)
 parsePosUncompressed' = do
   lat <- parseDir "lat " 2
   tbl <- A.satisfy (A.inClass "0-9/\\A-Za-j") A.<?> "lat/lon separator (tbl)"
   lon <- parseDir "lon " 3
   sym <- A.anyChar A.<?> "lat/lon separator (sym)"
+  posE <- parsePosExtension
 
-  return (Symbol tbl sym, Position (lat,lon, Nothing))
+  return (Symbol tbl sym, Position (lat,lon, Nothing), posE)
 
   where
     parseDir :: String -> Int -> A.Parser Double
@@ -439,8 +448,7 @@ parsePositionPacket :: A.Parser APRSPacket
 parsePositionPacket = do
   pre <- A.satisfy (`elem` ['!', '=', '/', '@']) <|> bangjunk
   ts <- maybeTS pre
-  (sym, Position (lat,lon,_)) <- parsePosition'
-  posE <- parsePosExtension
+  (sym, Position (lat,lon,_), posE) <- parsePosition'
   com <- A.takeText
   return $ PositionPacket (identifyPacket pre) sym (lat,lon) ts posE com
 
@@ -462,7 +470,7 @@ parseObjectPacket = do
   name <- replicateM 9 A.anyChar
   _objstate <- A.satisfy (`elem` ['_', '*']) -- killed, live
   ts <- parseTimestamp
-  (sym, Position (lat,lon,_)) <- parsePosition'
+  (sym, Position (lat,lon,_),_) <- parsePosition'
   comment <- A.takeText
   return $ ObjectPacket sym (fromString name) (lat, lon) ts comment
 
@@ -472,7 +480,7 @@ parseItemPacket = do
   name <- A.takeTill (\c -> c == '_' || c == '!')
   guard $ Data.Text.length name >= 3 && Data.Text.length name <= 9
   _objstate <- A.satisfy (`elem` ['_', '!']) -- killed, live
-  (sym, Position (lat,lon,_)) <- parsePosition'
+  (sym, Position (lat,lon,_),_) <- parsePosition'
   comment <- A.takeText
   return $ ItemPacket sym name (lat, lon) comment
 
@@ -489,10 +497,10 @@ parseWeatherPacket = do
   return $ WeatherPacket ts pos wp rest
 
   where
-    ppos :: A.Parser (Maybe (Double, Double))
+    ppos :: A.Parser (Maybe (Double, Double, PosExtension))
     ppos = do
-      (_, Position (lat,lon,_)) <- parsePosition'
-      return $ Just (lat,lon)
+      (_, Position (lat,lon,_),ext) <- parsePosition'
+      return $ Just (lat,lon,ext)
 
     wind :: A.Parser (Int, Int)
     wind = do

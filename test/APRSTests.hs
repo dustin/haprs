@@ -194,8 +194,8 @@ testMegaParser =
    Right (PositionPacket PositionMsg (Symbol '/' '>')
           (49.5,-72.75000393777269) (Just (DHMZulu (9,23,45))) PosENone " ")),
   (";LEADER   _092345z4903.50N/07201.75W>088/036",
-   Right (ObjectPacket (Symbol '/' '>')
-          "LEADER   " (49.05833333333333,-72.02916666666667) (DHMZulu (9,23,45)) "088/036")),
+   Right (ObjectPacket (Symbol '/' '>') -- this one eats the 088/036 course/speed
+          "LEADER   " (49.05833333333333,-72.02916666666667) (DHMZulu (9,23,45)) "")),
   (";LEADER   *092345z/5L!!<*e7>7P[ ",
    Right (ObjectPacket (Symbol '/' '>')
           "LEADER   " (49.5,-72.75000393777269) (DHMZulu (9,23,45)) " ")),
@@ -209,7 +209,7 @@ testMegaParser =
           [WindDir 220,WindSpeed 4,WindGust 5,Temp 77,RainLastHour 0,
            RainLast24Hours 0,RainToday 0,Humidity 50,Baro 9900] "wRSW")),
   ("!4903.50N/07201.75W_220/004g005t077r000p000P000h50b09900wRSW",
-   Right (WeatherPacket Nothing (Just (49.05833333333333,-72.02916666666667))
+   Right (WeatherPacket Nothing (Just (49.05833333333333,-72.02916666666667,PosECourseSpeed 220 7.408))
           [WindGust 5,Temp 77,RainLastHour 0,RainLast24Hours 0,
            RainToday 0,Humidity 50,Baro 9900] "wRSW")),
 

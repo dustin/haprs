@@ -113,16 +113,16 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                   Left e -> error (show e)
                                   Right f' -> (f,f')) fs in
                do
-                 asses <- foldM (\n (f, frame@(Frame s d _ b@(Body b'))) -> do
+                 asses <- foldM (\n (f, (Frame s d _ b@(Body b'))) -> do
                                     assertMaybeEqual "src" f srcCallsign s
                                     assertMaybeEqual "dst" f dstCallsign d
                                     assertMaybeEqual "body" f FAPTests.body b
 
                                     let res = (fromJust.result) f
-                                    let (Right mparsed) = A.parseOnly megaParser b'
-                                    let pos = position mparsed
                                     let wantpos = isJust $ latitude res
                                     pn <- if not wantpos then return 0 else do
+                                      let (Right mparsed) = A.parseOnly megaParser b'
+                                      let pos = position mparsed
                                       let (Just (Position (plat, plon, vel))) = pos
                                       let elat = (fromMaybe 0.latitude) res
                                       let elon = (fromMaybe 0.longitude) res
@@ -142,17 +142,17 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
 
                                       return (2 + vn)
 
-                                    let wantmsg = isJust $ fapmsg res
-                                    let msg = message frame
-                                    mn <- if not (isJust msg && wantmsg) then return 0 else do
-                                      let (Message sndr rcpt bod msgid) = fromJust msg
-                                      assertMaybeEqual ("msg sender: " ++ show b) f srcCallsign sndr
-                                      assertEqual ("msg bod: " ++ show b) (fromJust . fapmsg $ res) (unpack bod)
+                                    let wantmsg = fapmsg res
+                                    let gotmsg = either (const Nothing) Just (A.parseOnly megaParser b')
+                                    mn <- if not (isJust gotmsg && isJust wantmsg) then return 0 else do
+                                      let (Just (MessagePacket rcpt (Message' t) msgid)) = gotmsg
+                                      -- assertMaybeEqual ("msg sender: " ++ show b) f srcCallsign sndr
+                                      assertEqual ("msg bod: " ++ show b) (fromJust . fapmsg $ res) (unpack t)
                                       assertEqual ("msgid: " ++ show b) (fromJust . fapmsgid $ res) (unpack msgid)
                                       -- This is kind of dumb, but there's nothing to compare to in input data
                                       assertBool "rcpt strings" $ show rcpt /= ""
 
-                                      return 4
+                                      return 3
 
                                     return $ n + 3 + pn + mn
                                 ) (0::Int) parsed

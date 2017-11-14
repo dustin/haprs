@@ -10,10 +10,8 @@ module APRS.Types
     , Frame(..)
     , Body(..)
     , Position(..)
-    , Message(..)
     , Timestamp(..)
     , WeatherParam(..)
-    , message
     , identifyPacket
     , callPass
     , decodeBase91
@@ -29,7 +27,6 @@ module APRS.Types
     , parseFrame
     , parseTimestamp
     , parseWeather
-    , parseMessage
     , megaParser
     -- For testing
     ) where
@@ -180,24 +177,6 @@ parseTimestamp = dhmlocal <|> dhmzulu <|> hms <|> mdhm
 -- data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
 -- lon, lat, velocity
 newtype Position = Position (Double, Double, PosExtension) deriving (Eq, Show)
-
-data Message = Message { msgSender :: Address
-                       , msgRecipient :: Address
-                       , msgBody :: Text
-                       , msgID :: Text
-                       }
-               deriving (Show)
-
-parseMessage :: Address -> A.Parser Message
-parseMessage s = do
-  (MessagePacket rcpt mi mid) <- megaParser
-  let mtxt = case mi of
-               (Message' t) -> t
-               _ -> ""
-  return $ Message s rcpt mtxt mid
-
-message :: Frame -> Maybe Message
-message (Frame s _ _ (Body b)) = either (const Nothing) Just $ A.parseOnly (parseMessage s) b
 
 data WeatherParam = WindDir Int
                   | WindSpeed Int

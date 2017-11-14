@@ -10,7 +10,6 @@ module APRS.Types
     , Frame(..)
     , Body(..)
     , Position(..)
-    , Velocity(..)
     , Message(..)
     , Timestamp(..)
     , WeatherParam(..)
@@ -177,11 +176,6 @@ parseTimestamp = dhmlocal <|> dhmzulu <|> hms <|> mdhm
     n x = replicateM x (replicateM 2 A.digit) >>= \digs -> return $ map read digs
     n3 :: Char -> A.Parser (Int, Int, Int)
     n3 ch = n 3 >>= \[a,b,c] -> A.char ch >> pure (a,b,c)
-
-newtype Velocity = Velocity (Double, Double) deriving (Eq)
-
-instance Show Velocity where
-  show (Velocity (course, speed)) = show speed ++ " kph @" ++ (show.round) course ++ "°"
 
 -- data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
 -- lon, lat, velocity

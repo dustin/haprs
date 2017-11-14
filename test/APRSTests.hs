@@ -123,9 +123,6 @@ propValidAddress a s
   | otherwise = collect "other" $ isRight addr
   where addr = address (fromString a) (fromString s)
 
-testVelocityPrinting :: Assertion
-testVelocityPrinting = assertEqual "vel" "23.0 kph @273°" (show $ Velocity (273, 23))
-
 testNoDupMapping :: (Bounded a, Enum a, Show b, Ord b) => (a -> b) -> Assertion
 testNoDupMapping f = case foldr findDup (Right Set.empty) [minBound..] of
                        Left x -> assertString $ "Duplicate value found: " ++ show x
@@ -249,7 +246,6 @@ tests = [
   testGroup "base91" testBase91,
   testCase "no dup packet types" $ testNoDupMapping (identifyPacket.chr.fromIntegral :: Word8 -> PacketType),
 
-  testCase "velocity prints" testVelocityPrinting,
   testGroup "timestamp parsing" testTimestampParser,
   testGroup "weather parsing" testWeatherParser,
   testGroup "mega parser" testMegaParser

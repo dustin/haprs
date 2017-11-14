@@ -145,7 +145,7 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
                                     let wantmsg = fapmsg res
                                     let gotmsg = either (const Nothing) Just (A.parseOnly megaParser b')
                                     mn <- if not (isJust gotmsg && isJust wantmsg) then return 0 else do
-                                      let (Just (MessagePacket rcpt (Message' t) msgid)) = gotmsg
+                                      let (Just (MessagePacket rcpt (Message t) msgid)) = gotmsg
                                       -- assertMaybeEqual ("msg sender: " ++ show b) f srcCallsign sndr
                                       assertEqual ("msg bod: " ++ show b) (fromJust . fapmsg $ res) (unpack t)
                                       assertEqual ("msgid: " ++ show b) (fromJust . fapmsgid $ res) (unpack msgid)

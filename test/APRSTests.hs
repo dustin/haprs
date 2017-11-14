@@ -222,9 +222,9 @@ testMegaParser =
           (Position (51.573,-0.32449999999999996,PosECourseSpeed 155 42.596000000000004)) (Just (HMS (5,58,16)))
           "!W26!/A=000188 14.3V 27C HDOP01.0 SATS09")),
   (":OH7LZB   :Testing, 1 2 3{1", Right (MessagePacket (raddr "OH7LZB")
-                                         (Message' "Testing, 1 2 3") "1")),
+                                         (Message "Testing, 1 2 3") "1")),
   (":OH7LZB   :Testing, 1 2 3", Right (MessagePacket (raddr "OH7LZB")
-                                       (Message' "Testing, 1 2 3") "")),
+                                       (Message "Testing, 1 2 3") "")),
   (":OH7LZB   :ack1", Right (MessagePacket (raddr "OH7LZB") MessageACK "1")),
   (":OH7LZB   :rej1", Right (MessagePacket (raddr "OH7LZB") MessageNAK "1")),
 

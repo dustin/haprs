@@ -293,7 +293,7 @@ parsePosExtension = parseCrsSpd
 
 data Symbol = Symbol Char Char deriving (Show, Eq)
 
-data MessageInfo = Message' Text
+data MessageInfo = Message Text
                  | MessageACK
                  | MessageNAK
                    deriving (Show, Eq)
@@ -492,7 +492,7 @@ parseMessagePacket = do
     parseMsg = do
       mtext <- A.many' (A.satisfy (`notElem` ['{', '|', '~']))
       mid <- ("{" *> A.takeText) <|> pure "" -- message ID is optional
-      return (Message' (fromString mtext), mid)
+      return (Message (fromString mtext), mid)
 
 parseTelemetry :: A.Parser APRSPacket
 parseTelemetry = do

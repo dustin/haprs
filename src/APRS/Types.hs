@@ -461,8 +461,8 @@ parseUltimeter = do
   let funs = [(Just.)WindSpeed, (Just.)WindDir, (Just.)Temp, (Just.)RainLast24Hours,
               (Just.)Baro, ignore, (Just.)Humidity, ignore, ignore, ignore,
               (Just.)RainToday, ignore]
-  let params = zipWith (<$>) funs vals
-  return $ WeatherPacket Nothing Nothing (catMaybes.catMaybes $ params) ""
+  let params = zipWith (=<<) funs vals
+  return $ WeatherPacket Nothing Nothing (catMaybes $ params) ""
 
   where aValue :: A.Parser (Maybe Int)
         aValue = do

@@ -184,15 +184,16 @@ testMegaParser =
           (Position (49.5,-72.75000393777269,PosENone)) (Just (DHMZulu (9,23,45))) " ")),
   (";LEADER   _092345z4903.50N/07201.75W>088/036",
    Right (ObjectPacket (Symbol '/' '>') -- this one eats the 088/036 course/speed
-          "LEADER   " (Position (49.05833333333333,-72.02916666666667,PosENone)) (DHMZulu (9,23,45)) "")),
+          Killed "LEADER   " (Position (49.05833333333333,-72.02916666666667,PosENone)) (DHMZulu (9,23,45)) "")),
   (";LEADER   *092345z/5L!!<*e7>7P[ ",
    Right (ObjectPacket (Symbol '/' '>')
-          "LEADER   " (Position (49.5,-72.75000393777269,PosENone)) (DHMZulu (9,23,45)) " ")),
+          Live "LEADER   " (Position (49.5,-72.75000393777269,PosENone)) (DHMZulu (9,23,45)) " ")),
   (")AID #2!4903.50N/07201.75WA",
-    Right (ItemPacket (Symbol '/' 'A') "AID #2" (Position (49.05833333333333,-72.02916666666667,PosENone)) "")),
-  (")G/WB4APR!53  .  N\\002  .  Wd", Right (ItemPacket (Symbol '\\' 'd') "G/WB4APR"
+    Right (ItemPacket (Symbol '/' 'A') Live "AID #2"
+           (Position (49.05833333333333,-72.02916666666667,PosENone)) "")),
+  (")G/WB4APR!53  .  N\\002  .  Wd", Right (ItemPacket (Symbol '\\' 'd') Live "G/WB4APR"
                                             (Position (53.5,-2.5,PosENone)) "")),
-  (")MOBIL!\\5L!!<*e79 sT", Right (ItemPacket (Symbol '\\' '9')
+  (")MOBIL!\\5L!!<*e79 sT", Right (ItemPacket (Symbol '\\' '9') Live
                                     "MOBIL" (Position (49.5,-72.75000393777269,PosENone)) "")),
   ("_10090556c220s004g005t077r000p000P000h50b09900wRSW",
    Right (WeatherPacket (Just (MDHM (10,9,5,56))) Nothing

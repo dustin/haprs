@@ -20,6 +20,7 @@ module APRS.Types
     , Symbol(..)
     , Directivity(..)
     , MessageInfo(..)
+    , ObjectState(..)
     , position
     -- parsers
     , parseAddr
@@ -146,8 +147,8 @@ posamb _ = error "Invalid ambiguity"
 
 position :: APRSPacket -> Maybe Position
 position (PositionPacket _ _ pos _ _) = Just pos
-position (ObjectPacket _ _ pos _ _)   = Just pos
-position (ItemPacket _ _ pos _)       = Just pos
+position (ObjectPacket _ _ _ pos _ _)   = Just pos
+position (ItemPacket _ _ _ pos _)       = Just pos
 position (WeatherPacket _ mpos _ _)   = mpos
 position _                            = Nothing
 
@@ -296,8 +297,8 @@ data MessageInfo = Message Text
 
 -- TODO:  Include extensions from page 27 in position packets
 data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Text
-                | ObjectPacket Symbol Text Position Timestamp Text
-                | ItemPacket Symbol Text Position Text
+                | ObjectPacket Symbol ObjectState Text Position Timestamp Text
+                | ItemPacket Symbol ObjectState Text Position Text
                 | WeatherPacket (Maybe Timestamp) (Maybe Position) [WeatherParam] Text
                 | StatusPacket (Maybe Timestamp) Text
                 | MessagePacket Address MessageInfo Text -- includes sequence number
@@ -409,25 +410,31 @@ parsePositionPacket = do
       guard $ Data.Text.length pre <= 40
       A.char '!'
 
+data ObjectState = Live | Killed deriving (Show, Eq)
+
+objState :: Char -> ObjectState
+objState '_' = Killed
+objState _ = Live
+
 parseObjectPacket :: A.Parser APRSPacket
 parseObjectPacket = do
   _ <- A.satisfy (== ';')
   name <- replicateM 9 A.anyChar
-  _objstate <- A.satisfy (`elem` ['_', '*']) -- TODO:  killed, live
+  ost <- A.satisfy (`elem` ['_', '*']) -- killed, live
   ts <- parseTimestamp
   (sym, Position (lat,lon,_)) <- parsePosition
   comment <- A.takeText
-  return $ ObjectPacket sym (fromString name) (Position (lat, lon, PosENone)) ts comment
+  return $ ObjectPacket sym (objState ost) (fromString name) (Position (lat, lon, PosENone)) ts comment
 
 parseItemPacket :: A.Parser APRSPacket
 parseItemPacket = do
   _ <- A.satisfy (== ')')
   name <- A.takeTill (\c -> c == '_' || c == '!')
   guard $ Data.Text.length name >= 3 && Data.Text.length name <= 9
-  _objstate <- A.satisfy (`elem` ['_', '!']) -- TODO:  killed, live
+  ost <- A.satisfy (`elem` ['_', '!']) -- killed, live
   (sym, Position (lat,lon,_)) <- parsePosition
   comment <- A.takeText
-  return $ ItemPacket sym name (Position (lat, lon, PosENone)) comment
+  return $ ItemPacket sym (objState ost) name (Position (lat, lon, PosENone)) comment
 
 -- Examples that aren't recognized properly:
 --   @092345z/5L!!<*e7 _7P[g005t077r000p000P000h50b09900wRSW

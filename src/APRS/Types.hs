@@ -481,23 +481,13 @@ parseStandardWeather = do
   c <- A.satisfy (`elem` ['_', '/', '!', '@', '='])
   ts <- (parseTimestamp >>= pure.Just) <|> pure Nothing
   pos <- if c `elem` ['_', '='] then pure Nothing else ppos
-  _w <- wind <|> pure (0,0) -- TODO:  Do something with this parsed wind
   wp <- parseWeather
   rest <- A.takeText
   return $ WeatherPacket ts pos wp rest
 
   where
     ppos :: A.Parser (Maybe Position)
-    ppos = do
-      (_, p) <- parsePosition
-      return $ Just p
-
-    wind :: A.Parser (Int, Int)
-    wind = do
-      wspd <- replicateM 3 A.digit
-      _ <- A.char '/'
-      wdir <- replicateM 3 A.digit
-      return (read wspd, read wdir)
+    ppos = parsePosition >>= \(_, p) -> return $ Just p
 
 parseStatusPacket :: A.Parser APRSPacket
 parseStatusPacket = do

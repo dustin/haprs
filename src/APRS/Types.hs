@@ -27,7 +27,7 @@ module APRS.Types
     , parseFrame
     , parseTimestamp
     , parseWeather
-    , megaParser
+    , bodyParser
     -- For testing
     ) where
 
@@ -305,8 +305,8 @@ data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Te
                 | TelemetryPacket Text [Double] Word8 Text -- seq, vals, bits, comment
                 deriving (Show, Eq)
 
-megaParser :: A.Parser APRSPacket
-megaParser = parseWeatherPacket
+bodyParser :: A.Parser APRSPacket
+bodyParser = parseWeatherPacket
              <|> parseObjectPacket
              <|> parseItemPacket
              <|> parseStatusPacket

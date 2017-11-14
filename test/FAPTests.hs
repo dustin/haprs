@@ -92,16 +92,16 @@ instance FromJSON FAPTest where
 megaSkip :: [a] -> IO String
 megaSkip x = return $ "SKIPPED " ++ (show.length) x
 
-megaParserTest :: PacketType -> [FAPTest] -> IO String
-megaParserTest (InvalidPacket '$') x = megaSkip x
-megaParserTest (InvalidPacket '\'') x = megaSkip x
-megaParserTest CurrentMicE x = megaSkip x
-megaParserTest _ fs = let parsed = map (\f -> case readEither (src f) :: Either String Frame of
+bodyParserTest :: PacketType -> [FAPTest] -> IO String
+bodyParserTest (InvalidPacket '$') x = megaSkip x
+bodyParserTest (InvalidPacket '\'') x = megaSkip x
+bodyParserTest CurrentMicE x = megaSkip x
+bodyParserTest _ fs = let parsed = map (\f -> case readEither (src f) :: Either String Frame of
                                                 Left e -> error (show e)
                                                 Right f' -> (f,f')) fs in
                         do
                           assess <- foldM (\n (_f, _frame@(Frame _s _d _ b)) -> do
-                                              let bodyP = A.parseOnly megaParser b
+                                              let bodyP = A.parseOnly bodyParser b
                                               assertBool (show b) $ isRight bodyP
                                               return $ n + 1
                                           ) (0::Int) parsed
@@ -121,7 +121,7 @@ fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Fr
 
                                     let res = (fromJust.result) f
                                     let wantpos = isJust $ latitude res
-                                    let mparsed = A.parseOnly megaParser b
+                                    let mparsed = A.parseOnly bodyParser b
                                     assertEqual ("pos: want v. got: " ++ unpack b) wantpos (haspos mparsed)
                                     pn <- if not wantpos then return 0 else do
                                       let (Right mparsed') = mparsed
@@ -185,7 +185,7 @@ tests = do
     testCaseInfo "no pos" $ fapTest nopos
     ] ++ map (\cases -> let t = identifyPacket.head.fbody.head $ cases in
                           testCaseInfo ("megaparse " ++ show t) $
-                        megaParserTest t cases) groups)
+                        bodyParserTest t cases) groups)
 
   where
     fapfmt :: Maybe String -> FAPTest -> Bool

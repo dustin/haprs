@@ -157,7 +157,7 @@ testWeatherParser =
 
 testMegaParser :: [TestTree]
 testMegaParser =
-  map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly megaParser a)) [
+  map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly bodyParser a)) [
   ("!4903.50N/07201.75W-Test 001234",
    Right (PositionPacket PositionNoTSNoMsg (Symbol '/' '-')
           (Position (49.05833333333333,-72.02916666666667,PosENone)) Nothing "Test 001234")),

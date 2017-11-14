@@ -151,11 +151,11 @@ posamb 4 = 0.5
 posamb _ = error "Invalid ambiguity"
 
 position :: APRSPacket -> Maybe Position
-position (PositionPacket _ _ pos _ _)     = Just $ pos
-position (ObjectPacket _ _ (lat,lon) _ _) = Just $ Position (lat, lon, PosENone)
-position (ItemPacket _ _ (lat,lon) _)     = Just $ Position (lat, lon, PosENone)
-position (WeatherPacket _ mpos _ _)       = mpos
-position _                                = Nothing
+position (PositionPacket _ _ pos _ _) = Just pos
+position (ObjectPacket _ _ pos _ _)   = Just pos
+position (ItemPacket _ _ pos _)       = Just pos
+position (WeatherPacket _ mpos _ _)   = mpos
+position _                            = Nothing
 
 data Timestamp = DHMLocal (Int, Int, Int)
                | DHMZulu (Int, Int, Int)
@@ -321,8 +321,8 @@ data MessageInfo = Message' Text
 
 -- TODO:  Include extensions from page 27 in position packets
 data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Text
-                | ObjectPacket Symbol Text (Double, Double) Timestamp Text
-                | ItemPacket Symbol Text (Double, Double) Text
+                | ObjectPacket Symbol Text Position Timestamp Text
+                | ItemPacket Symbol Text Position Text
                 | WeatherPacket (Maybe Timestamp) (Maybe Position) [WeatherParam] Text
                 | StatusPacket (Maybe Timestamp) Text
                 | MessagePacket Address MessageInfo Text -- includes sequence number
@@ -442,7 +442,7 @@ parseObjectPacket = do
   ts <- parseTimestamp
   (sym, Position (lat,lon,_)) <- parsePosition
   comment <- A.takeText
-  return $ ObjectPacket sym (fromString name) (lat, lon) ts comment
+  return $ ObjectPacket sym (fromString name) (Position (lat, lon, PosENone)) ts comment
 
 parseItemPacket :: A.Parser APRSPacket
 parseItemPacket = do
@@ -452,7 +452,7 @@ parseItemPacket = do
   _objstate <- A.satisfy (`elem` ['_', '!']) -- killed, live
   (sym, Position (lat,lon,_)) <- parsePosition
   comment <- A.takeText
-  return $ ItemPacket sym name (lat, lon) comment
+  return $ ItemPacket sym name (Position (lat, lon, PosENone)) comment
 
 -- Examples that aren't recognized properly:
 --   @092345z/5L!!<*e7 _7P[g005t077r000p000P000h50b09900wRSW

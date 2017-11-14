@@ -8350,7 +8350,7 @@
         "result": {
             "body": "@011444z/:JF!T/W-_e!bg000t054r000p010P010h65b10073WS 2300 {UIV32N}",
             "comment": "WS 2300 {UIV32N}",
-            "course": 272,
+            "xxx_course": 272,
             "digipeaters": [
                 {
                     "call": "WIDE2-2",
@@ -8374,7 +8374,7 @@
             "messaging": 1,
             "origpacket": "SV4IKL-2>APU25N,WIDE2-2,qAR,SV6EXB-1:@011444z/:JF!T/W-_e!bg000t054r000p010P010h65b10073WS 2300 {UIV32N}",
             "posresolution": 0.291,
-            "speed": 0,
+            "xxx_speed": 0,
             "srccallsign": "SV4IKL-2",
             "symbolcode": "_",
             "symboltable": "/",

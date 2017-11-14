@@ -481,13 +481,18 @@ parseStandardWeather = do
   c <- A.satisfy (`elem` ['_', '/', '!', '@', '='])
   ts <- (parseTimestamp >>= pure.Just) <|> pure Nothing
   pos <- if c `elem` ['_', '='] then pure Nothing else ppos
+  let extra = case pos of
+                (Just (Position (_,_,PosECourseSpeed a b))) -> [WindDir a, WindSpeed (round $ b / 1.852)]
+                _ -> []
   wp <- parseWeather
   rest <- A.takeText
-  return $ WeatherPacket ts pos wp rest
+  return $ WeatherPacket ts (pos' pos) (extra ++ wp) rest
 
   where
     ppos :: A.Parser (Maybe Position)
     ppos = parsePosition >>= \(_, p) -> return $ Just p
+    pos' Nothing = Nothing
+    pos' (Just (Position (a,b,_))) = Just (Position (a,b,PosENone))
 
 parseStatusPacket :: A.Parser APRSPacket
 parseStatusPacket = do

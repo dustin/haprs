@@ -200,8 +200,8 @@ testMegaParser =
           [WindDir 220,WindSpeed 4,WindGust 5,Temp 77,RainLastHour 0,
            RainLast24Hours 0,RainToday 0,Humidity 50,Baro 9900] "wRSW")),
   ("!4903.50N/07201.75W_220/004g005t077r000p000P000h50b09900wRSW",
-   Right (WeatherPacket Nothing (Just (Position (49.05833333333333,-72.02916666666667,PosECourseSpeed 220 7.408)))
-          [WindGust 5,Temp 77,RainLastHour 0,RainLast24Hours 0,
+   Right (WeatherPacket Nothing (Just (Position (49.05833333333333,-72.02916666666667,PosENone)))
+          [WindDir 220, WindSpeed 4,WindGust 5,Temp 77,RainLastHour 0,RainLast24Hours 0,
            RainToday 0,Humidity 50,Baro 9900] "wRSW")),
 
   ("T#MIC199,000,255,073,123,01101001",

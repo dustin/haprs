@@ -106,7 +106,7 @@ instance Arbitrary Frame where
     return $ Frame src dst ["WIDE1-1", "WIDE2-1"] (fromString msg)
 
 rframe :: String -> Frame
-rframe = read
+rframe = must . A.parseOnly parseFrame . fromString
 
 testChristmasMsg :: Assertion
 testChristmasMsg =
@@ -250,7 +250,6 @@ tests = [
   testGroup "addrSimilar" testAddrSimilar,
   testProperty "addrSimilar" propAddrSimilar,
   testCase "frame parsing" testChristmasMsg,
-  testProperty "frame round trips" (prop_roundtrips :: Frame -> Bool),
   localOption (QC.QuickCheckTests 1000) $ testProperty "address validation" propValidAddress,
   testGroup "base91" testBase91,
   testCase "no dup packet types" $ testNoDupMapping (identifyPacket.chr.fromIntegral :: Word8 -> PacketType),

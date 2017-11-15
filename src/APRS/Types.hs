@@ -228,13 +228,6 @@ parseFrame = do
   bod <- A.takeText
   return $ Frame src dest path bod
 
-instance Read Frame where
-  readsPrec _ x = either error (\f -> [(f,"")]) $ A.parseOnly parseFrame (fromString x)
-
-instance Show Frame where
-  show (Frame s d p b) =
-    show s ++ ">" ++ show d ++ "," ++ (unpack.intercalate ",") p ++ ":" ++ unpack b
-
 decodeBase91 :: String -> Int
 decodeBase91 s@[_,_,_,_] =
   foldl (\a (c, i) -> i * ((toEnum . fromEnum $ c) -33) + a) 0 $ zip s [91^x | x <- [3,2..0]]

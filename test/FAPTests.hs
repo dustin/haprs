@@ -7,8 +7,8 @@ import APRS.Types
 import Control.Monad (foldM)
 import Data.Aeson
 import Data.Maybe
+import Data.String (fromString)
 import Data.Text (unpack)
-import Text.Read (readEither)
 import Data.Either (isRight)
 import Data.List (groupBy, sortBy)
 import qualified Data.Attoparsec.Text as A
@@ -96,7 +96,7 @@ bodyParserTest :: PacketType -> [FAPTest] -> IO String
 bodyParserTest (InvalidPacket '$') x = megaSkip x
 bodyParserTest (InvalidPacket '\'') x = megaSkip x
 bodyParserTest CurrentMicE x = megaSkip x
-bodyParserTest _ fs = let parsed = map (\f -> case readEither (src f) :: Either String Frame of
+bodyParserTest _ fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . src $ f) of
                                                 Left e -> error (show e)
                                                 Right f' -> (f,f')) fs in
                         do
@@ -109,7 +109,7 @@ bodyParserTest _ fs = let parsed = map (\f -> case readEither (src f) :: Either 
 
 
 fapTest :: [FAPTest] -> IO String
-fapTest fs = let parsed = map (\f -> case readEither (src f) :: Either String Frame of
+fapTest fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . src $ f) of
                                   Left e -> error (show e)
                                   Right f' -> (f,f')) fs in
                do

@@ -9,7 +9,7 @@ import Data.Aeson
 import Data.Maybe
 import Data.String (fromString)
 import Data.Text (unpack)
-import Data.Either (isRight, lefts, rights)
+import Data.Either (lefts, rights)
 import Data.List (groupBy, sortBy)
 import qualified Data.Attoparsec.Text as A
 import qualified Data.ByteString.Lazy as B
@@ -99,10 +99,16 @@ bodyParserTest CurrentMicE x = megaSkip x
 bodyParserTest _ fs = let parsed = map (\f -> (f, A.parseOnly parseFrame (fromString . src $ f))) fs in
                         do
                           assess <- foldM (\n (f,bodyP) -> do
-                                              assertBool (show f) $ isRight bodyP
+                                              assertBool (show f) $ understood bodyP
                                               return $ n + 1
                                           ) (0::Int) parsed
                           return $ show assess ++ " assertions run"
+
+                            where
+                              understood :: Either String Frame -> Bool
+                              understood (Right (Frame _ _ _ (GarbagePacket _))) = False
+                              understood (Right _) = True
+                              understood _ = False
 
 
 fapTest :: [FAPTest] -> IO String

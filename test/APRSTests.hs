@@ -98,13 +98,6 @@ prop_roundtrips x = read (show x) == x
 christmasMsg :: String
 christmasMsg = "KG6HWF>APX200,WIDE1-1,WIDE2-1:=3722.1 N/12159.1 W-Merry Christmas!"
 
-instance Arbitrary Frame where
-  arbitrary = do
-    src <- arbitrary ::Gen Address
-    dst <- arbitrary ::Gen Address
-    msg <- arbitrary ::Gen String
-    return $ Frame src dst ["WIDE1-1", "WIDE2-1"] (fromString msg)
-
 rframe :: String -> Frame
 rframe = must . A.parseOnly parseFrame . fromString
 

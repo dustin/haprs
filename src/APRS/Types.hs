@@ -40,7 +40,7 @@ import Data.Maybe (catMaybes)
 import Data.Int (Int16)
 import Data.Word (Word8)
 import Data.String (fromString)
-import Data.Text (Text, any, all, length, intercalate, unpack)
+import Data.Text (Text, any, all, length, unpack)
 import Text.Read (readMaybe)
 import Numeric (readInt)
 import Prelude hiding (any)
@@ -214,7 +214,7 @@ parseWeather :: A.Parser [WeatherParam]
 parseWeather = A.many1 parseWParam
 
 -- Source Dest Path Body
-data Frame = Frame Address Address [Text] Text
+data Frame = Frame Address Address [Text] APRSPacket
            deriving (Eq)
 
 parseFrame :: A.Parser Frame
@@ -225,7 +225,7 @@ parseFrame = do
   _ <- A.string "," <|> pure "" -- maybe comma
   path <- A.sepBy (A.takeWhile (`notElem` [',', ':'])) (A.char ',')
   _ <- A.char ':'
-  bod <- A.takeText
+  bod <- bodyParser
   return $ Frame src dest path bod
 
 decodeBase91 :: String -> Int

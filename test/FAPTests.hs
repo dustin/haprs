@@ -9,7 +9,7 @@ import Data.Aeson
 import Data.Maybe
 import Data.String (fromString)
 import Data.Text (unpack)
-import Data.Either (isRight)
+import Data.Either (isRight, lefts, rights)
 import Data.List (groupBy, sortBy)
 import qualified Data.Attoparsec.Text as A
 import qualified Data.ByteString.Lazy as B
@@ -96,13 +96,10 @@ bodyParserTest :: PacketType -> [FAPTest] -> IO String
 bodyParserTest (InvalidPacket '$') x = megaSkip x
 bodyParserTest (InvalidPacket '\'') x = megaSkip x
 bodyParserTest CurrentMicE x = megaSkip x
-bodyParserTest _ fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . src $ f) of
-                                                Left e -> error (show e)
-                                                Right f' -> (f,f')) fs in
+bodyParserTest _ fs = let parsed = map (\f -> (f, A.parseOnly parseFrame (fromString . src $ f))) fs in
                         do
-                          assess <- foldM (\n (_f, _frame@(Frame _s _d _ b)) -> do
-                                              let bodyP = A.parseOnly bodyParser b
-                                              assertBool (show b) $ isRight bodyP
+                          assess <- foldM (\n (f,bodyP) -> do
+                                              assertBool (show f) $ isRight bodyP
                                               return $ n + 1
                                           ) (0::Int) parsed
                           return $ show assess ++ " assertions run"
@@ -110,22 +107,19 @@ bodyParserTest _ fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromS
 
 fapTest :: [FAPTest] -> IO String
 fapTest fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . src $ f) of
-                                  Left e -> error (show e)
-                                  Right f' -> (f,f')) fs in
+                                       Left e -> Left $ show (src f) ++ " -- " ++ show e
+                                       Right f' -> Right $ (f,f')) fs in
                do
-                 asses <- foldM (\n (f, Frame s d _ b) -> do
+                 asses <- foldM (\n (f, Frame s d _ mparsed) -> do
                                     assertMaybeEqual "src" f srcCallsign s
                                     assertMaybeEqual "dst" f dstCallsign d
-                                    assertEqual ("body: " ++ unpack b) (fromJust (FAPTests.body =<< result f))
-                                      (unpack b)
 
+                                    let b = fromJust (FAPTests.body =<< result f)
                                     let res = (fromJust.result) f
                                     let wantpos = isJust $ latitude res
-                                    let mparsed = A.parseOnly bodyParser b
-                                    assertEqual ("pos: want v. got: " ++ unpack b) wantpos (haspos mparsed)
+                                    assertEqual ("pos: want v. got: " ++ b) wantpos (haspos mparsed)
                                     pn <- if not wantpos then return 0 else do
-                                      let (Right mparsed') = mparsed
-                                      let pos = position mparsed'
+                                      let pos = position mparsed
                                       let (Just (Position (plat, plon, vel))) = pos
                                       let elat = (fromMaybe 0.latitude) res
                                       let elon = (fromMaybe 0.longitude) res
@@ -146,9 +140,8 @@ fapTest fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . s
                                       return (2 + vn)
 
                                     let wantmsg = fapmsg res
-                                    let gotmsg = either (const Nothing) Just mparsed
-                                    mn <- if not (isJust gotmsg && isJust wantmsg) then return 0 else do
-                                      let (Just (MessagePacket rcpt (Message t) msgid)) = gotmsg
+                                    mn <- if not (isJust wantmsg) then return 0 else do
+                                      let (MessagePacket rcpt (Message t) msgid) = mparsed
                                       -- assertMaybeEqual ("msg sender: " ++ show b) f srcCallsign sndr
                                       assertEqual ("msg bod: " ++ show b) (fromJust . fapmsg $ res) (unpack t)
                                       assertEqual ("msgid: " ++ show b) (fromJust . fapmsgid $ res) (unpack msgid)
@@ -157,12 +150,11 @@ fapTest fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . s
 
                                       return 3
 
-                                    return $ n + 4 + pn + mn
-                                ) (0::Int) parsed
-                 return $ show asses ++ " assertions run"
+                                    return $ n + 3 + pn + mn
+                                ) (0::Int) (rights parsed)
+                 return $ show asses ++ " assertions run (" ++ (show $ (length.lefts) parsed) ++ " failed to parse)"
   where assertMaybeEqual lbl f a b = assertEqual lbl (fromJust (a =<< result f)) (show b)
-        haspos (Right x) = isJust $ position x
-        haspos _ = False
+        haspos x = isJust $ position x
 
 tests :: IO TestTree
 tests = do

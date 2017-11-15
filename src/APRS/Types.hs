@@ -215,7 +215,7 @@ parseWeather = A.many1 parseWParam
 
 -- Source Dest Path Body
 data Frame = Frame Address Address [Text] APRSPacket
-           deriving (Eq)
+           deriving (Show, Eq)
 
 parseFrame :: A.Parser Frame
 parseFrame = do

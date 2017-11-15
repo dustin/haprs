@@ -527,8 +527,6 @@ parseMessagePacket = do
       mid <- ("{" *> A.takeText) <|> pure "" -- message ID is optional
       return (Message (fromString mtext), mid)
 
--- TODO:  KI6TSF-8>APOTRS,WIDE1-1,qAR,W6YX-5:T#7,025,023,037,008,000,00000000
--- (apparently a single digit is also a valid three digit sequence number)
 parseTelemetry :: A.Parser APRSPacket
 parseTelemetry = do
   _ <- A.string "T#"
@@ -542,7 +540,6 @@ parseTelemetry = do
 
   where
     parseSeq :: A.Parser Text
-    parseSeq = ("MIC" *> (A.string "," <|> pure "") >> pure "MIC") <|> do
-      s <- replicateM 3 A.anyChar
-      _ <- A.char ','
-      return (fromString s)
+    parseSeq = ("MIC" *> (A.string "," <|> pure "") >> pure "MIC")
+               <|> (replicateM 3 A.anyChar <* "," >>= pure.fromString)
+               <|> (A.takeWhile (A.inClass "0-9")) <* ","

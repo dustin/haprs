@@ -230,7 +230,9 @@ testMegaParser =
   -- the FAP sample has interepreted the data incorrectly.
   ("!!00000066013D000028710166--------0158053201200210",
    Right (WeatherPacket Nothing Nothing
-          [WindSpeed 0,WindDir 66,RainLast24Hours 0,Baro 2871,RainToday 120] ""))
+          [WindSpeed 0,WindDir 66,RainLast24Hours 0,Baro 2871,RainToday 120] "")),
+  -- Here's one from the wild.
+  ("T#7,025,023,037,008,000,00000000", Right (TelemetryPacket "7" [25,23,37,8,0] 0 ""))
 
 
   ]

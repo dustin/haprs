@@ -298,6 +298,7 @@ data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Te
                 | StatusPacket (Maybe Timestamp) Text
                 | MessagePacket Address MessageInfo Text -- includes sequence number
                 | TelemetryPacket Text [Double] Word8 Text -- seq, vals, bits, comment
+                | GarbagePacket Text
                 deriving (Show, Eq)
 
 bodyParser :: A.Parser APRSPacket
@@ -308,6 +309,7 @@ bodyParser = parseWeatherPacket
              <|> parseMessagePacket
              <|> parseTelemetry
              <|> parsePositionPacket
+             <|> (A.takeText >>= pure.GarbagePacket)
 
 {-
 |       | No MSG | MSG |

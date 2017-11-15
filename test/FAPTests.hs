@@ -110,16 +110,16 @@ fapTest fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . s
                                        Left e -> Left $ show (src f) ++ " -- " ++ show e
                                        Right f' -> Right $ (f,f')) fs in
                do
-                 asses <- foldM (\n (f, Frame s d _ mparsed) -> do
+                 asses <- foldM (\n (f, frame@(Frame s d _ mparsed)) -> do
                                     assertMaybeEqual "src" f srcCallsign s
                                     assertMaybeEqual "dst" f dstCallsign d
 
                                     let b = fromJust (FAPTests.body =<< result f)
                                     let res = (fromJust.result) f
                                     let wantpos = isJust $ latitude res
-                                    assertEqual ("pos: want v. got: " ++ b) wantpos (haspos mparsed)
+                                    assertEqual ("pos: want v. got: " ++ b) wantpos (haspos frame)
                                     pn <- if not wantpos then return 0 else do
-                                      let pos = position mparsed
+                                      let pos = position frame
                                       let (Just (Position (plat, plon, vel))) = pos
                                       let elat = (fromMaybe 0.latitude) res
                                       let elon = (fromMaybe 0.longitude) res

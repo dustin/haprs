@@ -145,12 +145,12 @@ posamb 3 = 5 / 60
 posamb 4 = 0.5
 posamb _ = error "Invalid ambiguity"
 
-position :: APRSPacket -> Maybe Position
-position (PositionPacket _ _ pos _ _) = Just pos
-position (ObjectPacket _ _ _ pos _ _)   = Just pos
-position (ItemPacket _ _ _ pos _)       = Just pos
-position (WeatherPacket _ mpos _ _)   = mpos
-position _                            = Nothing
+position :: Frame -> Maybe Position
+position (Frame _ _ _ (PositionPacket _ _ pos _ _)) = Just pos
+position (Frame _ _ _ (ObjectPacket _ _ _ pos _ _)) = Just pos
+position (Frame _ _ _ (ItemPacket _ _ _ pos _))     = Just pos
+position (Frame _ _ _ (WeatherPacket _ mpos _ _))   = mpos
+position _                                          = Nothing
 
 data Timestamp = DHMLocal (Int, Int, Int)
                | DHMZulu (Int, Int, Int)

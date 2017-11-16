@@ -228,6 +228,8 @@ testMegaParser =
 
   ("`(_fn\"Oj/",
     Right (MicEPacket (Symbol '/' 'j') 4 (Position (33.42733333333334,-112.129,PosECourseSpeed 251 20)) "")),
+  ("`(_f\DEL;\DELj/",
+    Right (MicEPacket (Symbol '/' 'j') 4 (Position (33.42733333333334,-112.129,PosECourseSpeed 199 193)) "")),
 
   -- This came from the FAP samples, but from everything I can find,
   -- the FAP sample has interepreted the data incorrectly.

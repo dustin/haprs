@@ -38,6 +38,10 @@ options = Options
   <*> strOption (long "callpass" <> showDefault <> value "" <> help "your callpass")
 
 doBody :: String -> Frame -> IO ()
+doBody s f@(Frame _ _ _ (NotImplemented _ _)) =
+  colored Vivid Black (":( " ++ s ++ " ") >> colored Vivid Yellow (show f)
+doBody s f@(Frame _ _ _ (GarbagePacket _)) =
+  colored Vivid Red (":( " ++ s ++ " ") >> colored Vivid Black (show f)
 doBody s f = colored Vivid Black (":) " ++ s ++ " ") >> colored Vivid Green (show f)
 
 colored :: ColorIntensity -> Color -> String -> IO ()

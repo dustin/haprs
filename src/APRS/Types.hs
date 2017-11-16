@@ -62,6 +62,7 @@ data PacketType = CurrentMicEBin
   | PositionNoTS
   | PositionNoMsg
   | PositionMsg
+  | RawGPSOrUlt
   | Status
   | Query
   | Telemetry
@@ -80,6 +81,7 @@ identifyPacket ':' = MessagePkt
 identifyPacket ';' = Object
 identifyPacket '<' = StationCaps
 identifyPacket '=' = PositionNoTS
+identifyPacket '$' = RawGPSOrUlt
 identifyPacket '>' = Status
 identifyPacket '?' = Query
 identifyPacket '@' = PositionMsg
@@ -302,6 +304,7 @@ data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Te
                 | MessagePacket Address MessageInfo Text -- includes sequence number
                 | TelemetryPacket Text [Double] Word8 Text -- seq, vals, bits, comment
                 | MicEPacket Symbol Int Position Text
+                | NotImplemented PacketType Text
                 | GarbagePacket Text
                 deriving (Show, Eq)
 
@@ -314,7 +317,16 @@ bodyParser dest = parseWeatherPacket
                   <|> parseTelemetry
                   <|> parseMicE dest
                   <|> parsePositionPacket
+                  <|> parseNotImplemented
                   <|> (A.takeText >>= pure.GarbagePacket)
+
+
+parseNotImplemented :: A.Parser APRSPacket
+parseNotImplemented = do
+  c <- A.anyChar
+  case identifyPacket c of
+    InvalidPacket _ -> fail "unknown packet type"
+    t -> A.takeText >>= pure . (NotImplemented t)
 
 {-
 |       | No MSG | MSG |

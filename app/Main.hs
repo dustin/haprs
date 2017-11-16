@@ -38,7 +38,7 @@ options = Options
   <*> strOption (long "callpass" <> showDefault <> value "" <> help "your callpass")
 
 doBody :: String -> Frame -> IO ()
-doBody s f = putStr (":) " ++ s ++ " ") >> colored Vivid Green (show f)
+doBody s f = colored Vivid Black (":) " ++ s ++ " ") >> colored Vivid Green (show f)
 
 colored :: ColorIntensity -> Color -> String -> IO ()
 colored ci c s = do

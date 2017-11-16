@@ -1,0 +1,45 @@
+* Valid packets seen, but not understood completely:
+
+: AJ4NR-1>GPSLV,qAO,K6BJ-3:$GPRMC,191608,A,3704.3616,N,12159.7271,W,000.0,000.0 151117,013.7,E*6B
+: N8QH-9>APOT30,N6ZX-3*,WIDE1*,WIDE2-1,qAR,N6VUD-15:$ULTW00000000029F0077278900 B85C8000102A1013F028500000000
+: KE6AFE>APS250,TCPIP*,qAC,FIRST:<IGATE MSG_CNT=14878 LOC_CNT=57 FILL_CNT=0
+: KE6FRA-9>GPSMV,WIDE1-1,WIDE2-1,qAR,W6YX-5:$GPGGA,182240,3724.6788,N,12209.746 ,W,1,11,2.2,58.6,M,-28.4,M,,*49
+: KF6GPE>APWW10,TCPIP*,qAC,T2LUBLIN:<IGATE,MSG_CNT=0,LOC_CNT=0,DIR_CNT=0,RF_CNT=0,DX=1*WR6ABD(17mi@105°)
+: W6LLL-15>APTW14,K7FED-1*,WIDE2-1,qAR,N6VV-3:_111600
+
+* Missing Parser Features
+
+** Altitude Comments
+e.g.:
+
+: RANCHO>APN391,qAR,W6SRR-3:!3843.52N112038.40W#PHG2560/NCAn,TEMPn/AG6AU/Rancho del Sol,Camino,CA/A=003400
+: KM6GNH>APRS,TCPIP*,qAC,NINTH:=3734.88N/12222.95W$000/000/A=158APRSpro for iPhone 3.30V@93% hE<5m Burlingame
+
+Also, there are some in existing test data.
+
+** Beacons
+
+I couldn't find anything super obvious in the spec, but I think it's
+got to do with the destination address:
+
+W6BXN-3>BEACON,qAR,AA6I-1:Turlock Amateur Radio Club APRS
+
+** MicE Canned Status Messages
+
+** Truncated compressed position
+
+This was just not understood:
+
+: KK6LQ-11>APX209,,TCPIP*,qAC,THIRD:=/:x,r/pXZx
+
+Expected: 38.6493 N 121.1473 W
+
+It appears to be xastir, simply truncating the last three bytes (course and compression type).
+
+* Commandline Tool
+
+** Timeout connects and reads / retry on failure.
+
+* Specs
+
+** Consider http://apexprotocol.com/

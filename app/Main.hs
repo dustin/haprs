@@ -47,6 +47,8 @@ colored ci c s = do
   setSGR [Reset]
 
 entry :: String -> IO ()
+entry s@('#':_) =
+  do colored Vivid Black s
 entry s = do
   case A.parseOnly parseFrame (stripEnd . fromString $ s) of
     Right f -> doBody s f

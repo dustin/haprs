@@ -12,6 +12,8 @@ import Data.Semigroup ((<>))
 
 import qualified Data.Attoparsec.Text as A
 
+import System.Console.ANSI
+
 connect :: String -> String -> String -> String -> IO Handle
 connect s c p f = let h = takeWhile (/= ':') s
                       pd = Service $ drop (length h + 1) s in
@@ -36,14 +38,19 @@ options = Options
   <*> strOption (long "callpass" <> showDefault <> value "" <> help "your callpass")
 
 doBody :: String -> Frame -> IO ()
-doBody s f = putStrLn $ ":) " ++ s ++ show f
+doBody s f = putStr (":) " ++ s ++ " ") >> colored Vivid Green (show f)
 
+colored :: ColorIntensity -> Color -> String -> IO ()
+colored ci c s = do
+  setSGR [SetColor Foreground ci c]
+  putStrLn s
+  setSGR [Reset]
 
 entry :: String -> IO ()
 entry s = do
   case A.parseOnly parseFrame (stripEnd . fromString $ s) of
     Right f -> doBody s f
-    _ -> putStrLn $ "error parsing frame: " ++ s
+    _ -> colored Vivid Red $ "error parsing frame: " ++ s
 
 gate :: Options -> IO ()
 gate opts@(Options oFilt oSvr oCall oPass) = do

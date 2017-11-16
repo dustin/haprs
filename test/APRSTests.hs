@@ -150,7 +150,7 @@ testWeatherParser =
 
 testMegaParser :: [TestTree]
 testMegaParser =
-  map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly bodyParser a)) [
+  map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly (bodyParser $ raddr "S32UVT") a)) [
   ("!4903.50N/07201.75W-Test 001234",
    Right (PositionPacket PositionNoTSNoMsg (Symbol '/' '-')
           (Position (49.05833333333333,-72.02916666666667,PosENone)) Nothing "Test 001234")),
@@ -226,6 +226,9 @@ testMegaParser =
    Right (PositionPacket PositionNoTSNoMsg (Symbol 'I' '&')
           (Position (60.052010101699544,24.504507437140035,PosENone)) Nothing "igate testing")),
 
+  ("`(_fn\"Oj/",
+    Right (MicEPacket (Symbol '/' 'j') (Position (33.42733333333334,-112.129,PosENone)) "")),
+
   -- This came from the FAP samples, but from everything I can find,
   -- the FAP sample has interepreted the data incorrectly.
   ("!!00000066013D000028710166--------0158053201200210",
@@ -233,7 +236,6 @@ testMegaParser =
           [WindSpeed 0,WindDir 66,RainLast24Hours 0,Baro 2871,RainToday 120] "")),
   -- Here's one from the wild.
   ("T#7,025,023,037,008,000,00000000", Right (TelemetryPacket "7" [25,23,37,8,0] 0 ""))
-
 
   ]
 

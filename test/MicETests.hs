@@ -28,8 +28,15 @@ testMicELonM =
   ('W', 59)
   ]
 
+testMicEDest :: [TestTree]
+testMicEDest =
+  map (\(a@(c,s), want) -> testCase (show a ++ " -> " ++ show want) $ assertEqual "" want (micEDest c s)) [
+  (("S32U6T",""), (33.42733333333334, 4, 0, (-1), 0))
+  ]
+
 tests :: [TestTree]
 tests = [
   testGroup "micELonD" testMicELonD,
-  testGroup "micELonM" testMicELonM
+  testGroup "micELonM" testMicELonM,
+  testGroup "micEDest" testMicEDest
   ]

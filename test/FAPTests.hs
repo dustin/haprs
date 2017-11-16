@@ -95,7 +95,6 @@ megaSkip x = return $ "SKIPPED " ++ (show.length) x
 bodyParserTest :: PacketType -> [FAPTest] -> IO String
 bodyParserTest (InvalidPacket '$') x = megaSkip x
 bodyParserTest (InvalidPacket '\'') x = megaSkip x
-bodyParserTest CurrentMicE x = megaSkip x
 bodyParserTest _ fs = let parsed = map (\f -> (f, A.parseOnly parseFrame (fromString . src $ f))) fs in
                         do
                           assess <- foldM (\n (f,bodyP) -> do

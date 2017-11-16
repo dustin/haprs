@@ -46,6 +46,8 @@ import Numeric (readInt)
 import Prelude hiding (any)
 import qualified Data.Attoparsec.Text as A
 
+import APRS.MicE
+
 class Similar a where
   (≈) :: a -> a -> Bool
 
@@ -150,6 +152,7 @@ position (Frame _ _ _ (PositionPacket _ _ pos _ _)) = Just pos
 position (Frame _ _ _ (ObjectPacket _ _ _ pos _ _)) = Just pos
 position (Frame _ _ _ (ItemPacket _ _ _ pos _))     = Just pos
 position (Frame _ _ _ (WeatherPacket _ mpos _ _))   = mpos
+position (Frame _ _ _ (MicEPacket _ pos _))         = Just pos
 position _                                          = Nothing
 
 data Timestamp = DHMLocal (Int, Int, Int)
@@ -225,7 +228,7 @@ parseFrame = do
   _ <- A.string "," <|> pure "" -- maybe comma
   path <- A.sepBy (A.takeWhile (`notElem` [',', ':'])) (A.char ',')
   _ <- A.char ':'
-  bod <- bodyParser
+  bod <- bodyParser dest
   return $ Frame src dest path bod
 
 decodeBase91 :: String -> Int
@@ -298,18 +301,20 @@ data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Te
                 | StatusPacket (Maybe Timestamp) Text
                 | MessagePacket Address MessageInfo Text -- includes sequence number
                 | TelemetryPacket Text [Double] Word8 Text -- seq, vals, bits, comment
+                | MicEPacket Symbol Position Text
                 | GarbagePacket Text
                 deriving (Show, Eq)
 
-bodyParser :: A.Parser APRSPacket
-bodyParser = parseWeatherPacket
-             <|> parseObjectPacket
-             <|> parseItemPacket
-             <|> parseStatusPacket
-             <|> parseMessagePacket
-             <|> parseTelemetry
-             <|> parsePositionPacket
-             <|> (A.takeText >>= pure.GarbagePacket)
+bodyParser :: Address -> A.Parser APRSPacket
+bodyParser dest = parseWeatherPacket
+                  <|> parseObjectPacket
+                  <|> parseItemPacket
+                  <|> parseStatusPacket
+                  <|> parseMessagePacket
+                  <|> parseTelemetry
+                  <|> parseMicE dest
+                  <|> parsePositionPacket
+                  <|> (A.takeText >>= pure.GarbagePacket)
 
 {-
 |       | No MSG | MSG |
@@ -543,3 +548,20 @@ parseTelemetry = do
     parseSeq = ("MIC" *> (A.string "," <|> pure "") >> pure "MIC")
                <|> (replicateM 3 A.anyChar <* "," >>= pure.fromString)
                <|> (A.takeWhile (A.inClass "0-9")) <* ","
+
+parseMicE :: Address -> A.Parser APRSPacket
+parseMicE (Address call ss) = do
+  _ <- A.satisfy (`elem` ['\'', '`'])
+  let (lat, _mid, off, sign, _path) = micEDest call ss
+  [d,m,h] <- replicateM 3 A.anyChar
+
+  let lon' = (fromIntegral.micELonD d) off +
+        (((fromIntegral.micELonM) m + ((fromIntegral.fromEnum) h - 28) / 100) / 60)
+  let lon = (fromIntegral sign) * lon'
+
+  _cspbits <- replicateM 3 A.anyChar
+  let ext = PosENone
+  sym <- A.anyChar
+  tbl <- A.anyChar
+
+  return $ MicEPacket (Symbol tbl sym) (Position (lat,lon,ext)) ""

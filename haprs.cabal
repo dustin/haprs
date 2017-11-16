@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     APRS, APRS.Types
+  exposed-modules:     APRS, APRS.Types, APRS.MicE
   build-depends:       base >= 4.7 && < 5
                      , text
                      , attoparsec
@@ -39,7 +39,7 @@ test-suite haprs-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Main.hs
-  other-modules:       APRSTests, FAPTests
+  other-modules:       APRSTests, FAPTests, MicETests
   build-depends:       base
                      , haprs
                      , aeson, bytestring, text, containers

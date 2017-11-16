@@ -227,7 +227,7 @@ testMegaParser =
           (Position (60.052010101699544,24.504507437140035,PosENone)) Nothing "igate testing")),
 
   ("`(_fn\"Oj/",
-    Right (MicEPacket (Symbol '/' 'j') (Position (33.42733333333334,-112.129,PosENone)) "")),
+    Right (MicEPacket (Symbol '/' 'j') 4 (Position (33.42733333333334,-112.129,PosECourseSpeed 251 20)) "")),
 
   -- This came from the FAP samples, but from everything I can find,
   -- the FAP sample has interepreted the data incorrectly.

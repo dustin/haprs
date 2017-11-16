@@ -152,7 +152,7 @@ position (Frame _ _ _ (PositionPacket _ _ pos _ _)) = Just pos
 position (Frame _ _ _ (ObjectPacket _ _ _ pos _ _)) = Just pos
 position (Frame _ _ _ (ItemPacket _ _ _ pos _))     = Just pos
 position (Frame _ _ _ (WeatherPacket _ mpos _ _))   = mpos
-position (Frame _ _ _ (MicEPacket _ pos _))         = Just pos
+position (Frame _ _ _ (MicEPacket _ _ pos _))       = Just pos
 position _                                          = Nothing
 
 data Timestamp = DHMLocal (Int, Int, Int)
@@ -301,7 +301,7 @@ data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Te
                 | StatusPacket (Maybe Timestamp) Text
                 | MessagePacket Address MessageInfo Text -- includes sequence number
                 | TelemetryPacket Text [Double] Word8 Text -- seq, vals, bits, comment
-                | MicEPacket Symbol Position Text
+                | MicEPacket Symbol Int Position Text
                 | GarbagePacket Text
                 deriving (Show, Eq)
 
@@ -552,16 +552,21 @@ parseTelemetry = do
 parseMicE :: Address -> A.Parser APRSPacket
 parseMicE (Address call ss) = do
   _ <- A.satisfy (`elem` ['\'', '`'])
-  let (lat, _mid, off, sign, _path) = M.micEDest call ss
+  let (lat, mbits, off, sign, _path) = M.micEDest call ss
   [d,m,h] <- replicateM 3 A.anyChar
 
   let lon' = (fromIntegral.M.micELonD d) off +
         (((fromIntegral.M.micELonM) m + ((fromIntegral.fromEnum) h - 28) / 100) / 60)
   let lon = (fromIntegral sign) * lon'
 
-  _cspbits <- replicateM 3 A.anyChar
-  let ext = PosENone
+  [sp,dc,se] <- replicateM 3 A.anyChar
+  let speed10 = (fromEnum sp - 28) * 10
+  let (speed1, course100) = (fromEnum dc - 28) `quotRem` 10
+  let course' = (fromEnum se - 28)
+  let speed = (speed10 + speed1) `mod` 800
+  let course = course' + (course100*100)
+  let ext = PosECourseSpeed (if course > 400 then course - 400 else course) (fromIntegral speed)
   sym <- A.anyChar
   tbl <- A.anyChar
 
-  return $ MicEPacket (Symbol tbl sym) (Position (lat,lon,ext)) ""
+  return $ MicEPacket (Symbol tbl sym) mbits (Position (lat,lon,ext)) ""

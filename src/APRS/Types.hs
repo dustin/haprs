@@ -46,7 +46,7 @@ import Numeric (readInt)
 import Prelude hiding (any)
 import qualified Data.Attoparsec.Text as A
 
-import APRS.MicE
+import qualified APRS.MicE as M
 
 class Similar a where
   (≈) :: a -> a -> Bool
@@ -552,11 +552,11 @@ parseTelemetry = do
 parseMicE :: Address -> A.Parser APRSPacket
 parseMicE (Address call ss) = do
   _ <- A.satisfy (`elem` ['\'', '`'])
-  let (lat, _mid, off, sign, _path) = micEDest call ss
+  let (lat, _mid, off, sign, _path) = M.micEDest call ss
   [d,m,h] <- replicateM 3 A.anyChar
 
-  let lon' = (fromIntegral.micELonD d) off +
-        (((fromIntegral.micELonM) m + ((fromIntegral.fromEnum) h - 28) / 100) / 60)
+  let lon' = (fromIntegral.M.micELonD d) off +
+        (((fromIntegral.M.micELonM) m + ((fromIntegral.fromEnum) h - 28) / 100) / 60)
   let lon = (fromIntegral sign) * lon'
 
   _cspbits <- replicateM 3 A.anyChar

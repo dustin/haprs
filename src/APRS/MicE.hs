@@ -12,15 +12,16 @@ micEDest t _ssid =
     (deg * sign d, bit a * 4 + bit b * 2 + bit c, offset e, (negate.sign) f, 0)
 
   where
-    digit :: Char -> Double
-    digit c
-      | c >= '0' && c <= '9' = fromIntegral $ fromEnum c - 48
-      | c >= 'A' && c <= 'J' = fromIntegral $ fromEnum c - 65
-      | c >= 'P' && c <= 'Y' = fromIntegral $ fromEnum c - 80
-      | otherwise = 0
     sign c = if c < 'P' then (-1) else 1
     offset c = if c < 'P' then 0 else 100
     bit c = if (c >= 'A' && c <= 'K') || (c > 'P') then 1 else 0
+
+digit :: Char -> Double
+digit c
+  | c >= '0' && c <= '9' = fromIntegral $ fromEnum c - 48
+  | c >= 'A' && c <= 'J' = fromIntegral $ fromEnum c - 65
+  | c >= 'P' && c <= 'Y' = fromIntegral $ fromEnum c - 80
+  | otherwise = 0
 
 micELonD :: Char -> Int -> Int
 micELonD c off

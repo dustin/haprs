@@ -344,7 +344,7 @@ bodyParser dest = parseWeatherPacket
 parseNMEA :: A.Parser APRSPacket
 parseNMEA = do
   (lat,lon,ts) <- N.parseNMEA
-  return $ RawGPSPacket (Position (lon,lat,PosENone)) (HMS ts)
+  return $ RawGPSPacket (Position (lat,lon,PosENone)) (HMS ts)
 
 parseNotImplemented :: A.Parser APRSPacket
 parseNotImplemented = do

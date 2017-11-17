@@ -32,14 +32,14 @@ Where:
 -}
 
 import Control.Applicative ((<|>))
-import Control.Monad (replicateM, replicateM_)
+import Control.Monad (replicateM)
 import qualified Data.Attoparsec.Text as A
 
--- Lat, Long, Altitude, (H,M,S)
-parseNMEA :: A.Parser (Double, Double, Double, (Int, Int, Int))
+-- Lat, Long, (H,M,S)
+parseNMEA :: A.Parser (Double, Double, (Int, Int, Int))
 parseNMEA = parseGGA <|> parseRMC
 
-parseGGA :: A.Parser (Double, Double, Double, (Int, Int, Int))
+parseGGA :: A.Parser (Double, Double, (Int, Int, Int))
 parseGGA = do
   _ <- A.string "$GPGGA,"
   ts <- parseTS
@@ -47,14 +47,12 @@ parseGGA = do
   lat <- parseDir 2
   _ <- A.char ','
   lon <- parseDir 3
-  replicateM_ 3 ("," *> A.double)
-  alt <- ("," *> A.double)
 
-  return (lat, lon, alt, ts)
+  return (lat, lon, ts)
 
 parseTS :: A.Parser (Int, Int, Int)
 parseTS = do
-  digs <- replicateM 3 (replicateM 2 A.digit) A.<?> "time"
+  digs <- replicateM 3 (replicateM 2 A.digit)
   let [h,m,s] = map read digs
   return (h, m, s)
 
@@ -82,7 +80,7 @@ Where:
      *6A          The checksum data, always begins with *
 -}
 
-parseRMC :: A.Parser (Double, Double, Double, (Int, Int, Int))
+parseRMC :: A.Parser (Double, Double, (Int, Int, Int))
 parseRMC = do
   _ <- A.string "$GPRMC,"
   ts <- parseTS
@@ -91,4 +89,4 @@ parseRMC = do
   _ <- A.char ','
   lon <- parseDir 3
 
-  return (lat, lon, 0, ts)
+  return (lat, lon, ts)

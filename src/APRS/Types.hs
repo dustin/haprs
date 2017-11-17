@@ -270,24 +270,23 @@ data PosExtension = PosECourseSpeed Int Double
                   | PosENone
                   deriving (Show, Eq)
 
+-- Parse common aaa/bbb to (a,b)
+parseCourseSpeed :: A.Parser (Int, Double)
+parseCourseSpeed = do
+  a <- replicateM 3 A.digit
+  _ <- A.char '/'
+  b <- replicateM 3 A.digit
+  return (read a `mod` 360, fromIntegral (read b) * 1.852)
+
 data Directivity = Omni | DirNE | DirE | DirSE | DirS | DirSW | DirW | DirNW | DirN
                  deriving (Show, Eq, Ord, Enum, Bounded)
 
 parsePosExtension :: A.Parser PosExtension
-parsePosExtension = parseCrsSpd
+parsePosExtension = (parseCourseSpeed >>= uncurry ((return .) . PosECourseSpeed))
                     <|> parsePHG
                     <|> pure PosENone
 
   where
-    parseCrsSpd = do
-      crs <- replicateM 3 A.digit
-      _ <- A.char '/'
-      spd <- replicateM 3 A.digit
-      let c = read crs :: Int
-      let s = read spd :: Int
-      guard $ c > 0 && c < 361
-      return $ PosECourseSpeed (if c == 360 then 0 else c) (fromIntegral s * 1.852)
-
     parsePHG = do
       _ <- A.string "PHG"
       p <- A.digit
@@ -571,10 +570,8 @@ parseStandardWeather = do
     pos' Nothing = Nothing
     pos' (Just (Position (a,b,_))) = Just (Position (a,b,PosENone))
     parsews = do
-      crs <- replicateM 3 A.digit
-      _ <- A.char '/'
-      spd <- replicateM 3 A.digit
-      return $ [WindDir (read crs), WindSpeed (round $ read spd / 1.852)]
+      (crs, spd) <- parseCourseSpeed
+      return $ [WindDir crs, WindSpeed (round spd)]
 
 
 parseStatusPacket :: A.Parser APRSPacket

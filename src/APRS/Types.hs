@@ -49,6 +49,7 @@ import Prelude hiding (any)
 import qualified Data.Attoparsec.Text as A
 
 import qualified APRS.MicE as M
+import qualified APRS.NMEA as N
 
 class Similar a where
   (≈) :: a -> a -> Bool
@@ -320,6 +321,7 @@ data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Te
                 | MessagePacket Address MessageInfo Text -- includes sequence number
                 | TelemetryPacket Text [Double] Word8 Text -- seq, vals, bits, comment
                 | MicEPacket Symbol Int Position Text
+                | RawGPSPacket Position Timestamp
                 | CapabilitiesPacket [Capability]
                 | NotImplemented PacketType Text
                 | GarbagePacket Text
@@ -334,10 +336,15 @@ bodyParser dest = parseWeatherPacket
                   <|> parseMessagePacket
                   <|> parseTelemetry
                   <|> parseMicE dest
+                  <|> parseNMEA
                   <|> parsePositionPacket
                   <|> parseNotImplemented
                   <|> (A.takeText >>= pure.GarbagePacket)
 
+parseNMEA :: A.Parser APRSPacket
+parseNMEA = do
+  (lat,lon,_alt,ts) <- N.parseNMEA
+  return $ RawGPSPacket (Position (lon,lat,PosENone)) (HMS ts)
 
 parseNotImplemented :: A.Parser APRSPacket
 parseNotImplemented = do
@@ -535,7 +542,7 @@ parseUltimeter = do
       let params = zipWith (=<<) funs v
       return $ WeatherPacket Nothing Nothing (catMaybes params) ""
 
-    vals = replicateM 12 $ do
+    vals = A.many1 $ do
       digs <- replicateM 4 (A.satisfy $ A.inClass "A-F0-9-")
       return $ readMaybe ("0x" ++ digs)
 

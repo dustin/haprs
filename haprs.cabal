@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     APRS, APRS.Types, APRS.MicE
+  exposed-modules:     APRS, APRS.Types, APRS.MicE, APRS.NMEA
   build-depends:       base >= 4.7 && < 5
                      , text
                      , attoparsec

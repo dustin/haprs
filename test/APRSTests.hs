@@ -236,8 +236,11 @@ testMegaParser =
   ("!!00000066013D000028710166--------0158053201200210",
    Right (WeatherPacket Nothing Nothing
           [WindSpeed 0,WindDir 66,RainLast24Hours 0,Baro 2871,RainToday 120] "")),
-  -- Here's one from the wild.
-  ("T#7,025,023,037,008,000,00000000", Right (TelemetryPacket "7" [25,23,37,8,0] 0 ""))
+
+  -- Here's some from the wild.
+  ("T#7,025,023,037,008,000,00000000", Right (TelemetryPacket "7" [25,23,37,8,0] 0 "")),
+  ("=/:x,r/pXZx", Right (PositionPacket PositionNoTS (Symbol '/' 'x')
+                         (Position (38.64933346634255,-121.14733570299742,PosENone)) Nothing ""))
 
   ]
 

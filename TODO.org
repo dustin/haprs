@@ -49,7 +49,8 @@ got to do with the destination address:
 
 ** TODO MicE Canned Status Messages
 
-** TODO Truncated compressed position
+** DONE Truncated compressed position
+   CLOSED: [2017-11-16 Thu 17:52]
 
 This was just not understood:
 

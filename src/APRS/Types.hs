@@ -351,20 +351,25 @@ parsePosCompressed = do
   b91a <- parseB91Seg
   b91b <- parseB91Seg
   sym <- A.anyChar -- symbol code
-  vel <- replicateM 2 A.anyChar
-  _ <- A.anyChar -- TODO:  compression type
 
-  return (Symbol tbl sym, Position $ unc b91a b91b $ pcvel $ map fromEnum vel)
+  -- It seems that xastir will just truncate the packet once it has enough stuff.
+  ext <- pcvel <|> pure PosENone
+
+  return (Symbol tbl sym, Position $ unc b91a b91b $ ext)
 
   where
     unc m1 m2 v = (90 - (m1 / 380926), (-180) + (m2 / 190463), v)
-    pcvel :: [Int] -> PosExtension
-    pcvel [a,b]
+    pcvel :: A.Parser PosExtension
+    pcvel = do
+      x <- replicateM 3 A.anyChar
+      return $ pcvel' $ map fromEnum x
+
+    pcvel' [a,b,_]
       | a >= 33 && a <= 122 = let course = fromIntegral (a - 33) * 4
                                   speed = 1.852 * ((1.08 ^ (b - 33)) - 1)
                                   course' = if course == 0 then 360 else course in
                                 PosECourseSpeed course' speed
-    pcvel _ = PosENone
+    pcvel' _ = PosENone
 
 
 parsePosUncompressed :: A.Parser (Symbol, Position)

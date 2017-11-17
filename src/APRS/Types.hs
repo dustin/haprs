@@ -21,6 +21,7 @@ module APRS.Types
     , Directivity(..)
     , MessageInfo(..)
     , ObjectState(..)
+    , Capability(..)
     , position
     -- parsers
     , parseAddr
@@ -304,6 +305,12 @@ data MessageInfo = Message Text
                  | MessageNAK
                    deriving (Show, Eq)
 
+data Capability = IGATE
+                | MessageCount Int
+                | LocalCount Int
+                | Capability Text Text
+                deriving (Show, Eq)
+
 -- TODO:  Include extensions from page 27 in position packets
 data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Text
                 | ObjectPacket Symbol ObjectState Text Position Timestamp Text
@@ -313,6 +320,7 @@ data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Te
                 | MessagePacket Address MessageInfo Text -- includes sequence number
                 | TelemetryPacket Text [Double] Word8 Text -- seq, vals, bits, comment
                 | MicEPacket Symbol Int Position Text
+                | CapabilitiesPacket [Capability]
                 | NotImplemented PacketType Text
                 | GarbagePacket Text
                 deriving (Show, Eq)
@@ -322,6 +330,7 @@ bodyParser dest = parseWeatherPacket
                   <|> parseObjectPacket
                   <|> parseItemPacket
                   <|> parseStatusPacket
+                  <|> parseCapabilityPacket
                   <|> parseMessagePacket
                   <|> parseTelemetry
                   <|> parseMicE dest
@@ -335,6 +344,27 @@ parseNotImplemented = do
   c <- A.satisfy (`elem` validPktTypes)
   t <- A.takeText
   return $ NotImplemented (identifyPacket c) t
+
+parseCapabilityPacket :: A.Parser APRSPacket
+parseCapabilityPacket = do
+  _ <- A.char '<'
+  caps <- A.sepBy cap (A.satisfy isSep)
+  return $ CapabilitiesPacket caps
+
+  where
+    isSep = (`elem` [' ', ','])
+    cap :: A.Parser Capability
+    cap = (A.string "IGATE" >> pure IGATE)
+          <|> "MSG_CNT=" *> (A.decimal >>= pure.MessageCount)
+          <|> "LOC_CNT=" *> (A.decimal >>= pure.LocalCount)
+          <|> other
+
+    other :: A.Parser Capability
+    other = do
+      k <- A.takeTill (== '=')
+      _ <- A.satisfy (`elem` [' ', '='])
+      v <- A.takeWhile (not.isSep)
+      return $ Capability k v
 
 {-
 |       | No MSG | MSG |

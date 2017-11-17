@@ -240,7 +240,22 @@ testMegaParser =
   -- Here's some from the wild.
   ("T#7,025,023,037,008,000,00000000", Right (TelemetryPacket "7" [25,23,37,8,0] 0 "")),
   ("=/:x,r/pXZx", Right (PositionPacket PositionNoTS (Symbol '/' 'x')
-                         (Position (38.64933346634255,-121.14733570299742,PosENone)) Nothing ""))
+                         (Position (38.64933346634255,-121.14733570299742,PosENone)) Nothing "")),
+  ("<IGATE,MSG_CNT=0,LOC_CNT=0,DIR_CNT=0,RF_CNT=0,DX=1*WR6ABD(17mi@105°)",
+   Right (CapabilitiesPacket [IGATE,
+                              MessageCount 0,
+                              LocalCount 0,
+                              Capability "DIR_CNT" "0",
+                              Capability "RF_CNT" "0",
+                              Capability "DX" "1*WR6ABD(17mi@105°)"])),
+
+  -- this one is just wrong, but it's an uphill battle...
+  ("<IGATE MSG_CNT=14878 LOC_CNT=57 FILL_CNT=0",
+   Right (CapabilitiesPacket [IGATE,
+                              MessageCount 14878,
+                              LocalCount 57,
+                              Capability "FILL_CNT" "0"]))
+
 
   ]
 

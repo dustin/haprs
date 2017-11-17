@@ -250,6 +250,12 @@ testMegaParser =
            RainLastHour 0, RainLast24Hours 45, RainToday 1, Humidity 96, Baro 10205]
            (UnknownWeatherSW '.') (UnknownWeatherUnit "Ds") "VP")),
 
+  ("!3748.51N/12112.44W_270/001g001t051V136P022h88b10262OTW1",
+   Right (WeatherPacket Nothing (Just (Position (37.8085,-121.20733333333334,PosENone)))
+          [WindDir 270, WindSpeed 1, WindGust 1, Temp 10.555555555555555,
+           Voltage 13.6, RainToday 22, Humidity 88, Baro 10262]
+           (UnknownWeatherSW 'O') (UnknownWeatherUnit "TW") "1")),
+
   ("<IGATE,MSG_CNT=0,LOC_CNT=0,DIR_CNT=0,RF_CNT=0,DX=1*WR6ABD(17mi@105°)",
    Right (CapabilitiesPacket [IGATE,
                               MessageCount 0,

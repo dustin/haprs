@@ -204,6 +204,8 @@ data WeatherParam = WindDir Int
                   | RainToday Int
                   | Humidity Int
                   | Baro Int
+                  | Voltage Double
+                  | WaterLevel Double
                   | NoData Char
                   deriving (Show, Eq)
 
@@ -215,6 +217,8 @@ parseWParam = w 'c' WindDir
               <|> w 'r' RainLastHour
               <|> w 'p' RainLast24Hours
               <|> w 'P' RainToday
+              <|> w 'F' (WaterLevel . (/ 10) . fromIntegral)
+              <|> w 'V' (Voltage . (/ 10) . fromIntegral)
               <|> w' 2 'h' Humidity
               <|> w' 5 'b' Baro
   where

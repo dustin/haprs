@@ -260,7 +260,12 @@ testMegaParser =
   ("$ULTW0000000002A000772788000485C80001029D013F043D00000000",
    Right (WeatherPacket Nothing Nothing [WindSpeed 0, WindDir 0,
                                          Temp 19.555555555555557, RainLast24Hours 119,
-                                         Baro 1012, Humidity 66, RainToday 0] ""))
+                                         Baro 1012, Humidity 66, RainToday 0] "")),
+
+  ("$GPGGA,182240,3724.6788,N,12209.746,W,1,11,2.2,58.6,M,-28.4,M,,*49",
+    Right (RawGPSPacket (Position (121.83756666666666,37.41131333333333,PosENone)) (HMS (18,22,40)))),
+  ("$GPRMC,191608,A,3704.3616,N,12159.7271,W,000.0,000.0,151117,013.7,E*6B",
+   Right (RawGPSPacket (Position (120.00454833333333,37.07269333333333,PosENone)) (HMS (19,16,8))))
 
   ]
 

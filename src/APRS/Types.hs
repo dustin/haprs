@@ -11,6 +11,8 @@ module APRS.Types
     , Position(..)
     , Timestamp(..)
     , WeatherParam(..)
+    , WeatherSW(..)
+    , WeatherUnit(..)
     , identifyPacket
     , callPass
     , decodeBase91
@@ -36,9 +38,9 @@ import Data.Char (chr)
 import Control.Applicative ((<|>))
 import Control.Monad (replicateM, replicateM_, guard)
 import Data.Bits (xor, (.&.), shiftL)
-import Data.Char (digitToInt)
+import Data.Char (toLower, digitToInt)
 import Data.Either (either)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Int (Int16)
 import Data.Word (Word8)
 import Data.String (fromString)
@@ -161,12 +163,12 @@ posamb 4 = 0.5
 posamb _ = error "Invalid ambiguity"
 
 position :: Frame -> Maybe Position
-position (Frame _ _ _ (PositionPacket _ _ pos _ _)) = Just pos
-position (Frame _ _ _ (ObjectPacket _ _ _ pos _ _)) = Just pos
-position (Frame _ _ _ (ItemPacket _ _ _ pos _))     = Just pos
-position (Frame _ _ _ (WeatherPacket _ mpos _ _))   = mpos
-position (Frame _ _ _ (MicEPacket _ _ pos _))       = Just pos
-position _                                          = Nothing
+position (Frame _ _ _ (PositionPacket _ _ pos _ _))   = Just pos
+position (Frame _ _ _ (ObjectPacket _ _ _ pos _ _))   = Just pos
+position (Frame _ _ _ (ItemPacket _ _ _ pos _))       = Just pos
+position (Frame _ _ _ (WeatherPacket _ mpos _ _ _ _)) = mpos
+position (Frame _ _ _ (MicEPacket _ _ pos _))         = Just pos
+position _                                            = Nothing
 
 data Timestamp = DHMLocal (Int, Int, Int)
                | DHMZulu (Int, Int, Int)
@@ -311,11 +313,58 @@ data Capability = IGATE
                 | Capability Text Text
                 deriving (Show, Eq)
 
+data WeatherSW = APRSdos
+               | MacAPRS
+               | PocketAPRS
+               | APRSSA
+               | WinAPRS
+               | XAPRS
+               | UnknownWeatherSW Char
+               deriving (Eq, Show)
+
+weatherSWMap :: [(Char, WeatherSW)]
+weatherSWMap = [('d', APRSdos),
+                ('m', MacAPRS),
+                ('p', PocketAPRS),
+                ('s', APRSSA),
+                ('w', WinAPRS),
+                ('x', XAPRS)]
+
+lookupWeatherSW :: Char -> WeatherSW
+lookupWeatherSW c = fromMaybe (UnknownWeatherSW c) (lookup (toLower c) weatherSWMap)
+
+data WeatherUnit = WUDavis
+                 | WUHeathkit
+                 | WUPIC
+                 | WURadioShack
+                 | WUUltimeterIIAuto
+                 | WUUltimeterIIRemote
+                 | WUUltimeter2000
+                 | WUUltimeterRemote
+                 | WUUltimeter500
+                 | WURemoteUltimeterPacket
+                 | UnknownWeatherUnit Text
+                 deriving (Show, Eq)
+
+parseWeatherUnit :: A.Parser WeatherUnit
+parseWeatherUnit =
+  "Dvs"           *> pure WUDavis
+  <|> "HKT"       *> pure WUHeathkit
+  <|> "PIC"       *> pure WUPIC
+  <|> "RSW"       *> pure WURadioShack
+  <|> "U-II"      *> pure WUUltimeterIIAuto
+  <|> "U2R"       *> pure WUUltimeterIIRemote
+  <|> "U2k"       *> pure WUUltimeter2000
+  <|> "U2kr"      *> pure WUUltimeterRemote
+  <|> "U5"        *> pure WUUltimeter500
+  <|> "Upkm"      *> pure WURemoteUltimeterPacket
+  <|> (A.take 2  >>= (pure.) UnknownWeatherUnit)
+
 -- TODO:  Include extensions from page 27 in position packets
 data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Text
                 | ObjectPacket Symbol ObjectState Text Position Timestamp Text
                 | ItemPacket Symbol ObjectState Text Position Text
-                | WeatherPacket (Maybe Timestamp) (Maybe Position) [WeatherParam] Text
+                | WeatherPacket (Maybe Timestamp) (Maybe Position) [WeatherParam] WeatherSW WeatherUnit Text
                 | StatusPacket (Maybe Timestamp) Text
                 | MessagePacket Address MessageInfo Text -- includes sequence number
                 | TelemetryPacket Text [Double] Word8 Text -- seq, vals, bits, comment
@@ -537,7 +586,7 @@ parseUltimeter = do
     ulti funs = do
       v <- vals
       let params = zipWith (=<<) funs v
-      return $ WeatherPacket Nothing Nothing (catMaybes params) ""
+      return $ WeatherPacket Nothing Nothing (catMaybes params) (UnknownWeatherSW '?') WUUltimeter2000 ""
 
     vals = A.many1 $ do
       digs <- replicateM 4 (A.satisfy $ A.inClass "A-F0-9-")
@@ -561,8 +610,10 @@ parseStandardWeather = do
                 _ -> []
   extra2 <- parsews <|> pure []
   wp <- parseWeather A.<?> "weather junk"
+  swc <- A.anyChar <|> pure '?'
+  unit <- parseWeatherUnit <|> pure (UnknownWeatherUnit "??")
   rest <- A.takeText
-  return $ WeatherPacket ts (pos' pos) (extra ++ extra2 ++ wp) rest
+  return $ WeatherPacket ts (pos' pos) (extra ++ extra2 ++ wp) (lookupWeatherSW swc) unit rest
 
   where
     ppos :: A.Parser (Maybe Position)

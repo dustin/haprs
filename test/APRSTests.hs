@@ -193,11 +193,11 @@ testMegaParser =
   ("_10090556c220s004g005t077r000p000P000h50b09900wRSW",
    Right (WeatherPacket (Just (MDHM (10,9,5,56))) Nothing
           [WindDir 220, WindSpeed 4, WindGust 5, Temp 25, RainLastHour 0,
-           RainLast24Hours 0, RainToday 0, Humidity 50, Baro 9900] "wRSW")),
+           RainLast24Hours 0, RainToday 0, Humidity 50, Baro 9900] WinAPRS WURadioShack "")),
   ("!4903.50N/07201.75W_220/004g005t077r000p000P000h50b09900wRSW",
    Right (WeatherPacket Nothing (Just (Position (49.05833333333333,-72.02916666666667,PosENone)))
           [WindDir 220, WindSpeed 4, WindGust 5, Temp 25, RainLastHour 0, RainLast24Hours 0,
-           RainToday 0, Humidity 50, Baro 9900] "wRSW")),
+           RainToday 0, Humidity 50, Baro 9900] WinAPRS WURadioShack "")),
 
   ("T#MIC199,000,255,073,123,01101001",
     Right (TelemetryPacket "MIC" [199,0,255,73,123] 105 "")),
@@ -237,7 +237,8 @@ testMegaParser =
   -- the FAP sample has interepreted the data incorrectly.
   ("!!00000066013D000028710166--------0158053201200210",
    Right (WeatherPacket Nothing Nothing [WindSpeed 0, WindDir 102, Temp (-0.16666666666666707),
-                                         RainLast24Hours 0, Baro 1035, RainToday 288] "")),
+                                         RainLast24Hours 0, Baro 1035, RainToday 288]
+           (UnknownWeatherSW '?') WUUltimeter2000 "")),
 
   -- Here's some from the wild.
   ("T#7,025,023,037,008,000,00000000", Right (TelemetryPacket "7" [25,23,37,8,0] 0 "")),
@@ -246,7 +247,8 @@ testMegaParser =
   ("@171607z3755.50N/12205.43W_000/000g000t048r000p045P001h96b10205.DsVP",
    Right (WeatherPacket (Just (DHMZulu (17,16,7))) (Just (Position (37.925,-122.0905,PosENone)))
           [WindDir 0, WindSpeed 0, WindGust 0, Temp 8.88888888888889,
-           RainLastHour 0, RainLast24Hours 45, RainToday 1, Humidity 96, Baro 10205] ".DsVP")),
+           RainLastHour 0, RainLast24Hours 45, RainToday 1, Humidity 96, Baro 10205]
+           (UnknownWeatherSW '.') (UnknownWeatherUnit "Ds") "VP")),
 
   ("<IGATE,MSG_CNT=0,LOC_CNT=0,DIR_CNT=0,RF_CNT=0,DX=1*WR6ABD(17mi@105°)",
    Right (CapabilitiesPacket [IGATE,
@@ -267,7 +269,8 @@ testMegaParser =
   ("$ULTW0000000002A000772788000485C80001029D013F043D00000000",
    Right (WeatherPacket Nothing Nothing [WindSpeed 0, WindDir 0,
                                          Temp 19.555555555555557, RainLast24Hours 119,
-                                         Baro 1012, Humidity 66, RainToday 0] "")),
+                                         Baro 1012, Humidity 66, RainToday 0]
+           (UnknownWeatherSW '?') WUUltimeter2000 "")),
 
   ("$GPGGA,182240,3724.6788,N,12209.746,W,1,11,2.2,58.6,M,-28.4,M,,*49",
     Right (RawGPSPacket (Position (37.41131333333333,-122.16243333333334,PosENone)) (HMS (18,22,40)))),

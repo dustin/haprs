@@ -195,7 +195,7 @@ newtype Position = Position (Double, Double, PosExtension) deriving (Eq, Show)
 data WeatherParam = WindDir Int
                   | WindSpeed Int
                   | WindGust Int
-                  | Temp Int
+                  | Temp Double
                   | RainLastHour Int
                   | RainLast24Hours Int
                   | RainToday Int
@@ -208,7 +208,7 @@ parseWParam :: A.Parser WeatherParam
 parseWParam = w 'c' WindDir
               <|> w 's' WindSpeed
               <|> w 'g' WindGust
-              <|> w 't' Temp
+              <|> w 't' (Temp . fromIntegral)
               <|> w 'r' RainLastHour
               <|> w 'p' RainLast24Hours
               <|> w 'P' RainToday
@@ -542,7 +542,7 @@ parseUltimeter = do
     ignore = const Nothing
 
     convertTemp :: Int -> WeatherParam
-    convertTemp x = Temp $ round $ ((fromIntegral x / 10) - 32) * 5 / 9
+    convertTemp x = Temp $ ((fromIntegral x / 10) - 32) * 5 / 9
 
 parseStandardWeather :: A.Parser APRSPacket
 parseStandardWeather = do

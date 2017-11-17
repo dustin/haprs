@@ -145,6 +145,8 @@ testWeatherParser =
                                                        RainLastHour 0, RainLast24Hours 0, RainToday 0,
                                                        Humidity 50, Baro 9900]),
   ("g...t054r000p...P...b10140h88", Right [NoData 'g', Temp 12.222222222222221, RainLastHour 0,
+                                           NoData 'p', NoData 'P', Baro 10140, Humidity 88]),
+  ("g   t054r000p   P   b10140h88", Right [NoData 'g', Temp 12.222222222222221, RainLastHour 0,
                                            NoData 'p', NoData 'P', Baro 10140, Humidity 88])
   ]
 
@@ -272,7 +274,9 @@ testMegaParser =
   ("$GPGGA,182240,3724.6788,S,12209.746,E,1,11,2.2,58.6,M,-28.4,M,,*49",
     Right (RawGPSPacket (Position (-37.41131333333333,122.16243333333334,PosENone)) (HMS (18,22,40)))),
   ("$GPRMC,191608,A,3704.3616,N,12159.7271,W,000.0,000.0,151117,013.7,E*6B",
-   Right (RawGPSPacket (Position (37.07269333333333,-121.99545166666667,PosENone)) (HMS (19,16,8))))
+    Right (RawGPSPacket (Position (37.07269333333333,-121.99545166666667,PosENone)) (HMS (19,16,8)))),
+
+  ("{some user defined stuff", Right (NotImplemented UserDefined "some user defined stuff"))
 
   ]
 

@@ -519,19 +519,30 @@ parseWeatherPacket = parseUltimeter <|> parseStandardWeather
 -- TODO:  Ensure consistent units
 parseUltimeter :: A.Parser APRSPacket
 parseUltimeter = do
-  _ <- A.string "!!"
-  vals <- replicateM 12 aValue
-  let funs = [(Just.)WindSpeed, (Just.)WindDir, (Just.)Temp, (Just.)RainLast24Hours,
-              (Just.)Baro, ignore, (Just.)Humidity, ignore, ignore, ignore,
-              (Just.)RainToday, ignore]
-  let params = zipWith (=<<) funs vals
-  return $ WeatherPacket Nothing Nothing (catMaybes params) ""
+  let funsl = [(Just.)WindSpeed.(`div` 10), (Just.)WindDir, (Just.)convertTemp, (Just.)RainLast24Hours,
+               (Just.)Baro.(`div` 10), ignore, (Just.)Humidity.(`div` 10), ignore, ignore, ignore,
+               (Just.)RainToday, ignore]
+  let funsp = [(Just.)WindSpeed.(`div` 10), (Just.)WindDir, (Just.)convertTemp, (Just.)RainLast24Hours,
+               (Just.)Baro.(`div` 10), ignore, ignore, ignore, (Just.)Humidity.(`div` 10), ignore, ignore,
+               (Just.)RainToday]
 
-  where aValue :: A.Parser (Maybe Int)
-        aValue = do
-          digs <- replicateM 4 (A.satisfy $ A.inClass "A-F0-9-")
-          return $ readMaybe digs
-        ignore = const Nothing
+  "!!" *> ulti funsl <|> "$ULTW" *> (ulti funsp)
+
+  where
+    ulti :: [Int -> Maybe WeatherParam] -> A.Parser APRSPacket
+    ulti funs = do
+      v <- vals
+      let params = zipWith (=<<) funs v
+      return $ WeatherPacket Nothing Nothing (catMaybes params) ""
+
+    vals = replicateM 12 $ do
+      digs <- replicateM 4 (A.satisfy $ A.inClass "A-F0-9-")
+      return $ readMaybe ("0x" ++ digs)
+
+    ignore = const Nothing
+
+    convertTemp :: Int -> WeatherParam
+    convertTemp x = Temp $ round $ ((fromIntegral x / 10) - 32) * 5 / 9
 
 parseStandardWeather :: A.Parser APRSPacket
 parseStandardWeather = do

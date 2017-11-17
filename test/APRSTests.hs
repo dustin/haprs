@@ -234,8 +234,8 @@ testMegaParser =
   -- This came from the FAP samples, but from everything I can find,
   -- the FAP sample has interepreted the data incorrectly.
   ("!!00000066013D000028710166--------0158053201200210",
-   Right (WeatherPacket Nothing Nothing
-          [WindSpeed 0,WindDir 66,RainLast24Hours 0,Baro 2871,RainToday 120] "")),
+   Right (WeatherPacket Nothing Nothing [WindSpeed 0, WindDir 102, Temp 0,
+                                         RainLast24Hours 0, Baro 1035, RainToday 288] "")),
 
   -- Here's some from the wild.
   ("T#7,025,023,037,008,000,00000000", Right (TelemetryPacket "7" [25,23,37,8,0] 0 "")),
@@ -254,8 +254,13 @@ testMegaParser =
    Right (CapabilitiesPacket [IGATE,
                               MessageCount 14878,
                               LocalCount 57,
-                              Capability "FILL_CNT" "0"]))
+                              Capability "FILL_CNT" "0"])),
 
+  -- 19.2 °C 68% 1013.1 mbar 0.0 m/s North
+  ("$ULTW0000000002A000772788000485C80001029D013F043D00000000",
+   Right (WeatherPacket Nothing Nothing [WindSpeed 0, WindDir 0,
+                                         Temp 20, RainLast24Hours 119,
+                                         Baro 1012, Humidity 66, RainToday 0] ""))
 
   ]
 

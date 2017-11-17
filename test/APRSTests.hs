@@ -139,13 +139,13 @@ testTimestampParser =
 testWeatherParser :: [TestTree]
 testWeatherParser =
   map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly parseWeather a)) [
-  ("g005t077r000p000P000h50b09900wRSW", Right [WindGust 5,Temp 77,RainLastHour 0,
-                                               RainLast24Hours 0,RainToday 0,Humidity 50,Baro 9900]),
-  ("c220s004g005t077r000p000P000h50b09900wRSW", Right [WindDir 220,WindSpeed 4,WindGust 5,Temp 77,
-                                                       RainLastHour 0,RainLast24Hours 0,RainToday 0,
-                                                       Humidity 50,Baro 9900]),
-  ("g...t054r000p...P...b10140h88", Right [NoData 'g', Temp 54, RainLastHour 0, NoData 'p', NoData 'P',
-                                           Baro 10140, Humidity 88])
+  ("g005t077r000p000P000h50b09900wRSW", Right [WindGust 5,Temp 25, RainLastHour 0,
+                                               RainLast24Hours 0, RainToday 0, Humidity 50, Baro 9900]),
+  ("c220s004g005t077r000p000P000h50b09900wRSW", Right [WindDir 220, WindSpeed 4, WindGust 5, Temp 25,
+                                                       RainLastHour 0, RainLast24Hours 0, RainToday 0,
+                                                       Humidity 50, Baro 9900]),
+  ("g...t054r000p...P...b10140h88", Right [NoData 'g', Temp 12.222222222222221, RainLastHour 0,
+                                           NoData 'p', NoData 'P', Baro 10140, Humidity 88])
   ]
 
 testMegaParser :: [TestTree]
@@ -190,12 +190,12 @@ testMegaParser =
                                     "MOBIL" (Position (49.5,-72.75000393777269,PosENone)) "")),
   ("_10090556c220s004g005t077r000p000P000h50b09900wRSW",
    Right (WeatherPacket (Just (MDHM (10,9,5,56))) Nothing
-          [WindDir 220,WindSpeed 4,WindGust 5,Temp 77,RainLastHour 0,
-           RainLast24Hours 0,RainToday 0,Humidity 50,Baro 9900] "wRSW")),
+          [WindDir 220, WindSpeed 4, WindGust 5, Temp 25, RainLastHour 0,
+           RainLast24Hours 0, RainToday 0, Humidity 50, Baro 9900] "wRSW")),
   ("!4903.50N/07201.75W_220/004g005t077r000p000P000h50b09900wRSW",
    Right (WeatherPacket Nothing (Just (Position (49.05833333333333,-72.02916666666667,PosENone)))
-          [WindDir 220, WindSpeed 4,WindGust 5,Temp 77,RainLastHour 0,RainLast24Hours 0,
-           RainToday 0,Humidity 50,Baro 9900] "wRSW")),
+          [WindDir 220, WindSpeed 4, WindGust 5, Temp 25, RainLastHour 0, RainLast24Hours 0,
+           RainToday 0, Humidity 50, Baro 9900] "wRSW")),
 
   ("T#MIC199,000,255,073,123,01101001",
     Right (TelemetryPacket "MIC" [199,0,255,73,123] 105 "")),

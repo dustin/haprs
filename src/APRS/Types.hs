@@ -208,7 +208,7 @@ parseWParam :: A.Parser WeatherParam
 parseWParam = w 'c' WindDir
               <|> w 's' WindSpeed
               <|> w 'g' WindGust
-              <|> w 't' (Temp . fromIntegral)
+              <|> w 't' (Temp . f2c . fromIntegral)
               <|> w 'r' RainLastHour
               <|> w 'p' RainLast24Hours
               <|> w 'P' RainToday
@@ -542,7 +542,10 @@ parseUltimeter = do
     ignore = const Nothing
 
     convertTemp :: Int -> WeatherParam
-    convertTemp x = Temp $ ((fromIntegral x / 10) - 32) * 5 / 9
+    convertTemp x = Temp $ f2c (fromIntegral x / 10)
+
+f2c :: Double -> Double
+f2c x = (x - 32) * 5 / 9
 
 parseStandardWeather :: A.Parser APRSPacket
 parseStandardWeather = do

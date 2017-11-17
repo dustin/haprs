@@ -500,8 +500,6 @@ parseItemPacket = do
   comment <- A.takeText
   return $ ItemPacket sym (objState ost) name (Position (lat, lon, PosENone)) comment
 
--- Examples that aren't recognized properly:
---   @092345z/5L!!<*e7 _7P[g005t077r000p000P000h50b09900wRSW
 parseWeatherPacket :: A.Parser APRSPacket
 parseWeatherPacket = parseUltimeter <|> parseStandardWeather
 
@@ -562,15 +560,22 @@ parseStandardWeather = do
   let extra = case pos of
                 (Just (Position (_,_,PosECourseSpeed a b))) -> [WindDir a, WindSpeed (round $ b / 1.852)]
                 _ -> []
-  wp <- parseWeather
+  extra2 <- parsews <|> pure []
+  wp <- parseWeather A.<?> "weather junk"
   rest <- A.takeText
-  return $ WeatherPacket ts (pos' pos) (extra ++ wp) rest
+  return $ WeatherPacket ts (pos' pos) (extra ++ extra2 ++ wp) rest
 
   where
     ppos :: A.Parser (Maybe Position)
     ppos = parsePosition >>= \(_, p) -> return $ Just p
     pos' Nothing = Nothing
     pos' (Just (Position (a,b,_))) = Just (Position (a,b,PosENone))
+    parsews = do
+      crs <- replicateM 3 A.digit
+      _ <- A.char '/'
+      spd <- replicateM 3 A.digit
+      return $ [WindDir (read crs), WindSpeed (round $ read spd / 1.852)]
+
 
 parseStatusPacket :: A.Parser APRSPacket
 parseStatusPacket = do

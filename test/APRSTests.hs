@@ -241,6 +241,11 @@ testMegaParser =
   ("T#7,025,023,037,008,000,00000000", Right (TelemetryPacket "7" [25,23,37,8,0] 0 "")),
   ("=/:x,r/pXZx", Right (PositionPacket PositionNoTS (Symbol '/' 'x')
                          (Position (38.64933346634255,-121.14733570299742,PosENone)) Nothing "")),
+  ("@171607z3755.50N/12205.43W_000/000g000t048r000p045P001h96b10205.DsVP",
+   Right (WeatherPacket (Just (DHMZulu (17,16,7))) (Just (Position (37.925,-122.0905,PosENone)))
+          [WindDir 0, WindSpeed 0, WindGust 0, Temp 8.88888888888889,
+           RainLastHour 0, RainLast24Hours 45, RainToday 1, Humidity 96, Baro 10205] ".DsVP")),
+
   ("<IGATE,MSG_CNT=0,LOC_CNT=0,DIR_CNT=0,RF_CNT=0,DX=1*WR6ABD(17mi@105°)",
    Right (CapabilitiesPacket [IGATE,
                               MessageCount 0,

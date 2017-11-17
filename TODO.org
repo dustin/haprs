@@ -64,7 +64,8 @@ e.g.:
 
 Also, there are some in existing test data.
 
-** TODO Beacons
+** DONE Beacons
+   CLOSED: [2017-11-17 Fri 10:40]
 
 I couldn't find anything super obvious in the spec, but I think it's
 got to do with the destination address:

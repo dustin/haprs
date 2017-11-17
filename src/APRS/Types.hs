@@ -375,11 +375,13 @@ data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Te
                 | MicEPacket Symbol Int Position Text
                 | RawGPSPacket Position Timestamp
                 | CapabilitiesPacket [Capability]
+                | Beacon Text
                 | NotImplemented PacketType Text
                 | GarbagePacket Text
                 deriving (Show, Eq)
 
 bodyParser :: Address -> A.Parser APRSPacket
+bodyParser (Address "BEACON" "") = A.takeText >>= pure.Beacon
 bodyParser dest = parseWeatherPacket
                   <|> parseObjectPacket
                   <|> parseItemPacket

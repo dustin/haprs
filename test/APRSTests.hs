@@ -289,6 +289,14 @@ testMegaParser =
 
   ]
 
+testFrameParser :: [TestTree]
+testFrameParser =
+  map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly parseFrame a)) [
+  ("W6BXN-3>BEACON,qAR,AA6I-1:Turlock Amateur Radio Club APRS",
+   (Right (Frame (raddr "W6BXN-3") (raddr "BEACON") ["qAR", "AA6I-1"]
+           (Beacon "Turlock Amateur Radio Club APRS"))))
+  ]
+
 tests :: [TestTree]
 tests = [
   testGroup "callPass"  testCallPass,
@@ -303,5 +311,6 @@ tests = [
 
   testGroup "timestamp parsing" testTimestampParser,
   testGroup "weather parsing" testWeatherParser,
-  testGroup "mega parser" testMegaParser
+  testGroup "mega parser" testMegaParser,
+  testGroup "frame parser" testFrameParser
   ]

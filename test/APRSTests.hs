@@ -282,6 +282,12 @@ testMegaParser =
           [WindDir 105,WindSpeed 3,WindGust 6,Temp 7.222222222222222,
            RainLastHour 0,RainLast24Hours 0,RainToday 0,Humidity 48,Baro 10242,
            Luminosity 9] (UnknownWeatherSW '.') WUDavisVantagePro "")),
+  ("@182018z3925.85N/11948.27W_105/003g006t045r000F013P000h48b10242l009.DsVP",
+   Right (WeatherPacket (Just (DHMZulu (18,20,18)))
+          (Just (Position (39.43083333333333,-119.8045,PosENone)))
+          [WindDir 105,WindSpeed 3,WindGust 6,Temp 7.222222222222222,
+           RainLastHour 0,WaterLevel 1.3,RainToday 0,Humidity 48,Baro 10242,
+           Luminosity 1009] (UnknownWeatherSW '.') WUDavisVantagePro "")),
 
   ("<IGATE,MSG_CNT=0,LOC_CNT=0,DIR_CNT=0,RF_CNT=0,DX=1*WR6ABD(17mi@105°)",
    Right (CapabilitiesPacket [IGATE,

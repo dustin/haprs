@@ -23,6 +23,7 @@ module APRS.Types
     , Directivity(..)
     , MessageInfo(..)
     , ObjectState(..)
+    , ObjectData(..)
     , Capability(..)
     , position
     -- parsers
@@ -383,9 +384,13 @@ parseWeatherUnit =
   <|> "TW1"       *> pure WUOpenTrackerTW1
   <|> (A.take 2  >>= (pure.) UnknownWeatherUnit)
 
+data ObjectData = ObjText Text
+                | ObjWeather [WeatherParam]
+                deriving (Show, Eq)
+
 -- TODO:  Include extensions from page 27 in position packets
 data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Text
-                | ObjectPacket Symbol ObjectState Text Position Timestamp Text
+                | ObjectPacket Symbol ObjectState Text Position Timestamp ObjectData
                 | ItemPacket Symbol ObjectState Text Position Text
                 | WeatherPacket (Maybe Timestamp) (Maybe Position) [WeatherParam] WeatherSW WeatherUnit Text
                 | StatusPacket (Maybe Timestamp) Text
@@ -560,8 +565,12 @@ parseObjectPacket = do
   ost <- A.satisfy (`elem` ['_', '*']) -- killed, live
   ts <- parseTimestamp
   (sym, Position (lat,lon,_)) <- parsePosition
-  comment <- A.takeText
-  return $ ObjectPacket sym (objState ost) (fromString name) (Position (lat, lon, PosENone)) ts comment
+  objdat <- parseObjData
+  return $ ObjectPacket sym (objState ost) (fromString name) (Position (lat, lon, PosENone)) ts objdat
+
+  where
+    parseObjData :: A.Parser ObjectData
+    parseObjData = (parseWeather >>= (pure . ObjWeather)) <|> (A.takeText >>= (pure . ObjText))
 
 parseItemPacket :: A.Parser APRSPacket
 parseItemPacket = do

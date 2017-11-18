@@ -54,7 +54,8 @@ Also, two new software type identifiers have been assigned:
 
 's' is snowfall when windspeed is separate.
 
-** TODO Weather Objects
+** DONE Weather Objects
+   CLOSED: [2017-11-18 Sat 15:13]
 
 Here's an object with weather:
 : KO6TH>APWW10,TCPIP*,qAC,T2SATGFI1:;KO6TH-WX *170809z3857.54N/12106.64W_000/001g000t044r000p000P000h099b00000

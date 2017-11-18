@@ -199,10 +199,12 @@ testMegaParser =
           (Position (49.5,-72.75000393777269,PosENone)) (Just (DHMZulu (9,23,45))) " ")),
   (";LEADER   _092345z4903.50N/07201.75W>088/036",
    Right (ObjectPacket (Symbol '/' '>') -- this one eats the 088/036 course/speed
-          Killed "LEADER   " (Position (49.05833333333333,-72.02916666666667,PosENone)) (DHMZulu (9,23,45)) "")),
+          Killed "LEADER   " (Position (49.05833333333333,-72.02916666666667,PosENone)) (DHMZulu (9,23,45))
+         (ObjText ""))),
   (";LEADER   *092345z/5L!!<*e7>7P[ ",
    Right (ObjectPacket (Symbol '/' '>')
-          Live "LEADER   " (Position (49.5,-72.75000393777269,PosENone)) (DHMZulu (9,23,45)) " ")),
+          Live "LEADER   " (Position (49.5,-72.75000393777269,PosENone)) (DHMZulu (9,23,45))
+          (ObjText " "))),
   (")AID #2!4903.50N/07201.75WA",
     Right (ItemPacket (Symbol '/' 'A') Live "AID #2"
            (Position (49.05833333333333,-72.02916666666667,PosENone)) "")),
@@ -300,6 +302,12 @@ testMegaParser =
           [WindDir 270, WindSpeed 1, WindGust 1, Temp 10.555555555555555,
            Voltage 13.6, RainToday 22, Humidity 88, Baro 10262, RawRain 111]
            OpenTracker WUOpenTrackerTW1 "")),
+
+  (";KO6TH-WX *170809z3857.54N/12106.64W_000/001g000t044r000p000P000h099b00000",
+   Right (ObjectPacket (Symbol '/' '_') Live "KO6TH-WX "
+          (Position (38.959,-121.11066666666666,PosENone)) (DHMZulu (17,8,9))
+          (ObjWeather [WindGust 0, Temp 6.666666666666667, RainLastHour 0, RainLast24Hours 0,
+                       RainToday 0, Humidity 9]))),
 
   ("<IGATE,MSG_CNT=0,LOC_CNT=0,DIR_CNT=0,RF_CNT=0,DX=1*WR6ABD(17mi@105°)",
    Right (CapabilitiesPacket [IGATE,

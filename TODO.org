@@ -38,7 +38,8 @@ It appears to have fields from this draft: http://www.aprs.org/aprs12/weather-ne
 
 : W6PKT-WX>APWW10,qAS,W6PKT-5:/181215z/:XXn/?_T_ sT190/005g006t046r000P000p000h32b9152
 
-** TODO Identify this station:
+** DONE Identify this station:
+   CLOSED: [2017-11-18 Sat 13:13]
 
 : SPIDER>APOTW1,SPDRLK*,K6CDF-5,qAR,W6SRR-3:!3900.86N/12016.29W_160/000g003t048P004h64b10211OTW1
 

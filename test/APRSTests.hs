@@ -254,7 +254,7 @@ testMegaParser =
    Right (WeatherPacket Nothing (Just (Position (37.8085,-121.20733333333334,PosENone)))
           [WindDir 270, WindSpeed 1, WindGust 1, Temp 10.555555555555555,
            Voltage 13.6, RainToday 22, Humidity 88, Baro 10262]
-           (UnknownWeatherSW 'O') (UnknownWeatherUnit "TW") "1")),
+           OpenTracker WUOpenTrackerTW1 "")),
 
   ("@182018z3925.85N/11948.27W_105/003g006t045r000p000P000h48b10242L009.DsVP",
    Right (WeatherPacket (Just (DHMZulu (18,20,18)))

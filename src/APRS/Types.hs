@@ -329,6 +329,10 @@ data WeatherSW = APRSdos
                | APRSSA
                | WinAPRS
                | XAPRS
+               | OpenTracker
+               | Kenwood
+               | Byonics
+               | Yaesu
                | UnknownWeatherSW Char
                deriving (Eq, Show)
 
@@ -338,7 +342,11 @@ weatherSWMap = [('d', APRSdos),
                 ('p', PocketAPRS),
                 ('s', APRSSA),
                 ('w', WinAPRS),
-                ('x', XAPRS)]
+                ('x', XAPRS),
+                ('o', OpenTracker),
+                ('k', Kenwood),
+                ('b', Byonics),
+                ('y', Yaesu)]
 
 lookupWeatherSW :: Char -> WeatherSW
 lookupWeatherSW c = fromMaybe (UnknownWeatherSW c) (lookup (toLower c) weatherSWMap)
@@ -354,6 +362,7 @@ data WeatherUnit = WUDavis
                  | WUUltimeterRemote
                  | WUUltimeter500
                  | WURemoteUltimeterPacket
+                 | WUOpenTrackerTW1
                  | UnknownWeatherUnit Text
                  deriving (Show, Eq)
 
@@ -370,6 +379,7 @@ parseWeatherUnit =
   <|> "U2kr"      *> pure WUUltimeterRemote
   <|> "U5"        *> pure WUUltimeter500
   <|> "Upkm"      *> pure WURemoteUltimeterPacket
+  <|> "TW1"       *> pure WUOpenTrackerTW1
   <|> (A.take 2  >>= (pure.) UnknownWeatherUnit)
 
 -- TODO:  Include extensions from page 27 in position packets

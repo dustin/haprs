@@ -32,6 +32,7 @@ module APRS.Types
     , parseWeather
     , bodyParser
     -- For testing
+    , lookupWeatherSW
     ) where
 
 import Data.Char (chr)
@@ -334,7 +335,7 @@ data WeatherSW = APRSdos
                | Byonics
                | Yaesu
                | UnknownWeatherSW Char
-               deriving (Eq, Show)
+               deriving (Eq, Ord, Show)
 
 weatherSWMap :: [(Char, WeatherSW)]
 weatherSWMap = [('d', APRSdos),

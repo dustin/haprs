@@ -116,6 +116,26 @@ propValidAddress a s
   | otherwise = collect "other" $ isRight addr
   where addr = address (fromString a) (fromString s)
 
+-- Convenience for testing things that map from lowercase chars
+newtype LowChar = LowChar Char deriving (Ord, Show, Eq)
+
+instance Bounded LowChar where
+  minBound = LowChar 'a'
+  maxBound = LowChar 'z'
+
+fromLowChar :: LowChar -> Char
+fromLowChar (LowChar c) = c
+
+instance Enum LowChar where
+  fromEnum = fromEnum . fromLowChar
+  toEnum = LowChar . toEnum
+  enumFrom     x   = enumFromTo     x maxBound
+  enumFromThen x y = enumFromThenTo x y bound
+    where
+      bound | fromEnum y >= fromEnum x = maxBound
+            | otherwise                = minBound
+
+
 testNoDupMapping :: (Bounded a, Enum a, Show b, Ord b) => (a -> b) -> Assertion
 testNoDupMapping f = case foldr findDup (Right Set.empty) [minBound..] of
                        Left x -> assertString $ "Duplicate value found: " ++ show x
@@ -315,6 +335,7 @@ tests = [
   localOption (QC.QuickCheckTests 1000) $ testProperty "address validation" propValidAddress,
   testGroup "base91" testBase91,
   testCase "no dup packet types" $ testNoDupMapping (identifyPacket.chr.fromIntegral :: Word8 -> PacketType),
+  testCase "no dup weather sw" $ testNoDupMapping (lookupWeatherSW.fromLowChar :: LowChar -> WeatherSW),
 
   testGroup "timestamp parsing" testTimestampParser,
   testGroup "weather parsing" testWeatherParser,

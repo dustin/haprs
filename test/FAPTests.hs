@@ -100,8 +100,7 @@ bodyParserTest _ fs = let parsed = map (\f -> (f, A.parseOnly parseFrame (fromSt
 
                             where
                               understood :: Either String Frame -> Bool
-                              understood (Right (Frame _ _ _ (GarbagePacket _))) = False
-                              understood (Right (Frame _ _ _ (NotImplemented _ _))) = False
+                              understood (Right (Frame _ _ _ (NotUnderstoodPacket _))) = False
                               understood (Right _) = True
                               understood _ = False
 

@@ -338,7 +338,7 @@ testMegaParser =
   ("$GPRMC,191608,A,3704.3616,N,12159.7271,W,000.0,000.0,151117,013.7,E*6B",
     Right (RawGPSPacket (Position (37.07269333333333,-121.99545166666667,PosENone)) (HMS (19,16,8)))),
 
-  ("{some user defined stuff", Right (NotImplemented UserDefined "some user defined stuff"))
+  ("{some user defined stuff", Right (NotUnderstoodPacket "{some user defined stuff"))
 
   ]
 
@@ -347,12 +347,12 @@ testFrameParser =
   map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly parseFrame a)) [
   ("W6BXN-3>BEACON,qAR,AA6I-1:Turlock Amateur Radio Club APRS",
    (Right (Frame (raddr "W6BXN-3") (raddr "BEACON") ["qAR", "AA6I-1"]
-           (Beacon "Turlock Amateur Radio Club APRS")))),
+           (NotUnderstoodPacket "Turlock Amateur Radio Club APRS")))),
 
   -- A garbage packet
   ("WA6EWV-3>ID,SNOW,qAR,KJ6NKR-2:WA6EWV-3/R NONE/D WA6EWV-5/N",
    (Right (Frame (raddr "WA6EWV-3") (raddr "ID") ["SNOW","qAR","KJ6NKR-2"]
-            (GarbagePacket "WA6EWV-3/R NONE/D WA6EWV-5/N"))))
+            (NotUnderstoodPacket "WA6EWV-3/R NONE/D WA6EWV-5/N"))))
   ]
 
 tests :: [TestTree]

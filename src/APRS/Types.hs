@@ -399,13 +399,10 @@ data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Te
                 | MicEPacket Symbol Int Position Text
                 | RawGPSPacket Position Timestamp
                 | CapabilitiesPacket [Capability]
-                | Beacon Text
-                | NotImplemented PacketType Text
-                | GarbagePacket Text
+                | NotUnderstoodPacket Text
                 deriving (Show, Eq)
 
 bodyParser :: Address -> A.Parser APRSPacket
-bodyParser (Address "BEACON" "") = A.takeText >>= pure.Beacon
 bodyParser dest = parseWeatherPacket
                   <|> parseObjectPacket
                   <|> parseItemPacket
@@ -416,19 +413,12 @@ bodyParser dest = parseWeatherPacket
                   <|> parseMicE dest
                   <|> parseNMEA
                   <|> parsePositionPacket
-                  <|> parseNotImplemented
-                  <|> (A.takeText >>= pure.GarbagePacket)
+                  <|> (A.takeText >>= pure.NotUnderstoodPacket)
 
 parseNMEA :: A.Parser APRSPacket
 parseNMEA = do
   (lat,lon,ts) <- N.parseNMEA
   return $ RawGPSPacket (Position (lat,lon,PosENone)) (HMS ts)
-
-parseNotImplemented :: A.Parser APRSPacket
-parseNotImplemented = do
-  c <- A.satisfy (`elem` validPktTypes)
-  t <- A.takeText
-  return $ NotImplemented (identifyPacket c) t
 
 parseCapabilityPacket :: A.Parser APRSPacket
 parseCapabilityPacket = do

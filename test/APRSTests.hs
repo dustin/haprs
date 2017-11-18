@@ -295,6 +295,12 @@ testMegaParser =
            Voltage 13.6, RainToday 22, Humidity 88, Baro 10262, Snowfall 111]
            OpenTracker WUOpenTrackerTW1 "")),
 
+  ("!3748.51N/12112.44W_270/001g001t051V136P022h88b10262#111OTW1",
+   Right (WeatherPacket Nothing (Just (Position (37.8085,-121.20733333333334,PosENone)))
+          [WindDir 270, WindSpeed 1, WindGust 1, Temp 10.555555555555555,
+           Voltage 13.6, RainToday 22, Humidity 88, Baro 10262, RawRain 111]
+           OpenTracker WUOpenTrackerTW1 "")),
+
   ("<IGATE,MSG_CNT=0,LOC_CNT=0,DIR_CNT=0,RF_CNT=0,DX=1*WR6ABD(17mi@105°)",
    Right (CapabilitiesPacket [IGATE,
                               MessageCount 0,
@@ -333,7 +339,12 @@ testFrameParser =
   map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly parseFrame a)) [
   ("W6BXN-3>BEACON,qAR,AA6I-1:Turlock Amateur Radio Club APRS",
    (Right (Frame (raddr "W6BXN-3") (raddr "BEACON") ["qAR", "AA6I-1"]
-           (Beacon "Turlock Amateur Radio Club APRS"))))
+           (Beacon "Turlock Amateur Radio Club APRS")))),
+
+  -- A garbage packet
+  ("WA6EWV-3>ID,SNOW,qAR,KJ6NKR-2:WA6EWV-3/R NONE/D WA6EWV-5/N",
+   (Right (Frame (raddr "WA6EWV-3") (raddr "ID") ["SNOW","qAR","KJ6NKR-2"]
+            (GarbagePacket "WA6EWV-3/R NONE/D WA6EWV-5/N"))))
   ]
 
 tests :: [TestTree]

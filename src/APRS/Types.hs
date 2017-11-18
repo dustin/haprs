@@ -206,6 +206,9 @@ data WeatherParam = WindDir Int
                   | Baro Int
                   | Voltage Double
                   | WaterLevel Double
+                  | Luminosity Int
+                  | Snowfall Int
+                  | RawRain Int
                   | NoData Char
                   deriving (Show, Eq)
 
@@ -221,6 +224,9 @@ parseWParam = w 'c' WindDir
               <|> w 'V' (Voltage . (/ 10) . fromIntegral)
               <|> w' 2 'h' Humidity
               <|> w' 5 'b' Baro
+              <|> w 'L' Luminosity
+              <|> w 'l' (Luminosity . (+ 1000))
+              <|> w '#' RawRain
   where
     w' :: Int -> Char -> (Int -> WeatherParam) -> A.Parser WeatherParam
     w' i c wc = do

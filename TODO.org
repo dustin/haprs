@@ -29,6 +29,29 @@ This one was partially recognized:
 
 It appears to have fields from this draft: http://www.aprs.org/aprs12/weather-new.txt
 
+** DONE Luminosity
+   CLOSED: [2017-11-18 Sat 12:58]
+
+: WA7ITP>APRS,TCPIP*,qAC,SIXTH:@182018z3925.85N/11948.27W_105/003g006t045r000p000P000h48b10242L009.DsVP
+
+** TODO Truncated Baro
+
+: W6PKT-WX>APWW10,qAS,W6PKT-5:/181215z/:XXn/?_T_ sT190/005g006t046r000P000p000h32b9152
+
+** TODO Identify this station:
+
+: SPIDER>APOTW1,SPDRLK*,K6CDF-5,qAR,W6SRR-3:!3900.86N/12016.29W_160/000g003t048P004h64b10211OTW1
+
+from http://www.aprs.org/aprs11/spec-wx.txt
+
+Also, two new software type identifiers have been assigned:
+
+"O" for Otracker, "K" for  Kenwood, "B" for Byonics, "Y" for Yeasu.
+
+** TODO Snowfall
+
+'s' is snowfall when windspeed is separate.
+
 ** TODO Weather Objects
 
 Here's an object with weather:
@@ -73,6 +96,10 @@ got to do with the destination address:
 : W6BXN-3>BEACON,qAR,AA6I-1:Turlock Amateur Radio Club APRS
 
 ** TODO MicE Canned Status Messages
+
+** TODO MicE Manual status messages
+
+: KE6BEA>SXQTXV,W6CX-3*,WIDE2-1,qAR,K6RPT:'2Z4l k/]"3s}Sean's Truck Fairfield CA
 
 ** DONE Truncated compressed position
    CLOSED: [2017-11-16 Thu 17:52]

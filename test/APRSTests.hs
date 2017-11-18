@@ -248,7 +248,7 @@ testMegaParser =
    Right (WeatherPacket (Just (DHMZulu (17,16,7))) (Just (Position (37.925,-122.0905,PosENone)))
           [WindDir 0, WindSpeed 0, WindGust 0, Temp 8.88888888888889,
            RainLastHour 0, RainLast24Hours 45, RainToday 1, Humidity 96, Baro 10205]
-           (UnknownWeatherSW '.') (UnknownWeatherUnit "Ds") "VP")),
+           (UnknownWeatherSW '.') WUDavisVantagePro "")),
 
   ("!3748.51N/12112.44W_270/001g001t051V136P022h88b10262OTW1",
    Right (WeatherPacket Nothing (Just (Position (37.8085,-121.20733333333334,PosENone)))

@@ -338,6 +338,7 @@ lookupWeatherSW :: Char -> WeatherSW
 lookupWeatherSW c = fromMaybe (UnknownWeatherSW c) (lookup (toLower c) weatherSWMap)
 
 data WeatherUnit = WUDavis
+                 | WUDavisVantagePro
                  | WUHeathkit
                  | WUPIC
                  | WURadioShack
@@ -353,6 +354,7 @@ data WeatherUnit = WUDavis
 parseWeatherUnit :: A.Parser WeatherUnit
 parseWeatherUnit =
   "Dvs"           *> pure WUDavis
+  <|> "DsVP"      *> pure WUDavisVantagePro
   <|> "HKT"       *> pure WUHeathkit
   <|> "PIC"       *> pure WUPIC
   <|> "RSW"       *> pure WURadioShack

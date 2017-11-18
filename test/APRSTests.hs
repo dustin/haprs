@@ -289,6 +289,12 @@ testMegaParser =
            RainLastHour 0,WaterLevel 1.3,RainToday 0,Humidity 48,Baro 10242,
            Luminosity 1009] (UnknownWeatherSW '.') WUDavisVantagePro "")),
 
+  ("!3748.51N/12112.44W_270/001g001t051V136P022h88b10262s111OTW1",
+   Right (WeatherPacket Nothing (Just (Position (37.8085,-121.20733333333334,PosENone)))
+          [WindDir 270, WindSpeed 1, WindGust 1, Temp 10.555555555555555,
+           Voltage 13.6, RainToday 22, Humidity 88, Baro 10262, Snowfall 111]
+           OpenTracker WUOpenTrackerTW1 "")),
+
   ("<IGATE,MSG_CNT=0,LOC_CNT=0,DIR_CNT=0,RF_CNT=0,DX=1*WR6ABD(17mi@105°)",
    Right (CapabilitiesPacket [IGATE,
                               MessageCount 0,

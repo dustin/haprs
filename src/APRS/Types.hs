@@ -633,12 +633,12 @@ parseStandardWeather = do
   let extra = case pos of
                 (Just (Position (_,_,PosECourseSpeed a b))) -> [WindDir a, WindSpeed (round $ b / 1.852)]
                 _ -> []
-  extra2 <- parsews <|> pure []
+  ws <- parsews <|> pure []
   wp <- parseWeather A.<?> "weather junk"
   swc <- A.anyChar <|> pure '?'
   unit <- parseWeatherUnit <|> pure (UnknownWeatherUnit "??")
   rest <- A.takeText
-  return $ WeatherPacket ts (pos' pos) (extra ++ extra2 ++ wp) (lookupWeatherSW swc) unit rest
+  return $ WeatherPacket ts (pos' pos) (mightsnow $ extra ++ ws ++ wp) (lookupWeatherSW swc) unit rest
 
   where
     ppos :: A.Parser (Maybe Position)
@@ -648,7 +648,14 @@ parseStandardWeather = do
     parsews = do
       (crs, spd) <- parseCourseSpeed
       return $ [WindDir crs, WindSpeed (round spd)]
+    mightsnow :: [WeatherParam] -> [WeatherParam]
+    mightsnow [] = []
+    mightsnow (s@(WindSpeed _):xs) = s : sawRain xs
+    mightsnow (x:xs) = x : mightsnow xs
 
+    sawRain [] = []
+    sawRain ((WindSpeed s):xs) = (Snowfall s) : sawRain xs
+    sawRain (x:xs) = x : sawRain xs
 
 parseStatusPacket :: A.Parser APRSPacket
 parseStatusPacket = do

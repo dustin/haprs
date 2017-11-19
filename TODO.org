@@ -1,5 +1,26 @@
 * Valid packets seen, but not understood completely:
 
+** TODO Truncated Baro
+
+: W6PKT-WX>APWW10,qAS,W6PKT-5:/181215z/:XXn/?_T_ sT190/005g006t046r000P000p000h32b9152
+
+** TODO Another Weird Telemetry
+
+: BH3NVN-13>APZ036,TCPIP*,qAC,T2EHIME:T#598,049,063,037,005,101,000,00000000
+
+** TODO Whatever This Is
+Weather no pos, but just like, six digits?
+
+: W6LLL-15>APTW14,K7FED-1*,WIDE2-1,qAR,N6VV-3:_111600
+
+Actually, I think that was just truncated.  APRS.fi shows:
+
+: 2017-11-16 10:37:32 PST: W6LLL-15>APTW14,K7FED-1*,WIDE2-1,qAR,N6VV-3:_111600 [Unsupported weather format]
+
+Other entries looked like this:
+
+: 2017-11-16 10:37:02 PST: W6LLL-15>APTW14,WIDE1-1,WIDE2-1,qAR,K6SJC-1:_11160021c287s000g000t053r001p007P001h..b.....tU2k
+
 ** DONE NMEA
    CLOSED: [2017-11-17 Fri 00:04]
 
@@ -34,10 +55,6 @@ It appears to have fields from this draft: http://www.aprs.org/aprs12/weather-ne
 
 : WA7ITP>APRS,TCPIP*,qAC,SIXTH:@182018z3925.85N/11948.27W_105/003g006t045r000p000P000h48b10242L009.DsVP
 
-** TODO Truncated Baro
-
-: W6PKT-WX>APWW10,qAS,W6PKT-5:/181215z/:XXn/?_T_ sT190/005g006t046r000P000p000h32b9152
-
 ** DONE Identify this station:
    CLOSED: [2017-11-18 Sat 13:13]
 
@@ -62,23 +79,6 @@ Here's an object with weather:
 : KO6TH>APWW10,TCPIP*,qAC,T2SATGFI1:;KO6TH-WX *170807z3857.54N/12106.64W_000/000g000t044r000p000P000h099b00000
 
 
-** TODO Another Weird Telemetry
-
-: BH3NVN-13>APZ036,TCPIP*,qAC,T2EHIME:T#598,049,063,037,005,101,000,00000000
-
-** TODO Whatever This Is
-Weather no pos, but just like, six digits?
-
-: W6LLL-15>APTW14,K7FED-1*,WIDE2-1,qAR,N6VV-3:_111600
-
-Actually, I think that was just truncated.  APRS.fi shows:
-
-: 2017-11-16 10:37:32 PST: W6LLL-15>APTW14,K7FED-1*,WIDE2-1,qAR,N6VV-3:_111600 [Unsupported weather format]
-
-Other entries looked like this:
-
-: 2017-11-16 10:37:02 PST: W6LLL-15>APTW14,WIDE1-1,WIDE2-1,qAR,K6SJC-1:_11160021c287s000g000t053r001p007P001h..b.....tU2k
-
 * Missing Parser Features
 : @092345z/5L!!<*e7 _7P[g005t077r000p000P000h50b09900wRSW
 
@@ -90,6 +90,23 @@ e.g.:
 
 Also, there are some in existing test data.
 
+** TODO MicE Canned Status Messages
+
+** TODO MicE Altitude
+
+This one actually  has an altitude at the beginning.  I currenetly
+grab "3s} as aprt of the status message, but it's acstually a base91
+encoded three-digit number and then }.
+
+: KE6BEA>SXQTXV,W6CX-3*,WIDE2-1,qAR,K6RPT:'2Z4l k/]"3s}Sean's Truck Fairfield CA
+
+: KG6WQV>S8QQXV,K6CDF-8*,WIDE2-1,qAR,W6PKT-5:`1\'l"Fk/]"4A}=
+
+: KE7NOA-7>SXUUTQ,WIDE1-1,WIDE2-1,qAR,N6VUD-15:`1[Km5A>/]"9#}=
+
+: ]"9#}="
+
+
 ** DONE Beacons
    CLOSED: [2017-11-17 Fri 10:40]
 
@@ -98,18 +115,8 @@ got to do with the destination address:
 
 : W6BXN-3>BEACON,qAR,AA6I-1:Turlock Amateur Radio Club APRS
 
-** TODO MicE Canned Status Messages
-
 ** DONE MicE Manual status messages
    CLOSED: [2017-11-18 Sat 18:05]
-
-: KE6BEA>SXQTXV,W6CX-3*,WIDE2-1,qAR,K6RPT:'2Z4l k/]"3s}Sean's Truck Fairfield CA
-
-** TODO MicE Altitude
-
-This one actually  has an altitude at the beginning.  I currenetly
-grab "3s} as aprt of the status message, but it's acstually a base91
-encoded three-digit number and then }.
 
 : KE6BEA>SXQTXV,W6CX-3*,WIDE2-1,qAR,K6RPT:'2Z4l k/]"3s}Sean's Truck Fairfield CA
 

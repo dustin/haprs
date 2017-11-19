@@ -1,6 +1,6 @@
 module Main where
 
-import APRS.Types
+import APRS
 
 import Control.Monad (forever)
 import System.IO (Handle, hClose, hPutStr, hGetLine)

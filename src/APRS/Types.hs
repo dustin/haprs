@@ -719,5 +719,6 @@ parseMicE (Address call ss) = do
   let ext = PosECourseSpeed (if course > 400 then course - 400 else course) (fromIntegral speed)
   sym <- A.anyChar
   tbl <- A.anyChar
+  st <- A.takeText
 
-  return $ MicEPacket (Symbol tbl sym) mbits (Position (lat,lon,ext)) ""
+  return $ MicEPacket (Symbol tbl sym) mbits (Position (lat,lon,ext)) st

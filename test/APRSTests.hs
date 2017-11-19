@@ -349,6 +349,12 @@ testFrameParser =
    (Right (Frame (raddr "W6BXN-3") (raddr "BEACON") ["qAR", "AA6I-1"]
            (NotUnderstoodPacket "Turlock Amateur Radio Club APRS")))),
 
+  ("KE6BEA>SXQTXV,W6CX-3*,WIDE2-1,qAR,K6RPT:'2Z4l k/]\"3s}Sean's Truck Fairfield CA",
+   Right (Frame (raddr "KE6BEA") (raddr "SXQTXV") ["W6CX-3*","WIDE2-1","qAR","K6RPT"]
+          (MicEPacket (Symbol ']' '/') 7
+           (Position (38.24766666666667,-122.03733333333334,PosECourseSpeed 79 0.0))
+           "\"3s}Sean's Truck Fairfield CA"))),
+
   -- A garbage packet
   ("WA6EWV-3>ID,SNOW,qAR,KJ6NKR-2:WA6EWV-3/R NONE/D WA6EWV-5/N",
    (Right (Frame (raddr "WA6EWV-3") (raddr "ID") ["SNOW","qAR","KJ6NKR-2"]

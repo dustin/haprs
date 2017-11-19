@@ -36,7 +36,6 @@ module APRS.Types
     , lookupWeatherSW
     ) where
 
-import Data.Char (chr)
 import Control.Applicative ((<|>))
 import Control.Monad (replicateM, replicateM_, guard)
 import Data.Bits (xor, (.&.), shiftL)
@@ -98,14 +97,6 @@ identifyPacket '`' = CurrentMicE
 identifyPacket '{' = UserDefined
 identifyPacket '}' = ThirdParty
 identifyPacket x = InvalidPacket x
-
-validPktTypes :: [Char]
-validPktTypes = map (chr.fromIntegral) $ filter isValid [minBound..maxBound]
-  where
-    isValid :: Word8 -> Bool
-    isValid w = case (identifyPacket.chr.fromIntegral) w of
-                  InvalidPacket _ -> False
-                  _ -> True
 
 -- Address Callsign SSID
 data Address = Address Text Text deriving (Eq)

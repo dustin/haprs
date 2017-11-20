@@ -94,9 +94,9 @@ Also, there are some in existing test data.
 
 ** TODO MicE Altitude
 
-This one actually  has an altitude at the beginning.  I currenetly
-grab "3s} as aprt of the status message, but it's acstually a base91
-encoded three-digit number and then }.
+This one has an altitude at the beginning.  I currenetly grab "3s} as
+aprt of the status message, but it's actually a base91 encoded
+three-digit number and then }.
 
 : KE6BEA>SXQTXV,W6CX-3*,WIDE2-1,qAR,K6RPT:'2Z4l k/]"3s}Sean's Truck Fairfield CA
 

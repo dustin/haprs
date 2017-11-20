@@ -142,9 +142,9 @@ instance Similar Address where
 b91chars :: String
 b91chars = "[!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\\^_`abcdefghijklmnopqrstuvwxyz{]"
 
-parseB91Seg :: A.Parser Double
-parseB91Seg = do
-  stuff <- replicateM 4 (A.satisfy (`elem` b91chars))
+parseB91Seg :: Int -> A.Parser Double
+parseB91Seg n = do
+  stuff <- replicateM n (A.satisfy (`elem` b91chars))
   return $ (fromIntegral.decodeBase91.fromString) stuff
 
 posamb :: Int -> Double
@@ -183,10 +183,10 @@ parseTimestamp = dhmlocal <|> dhmzulu <|> hms <|> mdhm
     n3 ch = n 3 >>= \[a,b,c] -> A.char ch >> pure (a,b,c)
 
 -- data Position = Position { _pos :: Geodetic WGS84, _ambiguity :: Int }
--- lon, lat, velocity
+-- lon, lat, alt, extension
 -- TODO: Perhaps stuff some extensions in here to cover PosExtension
 -- as well as compression type and ambiguity.
-newtype Position = Position (Double, Double, PosExtension) deriving (Eq, Show)
+newtype Position = Position (Double, Double, Double, PosExtension) deriving (Eq, Show)
 
 data WeatherParam = WindDir Int
                   | WindSpeed Int
@@ -409,7 +409,8 @@ bodyParser dest = parseWeatherPacket
 parseNMEA :: A.Parser APRSPacket
 parseNMEA = do
   (lat,lon,ts) <- N.parseNMEA
-  return $ RawGPSPacket (Position (lat,lon,PosENone)) (HMS ts)
+  -- TODO: Altitude
+  return $ RawGPSPacket (Position (lat,lon,0,PosENone)) (HMS ts)
 
 parseCapabilityPacket :: A.Parser APRSPacket
 parseCapabilityPacket = do
@@ -444,8 +445,8 @@ parsePosition = parsePosUncompressed <|> parsePosCompressed
 parsePosCompressed :: A.Parser (Symbol, Position)
 parsePosCompressed = do
   tbl <- A.anyChar
-  b91a <- parseB91Seg
-  b91b <- parseB91Seg
+  b91a <- parseB91Seg 4
+  b91b <- parseB91Seg 4
   sym <- A.anyChar -- symbol code
 
   -- It seems that xastir will just truncate the packet once it has enough stuff.
@@ -454,7 +455,8 @@ parsePosCompressed = do
   return (Symbol tbl sym, Position $ unc b91a b91b $ ext)
 
   where
-    unc m1 m2 v = (90 - (m1 / 380926), (-180) + (m2 / 190463), v)
+    -- TODO: Altitude
+    unc m1 m2 v = (90 - (m1 / 380926), (-180) + (m2 / 190463), 0, v)
     pcvel :: A.Parser PosExtension
     pcvel = do
       x <- replicateM 3 A.anyChar
@@ -476,7 +478,8 @@ parsePosUncompressed = do
   sym <- A.anyChar
   posE <- parsePosExtension
 
-  return (Symbol tbl sym, Position (lat,lon, posE))
+  -- TODO:  Altitude
+  return (Symbol tbl sym, Position (lat,lon,0,posE))
 
   where
     parseDir :: Int -> A.Parser Double
@@ -545,9 +548,9 @@ parseObjectPacket = do
   name <- replicateM 9 A.anyChar
   ost <- A.satisfy (`elem` ['_', '*']) -- killed, live
   ts <- parseTimestamp
-  (sym, Position (lat,lon,_)) <- parsePosition
+  (sym, Position (lat,lon,alt,_)) <- parsePosition
   objdat <- parseObjData
-  return $ ObjectPacket sym (objState ost) (fromString name) (Position (lat, lon, PosENone)) ts objdat
+  return $ ObjectPacket sym (objState ost) (fromString name) (Position (lat, lon, alt, PosENone)) ts objdat
 
   where
     parseObjData :: A.Parser ObjectData
@@ -559,9 +562,9 @@ parseItemPacket = do
   name <- A.takeTill (\c -> c == '_' || c == '!')
   guard $ Data.Text.length name >= 3 && Data.Text.length name <= 9
   ost <- A.satisfy (`elem` ['_', '!']) -- killed, live
-  (sym, Position (lat,lon,_)) <- parsePosition
+  (sym, Position (lat,lon,alt,_)) <- parsePosition
   comment <- A.takeText
-  return $ ItemPacket sym (objState ost) name (Position (lat, lon, PosENone)) comment
+  return $ ItemPacket sym (objState ost) name (Position (lat, lon, alt, PosENone)) comment
 
 parseWeatherPacket :: A.Parser APRSPacket
 parseWeatherPacket = parseUltimeter <|> parseStandardWeather
@@ -621,7 +624,7 @@ parseStandardWeather = do
   ts <- (parseTimestamp >>= pure.Just) <|> pure Nothing
   pos <- if c `elem` ['_', '='] then pure Nothing else ppos
   let extra = case pos of
-                (Just (Position (_,_,PosECourseSpeed a b))) -> [WindDir a, WindSpeed (round $ b / 1.852)]
+                (Just (Position (_,_,_,PosECourseSpeed a b))) -> [WindDir a, WindSpeed (round $ b / 1.852)]
                 _ -> []
   ws <- parsews <|> pure []
   wp <- parseWeather A.<?> "weather junk"
@@ -634,7 +637,7 @@ parseStandardWeather = do
     ppos :: A.Parser (Maybe Position)
     ppos = parsePosition >>= \(_, p) -> return $ Just p
     pos' Nothing = Nothing
-    pos' (Just (Position (a,b,_))) = Just (Position (a,b,PosENone))
+    pos' (Just (Position (a,b,alt,_))) = Just (Position (a,b,alt,PosENone))
     parsews = do
       (crs, spd) <- parseCourseSpeed
       return $ [WindDir crs, WindSpeed (round spd)]
@@ -719,6 +722,7 @@ parseMicE (Address call ss) = do
   let ext = PosECourseSpeed (if course > 400 then course - 400 else course) (fromIntegral speed)
   sym <- A.anyChar
   tbl <- A.anyChar
+  alt <- (parseB91Seg 3 <* "}") <|> pure 10000 -- 10km = sea level.
   st <- A.takeText
 
-  return $ MicEPacket (Symbol tbl sym) mbits (Position (lat,lon,ext)) st
+  return $ MicEPacket (Symbol tbl sym) mbits (Position (lat,lon,alt-10000,ext)) st

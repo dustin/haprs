@@ -171,49 +171,49 @@ testMegaParser =
   map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly (bodyParser $ raddr "S32UVT") a)) [
   ("!4903.50N/07201.75W-Test 001234",
    Right (PositionPacket PositionNoTSNoMsg (Symbol '/' '-')
-          (Position (49.05833333333333,-72.02916666666667,PosENone)) Nothing "Test 001234")),
+          (Position (49.05833333333333,-72.02916666666667,0,PosENone)) Nothing "Test 001234")),
   ("!0000.00N\\00000.00W-Unknown pos",
    Right (PositionPacket PositionNoTSNoMsg (Symbol '\\' '-')
-          (Position (0,0,PosENone)) Nothing "Unknown pos")),
+          (Position (0,0,0,PosENone)) Nothing "Unknown pos")),
   ("!4903.50N/07201.75W-Test /A=001234", -- TODO:  Parse out the altitude (1234 feet, anywhere in comment)
    Right (PositionPacket PositionNoTSNoMsg (Symbol '/' '-')
-          (Position (49.05833333333333,-72.02916666666667,PosENone)) Nothing "Test /A=001234")),
+          (Position (49.05833333333333,-72.02916666666667,0,PosENone)) Nothing "Test /A=001234")),
   ("!49  .  N/072  .  W-",
    Right (PositionPacket PositionNoTSNoMsg (Symbol '/' '-')
-          (Position (49.5,-72.5,PosENone)) Nothing "")),
+          (Position (49.5,-72.5,0,PosENone)) Nothing "")),
   ("/092345z4903.50N/07201.75W>Test1234",
    Right (PositionPacket PositionNoMsg (Symbol '/' '>')
-          (Position (49.05833333333333,-72.02916666666667,PosENone)) (Just (DHMZulu (9,23,45))) "Test1234")),
+          (Position (49.05833333333333,-72.02916666666667,0,PosENone)) (Just (DHMZulu (9,23,45))) "Test1234")),
   ("@092345/4903.50N/07201.75W>Test1234",
    Right (PositionPacket PositionMsg (Symbol '/' '>')
-          (Position (49.05833333333333,-72.02916666666667,PosENone)) (Just (DHMLocal (9,23,45))) "Test1234")),
+          (Position (49.05833333333333,-72.02916666666667,0,PosENone)) (Just (DHMLocal (9,23,45))) "Test1234")),
   ("=/5L!!<*e7> sTComment",
    Right (PositionPacket PositionNoTS (Symbol '/' '>')
-          (Position (49.5,-72.75000393777269,PosENone)) Nothing "Comment")),
+          (Position (49.5,-72.75000393777269,0,PosENone)) Nothing "Comment")),
   ("@092345z/5L!!<*e7>{?! ",
    Right (PositionPacket PositionMsg (Symbol '/' '>')
-          (Position (49.5,-72.75000393777269,PosENone)) (Just (DHMZulu (9,23,45))) " ")),
+          (Position (49.5,-72.75000393777269,0,PosENone)) (Just (DHMZulu (9,23,45))) " ")),
   (";LEADER   _092345z4903.50N/07201.75W>088/036",
    Right (ObjectPacket (Symbol '/' '>') -- this one eats the 088/036 course/speed
-          Killed "LEADER   " (Position (49.05833333333333,-72.02916666666667,PosENone)) (DHMZulu (9,23,45))
+          Killed "LEADER   " (Position (49.05833333333333,-72.02916666666667,0,PosENone)) (DHMZulu (9,23,45))
          (ObjText ""))),
   (";LEADER   *092345z/5L!!<*e7>7P[ ",
    Right (ObjectPacket (Symbol '/' '>')
-          Live "LEADER   " (Position (49.5,-72.75000393777269,PosENone)) (DHMZulu (9,23,45))
+          Live "LEADER   " (Position (49.5,-72.75000393777269,0,PosENone)) (DHMZulu (9,23,45))
           (ObjText " "))),
   (")AID #2!4903.50N/07201.75WA",
     Right (ItemPacket (Symbol '/' 'A') Live "AID #2"
-           (Position (49.05833333333333,-72.02916666666667,PosENone)) "")),
+           (Position (49.05833333333333,-72.02916666666667,0,PosENone)) "")),
   (")G/WB4APR!53  .  N\\002  .  Wd", Right (ItemPacket (Symbol '\\' 'd') Live "G/WB4APR"
-                                            (Position (53.5,-2.5,PosENone)) "")),
+                                            (Position (53.5,-2.5,0,PosENone)) "")),
   (")MOBIL!\\5L!!<*e79 sT", Right (ItemPacket (Symbol '\\' '9') Live
-                                    "MOBIL" (Position (49.5,-72.75000393777269,PosENone)) "")),
+                                    "MOBIL" (Position (49.5,-72.75000393777269,0,PosENone)) "")),
   ("_10090556c220s004g005t077r000p000P000h50b09900wRSW",
    Right (WeatherPacket (Just (MDHM (10,9,5,56))) Nothing
           [WindDir 220, WindSpeed 4, WindGust 5, Temp 25, RainLastHour 0,
            RainLast24Hours 0, RainToday 0, Humidity 50, Baro 9900] WinAPRS WURadioShack "")),
   ("!4903.50N/07201.75W_220/004g005t077r000p000P000h50b09900wRSW",
-   Right (WeatherPacket Nothing (Just (Position (49.05833333333333,-72.02916666666667,PosENone)))
+   Right (WeatherPacket Nothing (Just (Position (49.05833333333333,-72.02916666666667,0,PosENone)))
           [WindDir 220, WindSpeed 4, WindGust 5, Temp 25, RainLastHour 0, RainLast24Hours 0,
            RainToday 0, Humidity 50, Baro 9900] WinAPRS WURadioShack "")),
 
@@ -230,10 +230,10 @@ testMegaParser =
   -- Some samples from FAP
   ("!4526.66NI01104.68E#PHG21306/- Lnx APRS Srv - sez. ARI VR EST",
    Right (PositionPacket PositionNoTSNoMsg (Symbol 'I' '#')
-          (Position (45.44433333333333,11.078,PosEPHG 4 20 3 Omni)) Nothing "6/- Lnx APRS Srv - sez. ARI VR EST")),
+          (Position (45.44433333333333,11.078,0,PosEPHG 4 20 3 Omni)) Nothing "6/- Lnx APRS Srv - sez. ARI VR EST")),
   ("/055816h5134.38N/00019.47W>155/023!W26!/A=000188 14.3V 27C HDOP01.0 SATS09",
    Right (PositionPacket PositionNoMsg (Symbol '/' '>')
-          (Position (51.573,-0.32449999999999996,PosECourseSpeed 155 42.596000000000004)) (Just (HMS (5,58,16)))
+          (Position (51.573,-0.32449999999999996,0,PosECourseSpeed 155 42.596000000000004)) (Just (HMS (5,58,16)))
           "!W26!/A=000188 14.3V 27C HDOP01.0 SATS09")),
   (":OH7LZB   :Testing, 1 2 3{1", Right (MessagePacket (raddr "OH7LZB")
                                          (Message "Testing, 1 2 3") "1")),
@@ -244,12 +244,12 @@ testMegaParser =
 
   ("!I0-X;T_Wv&{-Aigate testing",
    Right (PositionPacket PositionNoTSNoMsg (Symbol 'I' '&')
-          (Position (60.052010101699544,24.504507437140035,PosENone)) Nothing "igate testing")),
+          (Position (60.052010101699544,24.504507437140035,0,PosENone)) Nothing "igate testing")),
 
   ("`(_fn\"Oj/",
-    Right (MicEPacket (Symbol '/' 'j') 4 (Position (33.42733333333334,-112.129,PosECourseSpeed 251 20)) "")),
+    Right (MicEPacket (Symbol '/' 'j') 4 (Position (33.42733333333334,-112.129,0,PosECourseSpeed 251 20)) "")),
   ("`(_f\DEL;\DELj/",
-    Right (MicEPacket (Symbol '/' 'j') 4 (Position (33.42733333333334,-112.129,PosECourseSpeed 199 193)) "")),
+    Right (MicEPacket (Symbol '/' 'j') 4 (Position (33.42733333333334,-112.129,0,PosECourseSpeed 199 193)) "")),
 
   -- This came from the FAP samples, but from everything I can find,
   -- the FAP sample has interepreted the data incorrectly.
@@ -261,47 +261,47 @@ testMegaParser =
   -- Here's some from the wild.
   ("T#7,025,023,037,008,000,00000000", Right (TelemetryPacket "7" [25,23,37,8,0] 0 "")),
   ("=/:x,r/pXZx", Right (PositionPacket PositionNoTS (Symbol '/' 'x')
-                         (Position (38.64933346634255,-121.14733570299742,PosENone)) Nothing "")),
+                         (Position (38.64933346634255,-121.14733570299742,0,PosENone)) Nothing "")),
   ("@171607z3755.50N/12205.43W_000/000g000t048r000p045P001h96b10205.DsVP",
-   Right (WeatherPacket (Just (DHMZulu (17,16,7))) (Just (Position (37.925,-122.0905,PosENone)))
+   Right (WeatherPacket (Just (DHMZulu (17,16,7))) (Just (Position (37.925,-122.0905,0,PosENone)))
           [WindDir 0, WindSpeed 0, WindGust 0, Temp 8.88888888888889,
            RainLastHour 0, RainLast24Hours 45, RainToday 1, Humidity 96, Baro 10205]
            (UnknownWeatherSW '.') WUDavisVantagePro "")),
 
   ("!3748.51N/12112.44W_270/001g001t051V136P022h88b10262OTW1",
-   Right (WeatherPacket Nothing (Just (Position (37.8085,-121.20733333333334,PosENone)))
+   Right (WeatherPacket Nothing (Just (Position (37.8085,-121.20733333333334,0,PosENone)))
           [WindDir 270, WindSpeed 1, WindGust 1, Temp 10.555555555555555,
            Voltage 13.6, RainToday 22, Humidity 88, Baro 10262]
            OpenTracker WUOpenTrackerTW1 "")),
 
   ("@182018z3925.85N/11948.27W_105/003g006t045r000p000P000h48b10242L009.DsVP",
    Right (WeatherPacket (Just (DHMZulu (18,20,18)))
-          (Just (Position (39.43083333333333,-119.8045,PosENone)))
+          (Just (Position (39.43083333333333,-119.8045,0,PosENone)))
           [WindDir 105,WindSpeed 3,WindGust 6,Temp 7.222222222222222,
            RainLastHour 0,RainLast24Hours 0,RainToday 0,Humidity 48,Baro 10242,
            Luminosity 9] (UnknownWeatherSW '.') WUDavisVantagePro "")),
   ("@182018z3925.85N/11948.27W_105/003g006t045r000F013P000h48b10242l009.DsVP",
    Right (WeatherPacket (Just (DHMZulu (18,20,18)))
-          (Just (Position (39.43083333333333,-119.8045,PosENone)))
+          (Just (Position (39.43083333333333,-119.8045,0,PosENone)))
           [WindDir 105,WindSpeed 3,WindGust 6,Temp 7.222222222222222,
            RainLastHour 0,WaterLevel 1.3,RainToday 0,Humidity 48,Baro 10242,
            Luminosity 1009] (UnknownWeatherSW '.') WUDavisVantagePro "")),
 
   ("!3748.51N/12112.44W_270/001g001t051V136P022h88b10262s111OTW1",
-   Right (WeatherPacket Nothing (Just (Position (37.8085,-121.20733333333334,PosENone)))
+   Right (WeatherPacket Nothing (Just (Position (37.8085,-121.20733333333334,0,PosENone)))
           [WindDir 270, WindSpeed 1, WindGust 1, Temp 10.555555555555555,
            Voltage 13.6, RainToday 22, Humidity 88, Baro 10262, Snowfall 111]
            OpenTracker WUOpenTrackerTW1 "")),
 
   ("!3748.51N/12112.44W_270/001g001t051V136P022h88b10262#111OTW1",
-   Right (WeatherPacket Nothing (Just (Position (37.8085,-121.20733333333334,PosENone)))
+   Right (WeatherPacket Nothing (Just (Position (37.8085,-121.20733333333334,0,PosENone)))
           [WindDir 270, WindSpeed 1, WindGust 1, Temp 10.555555555555555,
            Voltage 13.6, RainToday 22, Humidity 88, Baro 10262, RawRain 111]
            OpenTracker WUOpenTrackerTW1 "")),
 
   (";KO6TH-WX *170809z3857.54N/12106.64W_000/001g000t044r000p000P000h099b00000",
    Right (ObjectPacket (Symbol '/' '_') Live "KO6TH-WX "
-          (Position (38.959,-121.11066666666666,PosENone)) (DHMZulu (17,8,9))
+          (Position (38.959,-121.11066666666666,0,PosENone)) (DHMZulu (17,8,9))
           (ObjWeather [WindGust 0, Temp 6.666666666666667, RainLastHour 0, RainLast24Hours 0,
                        RainToday 0, Humidity 9]))),
 
@@ -328,11 +328,11 @@ testMegaParser =
            (UnknownWeatherSW '?') WUUltimeter2000 "")),
 
   ("$GPGGA,182240,3724.6788,N,12209.746,W,1,11,2.2,58.6,M,-28.4,M,,*49",
-    Right (RawGPSPacket (Position (37.41131333333333,-122.16243333333334,PosENone)) (HMS (18,22,40)))),
+    Right (RawGPSPacket (Position (37.41131333333333,-122.16243333333334,0,PosENone)) (HMS (18,22,40)))),
   ("$GPGGA,182240,3724.6788,S,12209.746,E,1,11,2.2,58.6,M,-28.4,M,,*49",
-    Right (RawGPSPacket (Position (-37.41131333333333,122.16243333333334,PosENone)) (HMS (18,22,40)))),
+    Right (RawGPSPacket (Position (-37.41131333333333,122.16243333333334,0,PosENone)) (HMS (18,22,40)))),
   ("$GPRMC,191608,A,3704.3616,N,12159.7271,W,000.0,000.0,151117,013.7,E*6B",
-    Right (RawGPSPacket (Position (37.07269333333333,-121.99545166666667,PosENone)) (HMS (19,16,8)))),
+    Right (RawGPSPacket (Position (37.07269333333333,-121.99545166666667,0,PosENone)) (HMS (19,16,8)))),
 
   ("{some user defined stuff", Right (NotUnderstoodPacket "{some user defined stuff"))
 
@@ -348,8 +348,8 @@ testFrameParser =
   ("KE6BEA>SXQTXV,W6CX-3*,WIDE2-1,qAR,K6RPT:'2Z4l k/]\"3s}Sean's Truck Fairfield CA",
    Right (Frame (raddr "KE6BEA") (raddr "SXQTXV") ["W6CX-3*","WIDE2-1","qAR","K6RPT"]
           (MicEPacket (Symbol ']' '/') 7
-           (Position (38.24766666666667,-122.03733333333334,PosECourseSpeed 79 0.0))
-           "\"3s}Sean's Truck Fairfield CA"))),
+           (Position (38.24766666666667,-122.03733333333334,1,PosECourseSpeed 79 0.0))
+           "Sean's Truck Fairfield CA"))),
 
   -- A garbage packet
   ("WA6EWV-3>ID,SNOW,qAR,KJ6NKR-2:WA6EWV-3/R NONE/D WA6EWV-5/N",

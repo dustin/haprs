@@ -120,7 +120,7 @@ fapTest fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . s
                                     assertEqual ("pos: want v. got: " ++ b) wantpos (haspos frame)
                                     pn <- if not wantpos then return 0 else do
                                       let pos = position frame
-                                      let (Just (Position (plat, plon, vel))) = pos
+                                      let (Just (Position (plat, plon, _alt, vel))) = pos
                                       let elat = (fromMaybe 0.latitude) res
                                       let elon = (fromMaybe 0.longitude) res
                                       assertApproxEqual ("lat " ++ show b) ε elat plat

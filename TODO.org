@@ -92,7 +92,8 @@ Also, there are some in existing test data.
 
 ** TODO MicE Canned Status Messages
 
-** TODO MicE Altitude
+** DONE MicE Altitude
+   CLOSED: [2017-11-19 Sun 21:58]
 
 This one has an altitude at the beginning.  I currenetly grab "3s} as
 aprt of the status message, but it's actually a base91 encoded

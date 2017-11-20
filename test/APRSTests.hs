@@ -80,16 +80,12 @@ propAddrSimilar (ArbitraryCall c) (ArbitrarySSID s1) (ArbitrarySSID s2) =
 
 testBase91 :: [TestTree]
 testBase91 =
-  map (\(a, want) -> testCase (show a ++ " -> " ++ show want) $ assertEqual "" (decodeBase91 a)    want) [
+  map (\(a, want) -> testCase (show a ++ " -> " ++ show want) $ assertEqual "" want (decodeBase91 a)) [
   (['\0', '\0', '\0', '\0'], -25144152),
   (['\1', '\0', '\0', '\0'], -24390581),
   (['\1', '\0', '\0', '\1'], -24390580),
   (['\1', '\0', '\xff', '\1'], -24367375),
-  ("", 0),
-  ("a", 0),
-  ("ab", 0),
-  ("abc", 0),
-  ("abcde", 0),
+  ("\"4T", 10061),
   ("<*e7", 20346417 + 74529 + 6188 + 22)]
 
 prop_roundtrips :: (Show a, Read a, Eq a) => a -> Bool

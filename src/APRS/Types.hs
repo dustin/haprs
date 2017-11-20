@@ -250,9 +250,9 @@ parseFrame = do
   return $ Frame src dest path bod
 
 decodeBase91 :: String -> Int
-decodeBase91 s@[_,_,_,_] =
-  foldl (\a (c, i) -> i * ((toEnum . fromEnum $ c) -33) + a) 0 $ zip s [91^x | x <- [3,2..0]]
-decodeBase91 _ = 0
+decodeBase91 s =
+  let l = Prelude.length s - 1 in
+    foldl (\a (c, i) -> i * ((toEnum . fromEnum $ c) -33) + a) 0 $ zip s [91^x | x <- [l,pred l..0]]
 
 {-
 • Position

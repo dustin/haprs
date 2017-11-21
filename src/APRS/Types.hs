@@ -627,7 +627,7 @@ parseStandardWeather = do
                 (Just (Position (_,_,_,PosECourseSpeed a b))) -> [WindDir a, WindSpeed (round $ b / 1.852)]
                 _ -> []
   ws <- parsews <|> pure []
-  wp <- parseWeather A.<?> "weather junk"
+  wp <- parseWeather
   swc <- A.anyChar <|> pure '?'
   unit <- parseWeatherUnit <|> pure (UnknownWeatherUnit "??")
   rest <- A.takeText

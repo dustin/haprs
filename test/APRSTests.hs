@@ -293,6 +293,12 @@ testMegaParser =
            Voltage 13.6, RainToday 22, Humidity 88, Baro 10262, Snowfall 111]
            OpenTracker WUOpenTrackerTW1 "")),
 
+  ("!3748.51N/12112.44W_270/001g001t051V136P022h88b10262s111",
+   Right (WeatherPacket Nothing (Just (Position (37.8085,-121.20733333333334,0,PosENone)))
+          [WindDir 270, WindSpeed 1, WindGust 1, Temp 10.555555555555555,
+           Voltage 13.6, RainToday 22, Humidity 88, Baro 10262, Snowfall 111]
+           (UnknownWeatherSW '?') (UnknownWeatherUnit "??") "")),
+
   ("!3748.51N/12112.44W_270/001g001t051V136P022h88b10262#111OTW1",
    Right (WeatherPacket Nothing (Just (Position (37.8085,-121.20733333333334,0,PosENone)))
           [WindDir 270, WindSpeed 1, WindGust 1, Temp 10.555555555555555,

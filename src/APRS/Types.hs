@@ -722,7 +722,10 @@ parseMicE (Address call ss) = do
   let ext = PosECourseSpeed (if course > 400 then course - 400 else course) (fromIntegral speed)
   sym <- A.anyChar
   tbl <- A.anyChar
-  alt <- (parseB91Seg 3 <* "}") <|> pure 10000 -- 10km = sea level.
+  alt <- micalt
   st <- A.takeText
 
   return $ MicEPacket (Symbol tbl sym) mbits (Position (lat,lon,alt-10000,ext)) st
+
+  where micalt = (A.satisfy (`elem` ['\'', '`', ' ', ']', '>', 'T']) >> decodeAlt) <|> decodeAlt
+        decodeAlt = (parseB91Seg 3 <* "}") <|> pure 10000 -- 10km = sea level.

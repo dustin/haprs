@@ -41,6 +41,7 @@ import Control.Monad (replicateM, replicateM_, guard)
 import Data.Bits (xor, (.&.), shiftL)
 import Data.Char (toLower, digitToInt)
 import Data.Either (either)
+import Data.Foldable (foldl')
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Int (Int16)
 import Data.Word (Word8)
@@ -133,7 +134,7 @@ ctoi = toEnum . fromEnum
 
 callPass :: Address -> Int16
 callPass (Address a _) =
-  0x7fff .&. foldl xor 0x73e2 (map (\(c, f) -> f (ctoi c)) $ zip a' $ cycle [flip shiftL 8, id])
+  0x7fff .&. foldl' xor 0x73e2 (map (\(c, f) -> f (ctoi c)) $ zip a' $ cycle [flip shiftL 8, id])
   where a' = unpack a
 
 instance Similar Address where
@@ -252,7 +253,7 @@ parseFrame = do
 decodeBase91 :: String -> Int
 decodeBase91 s =
   let l = Prelude.length s - 1 in
-    foldl (\a (c, i) -> i * ((toEnum . fromEnum $ c) -33) + a) 0 $ zip s [91^x | x <- [l,pred l..0]]
+    foldl' (\a (c, i) -> i * ((toEnum . fromEnum $ c) -33) + a) 0 $ zip s [91^x | x <- [l,pred l..0]]
 
 {-
 • Position

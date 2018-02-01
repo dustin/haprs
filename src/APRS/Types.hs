@@ -453,7 +453,7 @@ parsePosCompressed = do
   -- It seems that xastir will just truncate the packet once it has enough stuff.
   ext <- pcvel <|> pure PosENone
 
-  return (Symbol tbl sym, Position $ unc b91a b91b $ ext)
+  return (Symbol tbl sym, Position $ unc b91a b91b ext)
 
   where
     -- TODO: Altitude
@@ -598,7 +598,7 @@ parseUltimeter = do
                (Just.)Baro.(`div` 10), ignore, ignore, ignore, (Just.)Humidity.(`div` 10), ignore, ignore,
                (Just.)RainToday]
 
-  "!!" *> ulti funsl <|> "$ULTW" *> (ulti funsp)
+  "!!" *> ulti funsl <|> "$ULTW" *> ulti funsp
 
   where
     ulti :: [Int -> Maybe WeatherParam] -> A.Parser APRSPacket
@@ -641,14 +641,14 @@ parseStandardWeather = do
     pos' (Just (Position (a,b,alt,_))) = Just (Position (a,b,alt,PosENone))
     parsews = do
       (crs, spd) <- parseCourseSpeed
-      return $ [WindDir crs, WindSpeed (round spd)]
+      return [WindDir crs, WindSpeed (round spd)]
     mightsnow :: [WeatherParam] -> [WeatherParam]
     mightsnow [] = []
     mightsnow (s@(WindSpeed _):xs) = s : sawRain xs
     mightsnow (x:xs) = x : mightsnow xs
 
     sawRain [] = []
-    sawRain ((WindSpeed s):xs) = (Snowfall s) : sawRain xs
+    sawRain (WindSpeed s:xs) = Snowfall s : sawRain xs
     sawRain (x:xs) = x : sawRain xs
 
 parseStatusPacket :: A.Parser APRSPacket
@@ -702,7 +702,7 @@ parseTelemetry = do
     parseSeq :: A.Parser Text
     parseSeq = ("MIC" *> (A.string "," <|> pure "") >> pure "MIC")
                <|> (replicateM 3 A.anyChar <* "," >>= pure.fromString)
-               <|> (A.takeWhile (A.inClass "0-9")) <* ","
+               <|> A.takeWhile (A.inClass "0-9") <* ","
 
 parseMicE :: Address -> A.Parser APRSPacket
 parseMicE (Address call ss) = do
@@ -712,7 +712,7 @@ parseMicE (Address call ss) = do
 
   let lon' = (fromIntegral.M.micELonD d) off +
         (((fromIntegral.M.micELonM) m + ((fromIntegral.fromEnum) h - 28) / 100) / 60)
-  let lon = (fromIntegral sign) * lon'
+  let lon = fromIntegral sign * lon'
 
   [sp,dc,se] <- replicateM 3 A.anyChar
   let speed10 = (fromEnum sp - 28) * 10

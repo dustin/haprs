@@ -108,7 +108,7 @@ bodyParserTest _ fs = let parsed = map (\f -> (f, A.parseOnly parseFrame (fromSt
 fapTest :: [FAPTest] -> IO String
 fapTest fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . src $ f) of
                                        Left e -> Left $ show (src f) ++ " -- " ++ show e
-                                       Right f' -> Right $ (f,f')) fs in
+                                       Right f' -> Right (f,f')) fs in
                do
                  asses <- foldM (\n (f, frame@(Frame s d _ mparsed)) -> do
                                     assertMaybeEqual "src" f srcCallsign s
@@ -140,7 +140,7 @@ fapTest fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . s
                                       return (2 + vn)
 
                                     let wantmsg = fapmsg res
-                                    mn <- if not (isJust wantmsg) then return 0 else do
+                                    mn <- if isNothing wantmsg then return 0 else do
                                       let (MessagePacket rcpt (Message t) msgid) = mparsed
                                       -- assertMaybeEqual ("msg sender: " ++ show b) f srcCallsign sndr
                                       assertEqual ("msg bod: " ++ show b) (fromJust . fapmsg $ res) (unpack t)
@@ -152,7 +152,7 @@ fapTest fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . s
 
                                     return $ n + 3 + pn + mn
                                 ) (0::Int) (rights parsed)
-                 return $ show asses ++ " assertions run (" ++ (show $ (length.lefts) parsed) ++ " failed to parse)"
+                 return $ show asses ++ " assertions run (" ++ show ((length.lefts) parsed) ++ " failed to parse)"
   where assertMaybeEqual lbl f a b = assertEqual lbl (fromJust (a =<< result f)) (show b)
         haspos x = isJust $ position x
 
@@ -184,5 +184,5 @@ tests = do
     fapfmt x ft = x == (result ft >>= format)
 
     fbody :: FAPTest -> String
-    fbody (FAPTest _ (Just (FAPResult{body=Just b})) _ _) = b
+    fbody (FAPTest _ (Just FAPResult{body=Just b}) _ _) = b
     fbody f = (error.show) f

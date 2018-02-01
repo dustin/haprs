@@ -29,8 +29,8 @@ micELonD c off
   | between 190 d 199 = d - 190
   | otherwise = d
 
-  where d = off + (fromEnum c) - 28
+  where d = off + fromEnum c - 28
         between l v h = v >= l && v <= h
 
 micELonM :: Char -> Int
-micELonM c = ((fromEnum c) - 28) `mod` 60
+micELonM c = (fromEnum c - 28) `mod` 60

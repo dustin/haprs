@@ -10,6 +10,11 @@ import Options.Applicative
 import Data.Text (stripEnd)
 import Data.Semigroup ((<>))
 
+import Control.Concurrent (forkIO)
+import Control.Concurrent.Broadcast ( Broadcast )
+import qualified Control.Concurrent.Broadcast as Broadcast
+
+
 import qualified Data.Attoparsec.Text as A
 
 import System.Console.ANSI
@@ -30,6 +35,8 @@ data Options = Options { optFilter :: String
                        , optCallpass :: String
                        } deriving (Show)
 
+data Msg = Msg String (Either String Frame)
+
 options :: Parser Options
 options = Options
   <$> strOption (long "filter" <> showDefault <> value "" <> help "APRS filter")
@@ -48,19 +55,23 @@ colored ci c s = do
   putStrLn s
   setSGR [Reset]
 
-entry :: String -> IO ()
-entry s@('#':_) =
-  do colored Vivid Black s
-entry s = do
-  case A.parseOnly parseFrame (stripEnd . fromString $ s) of
-    Right f -> doBody s f
-    _ -> colored Vivid Red $ "error parsing frame: " ++ s
+-- Console logging thread.  This listens to broadcasts forever and logs them.
+consLog :: Broadcast Msg -> IO ()
+consLog b = forever (Broadcast.listen b >>= l)
+  where l (Msg s (Right f)) = doBody s f
+        l (Msg s (Left _)) = colored Vivid Red $ "error parsing frame: " ++ s
+
+entry :: Broadcast Msg -> String -> IO ()
+entry _ s@('#':_) = colored Vivid Black s
+entry b s = Broadcast.signal b (Msg s $ A.parseOnly parseFrame (stripEnd . fromString $ s))
 
 gate :: Options -> IO ()
 gate opts@(Options oFilt oSvr oCall oPass) = do
   putStrLn $ "gatin' " ++ oSvr ++ show opts
+  b <- Broadcast.new
+  _ <- forkIO $ consLog b
   a <- connect oSvr oCall oPass oFilt
-  forever (hGetLine a >>= entry)
+  forever (hGetLine a >>= entry b)
 
 main :: IO ()
 main = gate =<< execParser opts

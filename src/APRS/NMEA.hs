@@ -48,13 +48,13 @@ parseGGA = do
   _ <- A.char ','
   lon <- parseDir 3
 
-  return (lat, lon, ts)
+  pure (lat, lon, ts)
 
 parseTS :: A.Parser (Int, Int, Int)
 parseTS = do
   digs <- replicateM 3 (replicateM 2 A.digit)
   let [h,m,s] = map read digs
-  return (h, m, s)
+  pure (h, m, s)
 
 parseDir :: Int -> A.Parser Double
 parseDir n = do
@@ -62,7 +62,7 @@ parseDir n = do
   cM <- A.double
   _ <- A.char ','
   cS <- A.satisfy (`elem` ['N', 'E', 'W', 'S'])
-  return $ (read cD + (cM / 60)) * (if cS `elem` ['W', 'S'] then -1 else 1)
+  pure $ (read cD + (cM / 60)) * (if cS `elem` ['W', 'S'] then -1 else 1)
 
 {-
 $GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A
@@ -89,4 +89,4 @@ parseRMC = do
   _ <- A.char ','
   lon <- parseDir 3
 
-  return (lat, lon, ts)
+  pure (lat, lon, ts)

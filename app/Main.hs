@@ -27,7 +27,7 @@ connect s c p f = let h = takeWhile (/= ':') s
                       let stuff = "user " ++ c ++ " pass " ++ p ++ " vers haprs 0.1 filter " ++ f ++ "\r\n"
                       print stuff
                       hPutStr a stuff
-                      return a
+                      pure a
 
 data Options = Options { optFilter :: String
                        , optServer :: String

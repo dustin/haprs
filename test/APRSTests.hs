@@ -25,7 +25,7 @@ arbitraryText :: String -> (Int, Int) -> Gen T.Text
 arbitraryText chars range = do
     l <- choose range
     a <- vectorOf l $ elements chars
-    return (fromString $ take l a)
+    pure (fromString $ take l a)
 
 must :: Either String a -> a
 must = either undefined id
@@ -44,7 +44,7 @@ instance Arbitrary Address where
   arbitrary = do
     (ArbitraryCall c) <- arbitrary
     (ArbitrarySSID s) <- arbitrary
-    return $ must $ address c s
+    pure $ must $ address c s
 
 testCallPass :: [TestTree]
 testCallPass =
@@ -135,7 +135,7 @@ instance Enum LowChar where
 testNoDupMapping :: (Bounded a, Enum a, Show b, Ord b) => (a -> b) -> Assertion
 testNoDupMapping f = case foldr findDup (Right Set.empty) [minBound..] of
                        Left x -> assertString $ "Duplicate value found: " ++ show x
-                       Right _ -> return ()
+                       Right _ -> pure ()
   where findDup x s = let p = f x in case Set.member p <$> s of
                                        Right True -> Left p
                                        _ -> Set.insert p <$> s

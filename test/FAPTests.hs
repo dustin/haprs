@@ -94,9 +94,9 @@ bodyParserTest _ fs = let parsed = map (\f -> (f, A.parseOnly parseFrame (fromSt
                         do
                           assess <- foldM (\n (f,bodyP) -> do
                                               assertBool (show f) $ understood bodyP
-                                              return $ n + 1
+                                              pure $ n + 1
                                           ) (0::Int) parsed
-                          return $ show assess ++ " assertions run"
+                          pure $ show assess ++ " assertions run"
 
                             where
                               understood :: Either String Frame -> Bool
@@ -118,7 +118,7 @@ fapTest fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . s
                                     let res = (fromJust.result) f
                                     let wantpos = isJust $ latitude res
                                     assertEqual ("pos: want v. got: " ++ b) wantpos (haspos frame)
-                                    pn <- if not wantpos then return 0 else do
+                                    pn <- if not wantpos then pure 0 else do
                                       let pos = position frame
                                       let (Just (Position (plat, plon, _alt, vel))) = pos
                                       let elat = (fromMaybe 0.latitude) res
@@ -127,7 +127,7 @@ fapTest fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . s
                                       assertApproxEqual ("lon " ++ show b) ε elon plon
 
                                       let wantvel = isJust (speed res)
-                                      vn <- if not wantvel then return 0 else do
+                                      vn <- if not wantvel then pure 0 else do
                                         assertBool (show b) $ vel /= PosENone
                                         let (PosECourseSpeed crs spd) = vel
                                         let ecrs = (fromMaybe 0.course) res
@@ -135,12 +135,12 @@ fapTest fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . s
                                         assertApproxEqual ("course " ++ show b) ε ecrs (fromIntegral crs)
                                         assertApproxEqual ("speed " ++ show b) ε espd spd
 
-                                        return 3
+                                        pure 3
 
-                                      return (2 + vn)
+                                      pure (2 + vn)
 
                                     let wantmsg = fapmsg res
-                                    mn <- if isNothing wantmsg then return 0 else do
+                                    mn <- if isNothing wantmsg then pure 0 else do
                                       let (MessagePacket rcpt (Message t) msgid) = mparsed
                                       -- assertMaybeEqual ("msg sender: " ++ show b) f srcCallsign sndr
                                       assertEqual ("msg bod: " ++ show b) (fromJust . fapmsg $ res) (unpack t)
@@ -148,11 +148,11 @@ fapTest fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . s
                                       -- This is kind of dumb, but there's nothing to compare to in input data
                                       assertBool "rcpt strings" $ show rcpt /= ""
 
-                                      return 3
+                                      pure 3
 
-                                    return $ n + 3 + pn + mn
+                                    pure $ n + 3 + pn + mn
                                 ) (0::Int) (rights parsed)
-                 return $ show asses ++ " assertions run (" ++ show ((length.lefts) parsed) ++ " failed to parse)"
+                 pure $ show asses ++ " assertions run (" ++ show ((length.lefts) parsed) ++ " failed to parse)"
   where assertMaybeEqual lbl f a b = assertEqual lbl (fromJust (a =<< result f)) (show b)
         haspos x = isJust $ position x
 
@@ -171,7 +171,7 @@ tests = do
   let groups = (groupBy (\a b -> (head.fbody) a == (head.fbody) b) $
         sortBy (\a b -> compare (head $ fbody a) (head $ fbody b)) allfaps) :: [[FAPTest]]
 
-  return $ testGroup "FAP Tests" ([
+  pure $ testGroup "FAP Tests" ([
     testCaseInfo "compressed" $ fapTest compressed,
     testCaseInfo "uncompressed" $ fapTest uncompressed,
     testCaseInfo "no pos" $ fapTest nopos

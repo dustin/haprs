@@ -124,7 +124,7 @@ parseAddr :: A.Parser Address
 parseAddr = do
   c <- A.takeWhile (A.inClass "A-Z0-9")
   ss <- ("-" *> A.takeWhile (A.inClass "A-Z0-9")) <|> pure ""
-  either fail return $ address c ss
+  either fail pure $ address c ss
 
 instance Read Address where
   readsPrec _ x = either error (\a -> [(a,"")]) $ A.parseOnly parseAddr (fromString x)
@@ -146,7 +146,7 @@ b91chars = "[!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\\^_`abc
 parseB91Seg :: Int -> A.Parser Double
 parseB91Seg n = do
   stuff <- replicateM n (A.satisfy (`elem` b91chars))
-  return $ (fromIntegral.decodeBase91.fromString) stuff
+  pure $ (fromIntegral.decodeBase91.fromString) stuff
 
 posamb :: Int -> Double
 posamb 0 = 0
@@ -179,7 +179,7 @@ parseTimestamp = dhmlocal <|> dhmzulu <|> hms <|> mdhm
     mdhm = n 4 >>= \[m, d, h, mn] -> pure $ MDHM (m, d, h, mn)
 
     n :: Int -> A.Parser [Int]
-    n x = replicateM x (replicateM 2 A.digit) >>= \digs -> return $ map read digs
+    n x = replicateM x (replicateM 2 A.digit) >>= \digs -> pure $ map read digs
     n3 :: Char -> A.Parser (Int, Int, Int)
     n3 ch = n 3 >>= \[a,b,c] -> A.char ch >> pure (a,b,c)
 
@@ -227,8 +227,8 @@ parseWParam = w 'c' WindDir
       _ <- A.char c
       wgood i wc <|> wnodata i c
 
-    wgood i wc = replicateM i A.digit >>= \deez -> return $ wc (read deez)
-    wnodata i c = replicateM_ i (A.satisfy (`elem` ['.', ' '])) >> return (NoData c)
+    wgood i wc = replicateM i A.digit >>= \deez -> pure $ wc (read deez)
+    wnodata i c = replicateM_ i (A.satisfy (`elem` ['.', ' '])) >> pure (NoData c)
 
     w = w' 3
 
@@ -248,7 +248,7 @@ parseFrame = do
   path <- A.sepBy (A.takeWhile (`notElem` [',', ':'])) (A.char ',')
   _ <- A.char ':'
   bod <- bodyParser dest
-  return $ Frame src dest path bod
+  pure $ Frame src dest path bod
 
 decodeBase91 :: String -> Int
 decodeBase91 s =
@@ -282,13 +282,13 @@ parseCourseSpeed = do
   a <- replicateM 3 A.digit
   _ <- A.char '/'
   b <- replicateM 3 A.digit
-  return (read a `mod` 360, fromIntegral (read b) * 1.852)
+  pure (read a `mod` 360, fromIntegral (read b) * 1.852)
 
 data Directivity = Omni | DirNE | DirE | DirSE | DirS | DirSW | DirW | DirNW | DirN
                  deriving (Show, Eq, Ord, Enum, Bounded)
 
 parsePosExtension :: A.Parser PosExtension
-parsePosExtension = (parseCourseSpeed >>= uncurry ((return .) . PosECourseSpeed))
+parsePosExtension = (parseCourseSpeed >>= uncurry ((pure .) . PosECourseSpeed))
                     <|> parsePHG
                     <|> pure PosENone
 
@@ -302,7 +302,7 @@ parsePosExtension = (parseCourseSpeed >>= uncurry ((return .) . PosECourseSpeed)
 
       let d' = (toEnum . digitToInt) d :: Directivity
 
-      return $ PosEPHG (digitToInt p ^ 2) (10 * 2 ^ digitToInt h) (digitToInt g) d'
+      pure $ PosEPHG (digitToInt p ^ 2) (10 * 2 ^ digitToInt h) (digitToInt g) d'
 
 data Symbol = Symbol Char Char deriving (Show, Eq)
 
@@ -411,13 +411,13 @@ parseNMEA :: A.Parser APRSPacket
 parseNMEA = do
   (lat,lon,ts) <- N.parseNMEA
   -- TODO: Altitude
-  return $ RawGPSPacket (Position (lat,lon,0,PosENone)) (HMS ts)
+  pure $ RawGPSPacket (Position (lat,lon,0,PosENone)) (HMS ts)
 
 parseCapabilityPacket :: A.Parser APRSPacket
 parseCapabilityPacket = do
   _ <- A.char '<'
   caps <- A.sepBy cap (A.satisfy isSep)
-  return $ CapabilitiesPacket caps
+  pure $ CapabilitiesPacket caps
 
   where
     isSep = (`elem` [' ', ','])
@@ -432,7 +432,7 @@ parseCapabilityPacket = do
       k <- A.takeTill (== '=')
       _ <- A.satisfy (`elem` [' ', '='])
       v <- A.takeWhile (not.isSep)
-      return $ Capability k v
+      pure $ Capability k v
 
 {-
 |       | No MSG | MSG |
@@ -453,7 +453,7 @@ parsePosCompressed = do
   -- It seems that xastir will just truncate the packet once it has enough stuff.
   ext <- pcvel <|> pure PosENone
 
-  return (Symbol tbl sym, Position $ unc b91a b91b ext)
+  pure (Symbol tbl sym, Position $ unc b91a b91b ext)
 
   where
     -- TODO: Altitude
@@ -461,7 +461,7 @@ parsePosCompressed = do
     pcvel :: A.Parser PosExtension
     pcvel = do
       x <- replicateM 3 A.anyChar
-      return $ pcvel' $ map fromEnum x
+      pure $ pcvel' $ map fromEnum x
 
     pcvel' [a,b,_]
       | a >= 33 && a <= 122 = let course = fromIntegral (a - 33) * 4
@@ -480,7 +480,7 @@ parsePosUncompressed = do
   posE <- parsePosExtension
 
   -- TODO:  Altitude
-  return (Symbol tbl sym, Position (lat,lon,0,posE))
+  pure (Symbol tbl sym, Position (lat,lon,0,posE))
 
   where
     parseDir :: Int -> A.Parser Double
@@ -494,7 +494,7 @@ parsePosUncompressed = do
       cdir <- A.satisfy (`elem` ['N', 'S', 'E', 'W'])
 
       let amb = Prelude.length cs1 + Prelude.length cs2
-      return $ (compPos cM (cm ++ cs1) (cd ++ cs2) + posamb amb) * psign cdir
+      pure $ (compPos cM (cm ++ cs1) (cd ++ cs2) + posamb amb) * psign cdir
 
     psign 'S' = -1
     psign 'W' = -1
@@ -523,7 +523,7 @@ parsePositionPacket = do
   ts <- maybeTS pre
   (sym, pos) <- parsePosition
   com <- A.takeText
-  return $ PositionPacket (identifyPacket pre) sym pos ts com
+  pure $ PositionPacket (identifyPacket pre) sym pos ts com
 
   where
     maybeTS :: Char -> A.Parser (Maybe Timestamp)
@@ -551,7 +551,7 @@ parseObjectPacket = do
   ts <- parseTimestamp
   (sym, Position (lat,lon,alt,_)) <- parsePosition
   objdat <- parseObjData
-  return $ ObjectPacket sym (objState ost) (fromString name) (Position (lat, lon, alt, PosENone)) ts objdat
+  pure $ ObjectPacket sym (objState ost) (fromString name) (Position (lat, lon, alt, PosENone)) ts objdat
 
   where
     parseObjData :: A.Parser ObjectData
@@ -565,7 +565,7 @@ parseItemPacket = do
   ost <- A.satisfy (`elem` ['_', '!']) -- killed, live
   (sym, Position (lat,lon,alt,_)) <- parsePosition
   comment <- A.takeText
-  return $ ItemPacket sym (objState ost) name (Position (lat, lon, alt, PosENone)) comment
+  pure $ ItemPacket sym (objState ost) name (Position (lat, lon, alt, PosENone)) comment
 
 parseWeatherPacket :: A.Parser APRSPacket
 parseWeatherPacket = parseUltimeter <|> parseStandardWeather
@@ -605,11 +605,11 @@ parseUltimeter = do
     ulti funs = do
       v <- vals
       let params = zipWith (=<<) funs v
-      return $ WeatherPacket Nothing Nothing (catMaybes params) (UnknownWeatherSW '?') WUUltimeter2000 ""
+      pure $ WeatherPacket Nothing Nothing (catMaybes params) (UnknownWeatherSW '?') WUUltimeter2000 ""
 
     vals = A.many1 $ do
       digs <- replicateM 4 (A.satisfy $ A.inClass "A-F0-9-")
-      return $ readMaybe ("0x" ++ digs)
+      pure $ readMaybe ("0x" ++ digs)
 
     ignore = const Nothing
 
@@ -632,16 +632,16 @@ parseStandardWeather = do
   swc <- A.anyChar <|> pure '?'
   unit <- parseWeatherUnit <|> pure (UnknownWeatherUnit "??")
   rest <- A.takeText
-  return $ WeatherPacket ts (pos' pos) (mightsnow $ extra ++ ws ++ wp) (lookupWeatherSW swc) unit rest
+  pure $ WeatherPacket ts (pos' pos) (mightsnow $ extra ++ ws ++ wp) (lookupWeatherSW swc) unit rest
 
   where
     ppos :: A.Parser (Maybe Position)
-    ppos = parsePosition >>= \(_, p) -> return $ Just p
+    ppos = parsePosition >>= \(_, p) -> pure $ Just p
     pos' Nothing = Nothing
     pos' (Just (Position (a,b,alt,_))) = Just (Position (a,b,alt,PosENone))
     parsews = do
       (crs, spd) <- parseCourseSpeed
-      return [WindDir crs, WindSpeed (round spd)]
+      pure [WindDir crs, WindSpeed (round spd)]
     mightsnow :: [WeatherParam] -> [WeatherParam]
     mightsnow [] = []
     mightsnow (s@(WindSpeed _):xs) = s : sawRain xs
@@ -656,7 +656,7 @@ parseStatusPacket = do
   _ <- A.char '>'
   ts <- (parseTimestamp >>= pure.Just) <|> pure Nothing
   msg <- A.many1 (A.satisfy (`notElem` ['|', '~']))
-  return $ StatusPacket ts (fromString msg)
+  pure $ StatusPacket ts (fromString msg)
 
 parseMessagePacket :: A.Parser APRSPacket
 parseMessagePacket = do
@@ -666,7 +666,7 @@ parseMessagePacket = do
   _ <- A.char ':' -- message separator
   (mi, mid) <- parseMI
 
-  return $ MessagePacket rcpt mi mid
+  pure $ MessagePacket rcpt mi mid
 
   where
     parseMI :: A.Parser (MessageInfo, Text) -- returns the message ID
@@ -679,13 +679,13 @@ parseMessagePacket = do
       guard $ msgid /= ""
       guard $ Data.Text.length msgid <= 5
       guard $ Data.Text.all (A.inClass "A-z0-9") msgid
-      return (i, msgid)
+      pure (i, msgid)
 
     parseMsg :: A.Parser (MessageInfo, Text)
     parseMsg = do
       mtext <- A.many' (A.satisfy (`notElem` ['{', '|', '~']))
       mid <- ("{" *> A.takeText) <|> pure "" -- message ID is optional
-      return (Message (fromString mtext), mid)
+      pure (Message (fromString mtext), mid)
 
 parseTelemetry :: A.Parser APRSPacket
 parseTelemetry = do
@@ -696,7 +696,7 @@ parseTelemetry = do
   let [(bits', "")] = readInt 2 (`elem` ['0', '1']) (\c -> if c == '0' then 0 else 1) bits
   rest <- A.takeText
 
-  return $ TelemetryPacket s vals (fromInteger bits') rest
+  pure $ TelemetryPacket s vals (fromInteger bits') rest
 
   where
     parseSeq :: A.Parser Text
@@ -726,7 +726,7 @@ parseMicE (Address call ss) = do
   alt <- micalt
   st <- A.takeText
 
-  return $ MicEPacket (Symbol tbl sym) mbits (Position (lat,lon,alt-10000,ext)) st
+  pure $ MicEPacket (Symbol tbl sym) mbits (Position (lat,lon,alt-10000,ext)) st
 
   where micalt = (A.satisfy (`elem` ['\'', '`', ' ', ']', '>', 'T']) >> decodeAlt) <|> decodeAlt
         decodeAlt = (parseB91Seg 3 <* "}") <|> pure 10000 -- 10km = sea level.

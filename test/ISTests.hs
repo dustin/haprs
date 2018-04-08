@@ -7,7 +7,7 @@ import Test.Tasty.HUnit
 import qualified Data.Attoparsec.Text as A
 
 import APRS.IS
-import APRS.Types (Address)
+import APRS.Types (Address, Position(..), PosExtension(..))
 
 raddr :: String -> Address
 raddr = read
@@ -30,7 +30,52 @@ testIDParser =
     (Right (ID (raddr "KG6HWF-9") (Just ("haprs", "0.1")) (Just 1384) "filter r/1")))
   ]
 
+testFilterParser :: [TestTree]
+testFilterParser =
+  map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly parseFilter a)) [
+  ("filter r/37.335278/-121.891944/50",
+   Right (Filter [RangeFilter (Position (-121.891944,37.335278,0.0,PosENone)) 50.0])),
+  ("filter p/KG/K6",
+   Right (Filter [PrefixFilter ["KG", "K6"]])),
+  ("filter b/KG6HWF/K6MGD",
+   Right (Filter [BudlistFilter $ map raddr ["KG6HWF", "K6MGD"]])),
+  ("filter o/BAYLANDS/SOMETHING",
+   Right (Filter [ObjectFilter ["BAYLANDS", "SOMETHING"]])),
+  ("filter os/BAYLANDS/SOMETHING",
+   Right (Filter [StrictObjectFilter ["BAYLANDS", "SOMETHING"]])),
+  ("filter t/pow",
+   Right (Filter [TypeFilter "pow" Nothing])),
+  ("filter t/pow/KG6HWF/13",
+   Right (Filter [TypeFilter "pow" (Just (raddr "KG6HWF", 13))])),
+  ("filter s/->",
+   Right (Filter [SymbolFilter "->" "" ""])),
+  ("filter s//#",
+   Right (Filter [SymbolFilter "" "#" ""])),
+  ("filter s//#/T",
+   Right (Filter [SymbolFilter "" "#" "T"])),
+  ("filter d/KG6HWF-1/KG6HWF-3",
+   Right (Filter [DigiFilter $ map raddr ["KG6HWF-1", "KG6HWF-3"]])),
+  ("filter a/38/37/-122/-121",
+   Right (Filter [AreaFilter 38 37 (-122) (-121)])),
+  ("filter e/KG6HWF-3/K6MGD-5",
+   Right (Filter [EntryStationFilter $ map raddr ["KG6HWF-3", "K6MGD-5"]])),
+  ("filter g/KG6HWF/K6MGD/KI6IQI",
+   Right (Filter [GroupMessageFilter $ map raddr ["KG6HWF", "K6MGD", "KI6IQI"]])),
+  ("filter u/KG6HWF-3",
+   Right (Filter [UnprotoFilter $ map raddr ["KG6HWF-3"]])),
+  ("filter q/C", Right (Filter [QConsFilter "C" False])),
+  ("filter q/rR", Right (Filter [QConsFilter "rR" False])),
+  ("filter q//I", Right (Filter [QConsFilter "" True])),
+  ("filter m/13", Right (Filter [MyRangeFilter 13])),
+  ("filter f/K6MGD/19.3", Right (Filter [FriendRangeFilter (raddr "K6MGD") 19.3])),
+  ("filter m/200 -p/CW",
+   Right (Filter [MyRangeFilter 200.0,NotFilter (PrefixFilter ["CW"])])),
+  ("filter r/33/-97/200 t/n",
+   Right (Filter [RangeFilter (Position (-97.0,33.0,0.0,PosENone)) 200.0,TypeFilter "n" Nothing]))
+  ]
+
 tests :: [TestTree]
 tests = [
-  testGroup "id parser" testIDParser
+  testGroup "id parser" testIDParser,
+  testGroup "filter parser" testFilterParser
   ]

@@ -11,7 +11,7 @@ import Data.Semigroup ((<>))
 import Data.Text (Text, pack, unpack)
 import qualified Data.Attoparsec.Text as A
 
-import APRS.Types (Address, Position(..), PosExtension(..), parseAddr, callPass)
+import APRS.Types (Address, Frame(..), Position(..), PosExtension(..), parseAddr, callPass)
 
 -- user mycall[-ss] pass passcode[ vers softwarename softwarevers[ UDP udpport][ servercommand]]
 
@@ -20,22 +20,31 @@ data Identification = ID {
   , _idSW :: Maybe (Text, Text)
   , _idUDPPort :: Maybe Int16
   , _idFilter :: Text
+  , _idValidMsg :: Frame -> Bool
   }
-  deriving (Eq, Show)
+
+instance Show Identification where
+  show (ID a s u f _) = "ID{addr=" <> show a
+                        <> ", sw=" <> show s
+                        <> ", udp=" <> show u
+                        <> ", cmd=" <> show f <> "}"
+
+instance Eq Identification where
+  (ID a s u f _) == (ID a' s' u' f' _) = a == a' && s == s' && u == u' && f == f'
 
 parseIdentification :: A.Parser Identification
 parseIdentification = do
   addr <- "user" >> A.skipSpace *> parseAddr
   _ <- A.skipSpace
-  pass <- ("pass" >> A.skipSpace *> A.decimal) A.<?> "call pass"
-  when (pass /= callPass addr) $ fail "invalid callpass"
+  pass <- ("pass" >> A.skipSpace *> A.signed A.decimal) A.<?> "call pass"
+  when (pass /= (-1) && pass /= callPass addr) $ fail "invalid callpass"
   _ <- A.skipSpace
   sw <- Just <$> ("vers" >> parseVers) <|> pure Nothing
   _ <- A.skipSpace
   udp <- Just <$> ("UDP" >> A.skipSpace >> A.decimal) <|> pure Nothing
   _ <- A.skipSpace
   cmd <- A.takeText
-  pure $ ID addr sw udp cmd
+  pure $ ID addr sw udp cmd (const (pass /= (-1)))
 
   where parseVers :: A.Parser (Text, Text)
         parseVers = do

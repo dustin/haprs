@@ -4,9 +4,11 @@ module APRS.IS where
 
 import Control.Applicative ((<|>))
 import Control.Monad (when)
-import Data.Text (Text, pack)
 import Data.Char (isSpace)
 import Data.Int (Int16)
+import Data.List (intercalate)
+import Data.Semigroup ((<>))
+import Data.Text (Text, pack, unpack)
 import qualified Data.Attoparsec.Text as A
 
 import APRS.Types (Address, Position(..), PosExtension(..), parseAddr, callPass)
@@ -47,7 +49,10 @@ parseIdentification = do
           pure w
 
 newtype Filter = Filter [FilterItem]
-               deriving (Eq, Show)
+               deriving (Eq)
+
+instance Show Filter where
+  show (Filter i) = "filter " <> intercalate " " (map show i)
 
 parseFilter :: A.Parser Filter
 parseFilter = do
@@ -71,7 +76,29 @@ data FilterItem =
   | QConsFilter [Char] Bool
   | MyRangeFilter Double
   | FriendRangeFilter Address Double
-    deriving (Show, Eq)
+    deriving (Eq)
+
+instance Show FilterItem where
+  show (NotFilter x) = "-" <> show x
+  show (RangeFilter (Position (lon,lat,_,_)) d) = "r/" <> show lat <> "/" <> show lon <> "/" <> show d
+  show (PrefixFilter p) = "p/" <> intercalate "/" (map unpack p)
+  show (BudlistFilter b) = "b/" <> intercalate "/" (map show b)
+  show (ObjectFilter b) = "o/" <> intercalate "/" (map unpack b)
+  show (StrictObjectFilter b) = "os/" <> intercalate "/" (map unpack b)
+  show (TypeFilter t Nothing) = "t/" <> t
+  show (TypeFilter t (Just (c,d))) = "t/" <> t <> "/" <> show c <> "/" <> show d
+  show (SymbolFilter a "" "") = "s/" <> intercalate "/" [a]
+  show (SymbolFilter a b "") = "s/" <> intercalate "/" [a, b]
+  show (SymbolFilter a b c) = "s/" <> intercalate "/" [a, b, c]
+  show (DigiFilter a) = "d/" <> intercalate "/" (map show a)
+  show (AreaFilter a b c d) = "a/" <> intercalate "/" (map show [a, b, c, d])
+  show (EntryStationFilter a) = "e/" <> intercalate "/" (map show a)
+  show (GroupMessageFilter a) = "g/" <> intercalate "/" (map show a)
+  show (UnprotoFilter a) = "u/" <> intercalate "/" (map show a)
+  show (QConsFilter x False) = "q/" <> x
+  show (QConsFilter x True) = "q/" <> x <> "/I"
+  show (MyRangeFilter d) = "m/" <> show d
+  show (FriendRangeFilter a d) = "f/" <> show a <> "/" <> show d
 
 parseFilterItem :: A.Parser FilterItem
 parseFilterItem = NotFilter <$> ("-" *> parseFilterItem)

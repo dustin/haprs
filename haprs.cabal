@@ -15,10 +15,11 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     APRS, APRS.Types, APRS.MicE, APRS.NMEA, APRS.IS
+  exposed-modules:     APRS, APRS.Types, APRS.MicE, APRS.NMEA, APRS.IS, APRS.Arbitrary
   build-depends:       base >= 4.7 && < 5
                      , text
                      , attoparsec
+                     , QuickCheck
   default-language:    Haskell2010
   ghc-options:        -Wall
 

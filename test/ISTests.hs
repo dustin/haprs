@@ -1,13 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
-module ISTests (tests) where
+
+module ISTests where
 
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck as QC
 import qualified Data.Attoparsec.Text as A
+import qualified Data.Text as T
 
 import APRS.IS
 import APRS.Types (Address, Position(..), PosExtension(..))
+import APRS.Arbitrary ()
 
 raddr :: String -> Address
 raddr = read
@@ -74,8 +79,14 @@ testFilterParser =
    Right (Filter [RangeFilter (Position (-97.0,33.0,0.0,PosENone)) 200.0,TypeFilter "n" Nothing]))
   ]
 
+propParseRoundTrip :: (Eq a, Show a) => A.Parser a -> a -> Bool
+propParseRoundTrip f i = A.parseOnly f ((T.pack.show) i) == Right i
+
 tests :: [TestTree]
 tests = [
   testGroup "id parser" testIDParser,
-  testGroup "filter parser" testFilterParser
+  testGroup "filter parser" testFilterParser,
+
+  testProperty "filter round tripping" (propParseRoundTrip parseFilter),
+  testProperty "filter item round tripping" (propParseRoundTrip parseFilterItem)
   ]

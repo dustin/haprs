@@ -4,6 +4,7 @@
 module APRSTests (tests) where
 
 import APRS.Types
+import APRS.Arbitrary
 
 import Data.Char (chr)
 import Data.Either (isRight, either)
@@ -15,36 +16,9 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Set as Set
-import qualified Data.Text as T
-
-
-addrChars :: [Char]
-addrChars = ['A'..'Z'] ++ ['0'..'9']
-
-arbitraryText :: String -> (Int, Int) -> Gen T.Text
-arbitraryText chars range = do
-    l <- choose range
-    a <- vectorOf l $ elements chars
-    pure (fromString $ take l a)
 
 must :: Either String a -> a
 must = either undefined id
-
-newtype ArbitraryCall = ArbitraryCall T.Text deriving Show
-
-instance Arbitrary ArbitraryCall where
-  arbitrary = ArbitraryCall <$> arbitraryText addrChars (1, 12)
-
-newtype ArbitrarySSID = ArbitrarySSID T.Text deriving Show
-
-instance Arbitrary ArbitrarySSID where
-  arbitrary = ArbitrarySSID <$> arbitraryText addrChars (0, 6)
-
-instance Arbitrary Address where
-  arbitrary = do
-    (ArbitraryCall c) <- arbitrary
-    (ArbitrarySSID s) <- arbitrary
-    pure $ must $ address c s
 
 testCallPass :: [TestTree]
 testCallPass =

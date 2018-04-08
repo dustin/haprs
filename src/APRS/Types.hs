@@ -702,7 +702,7 @@ parseTelemetry = do
   where
     parseSeq :: A.Parser Text
     parseSeq = ("MIC" *> (A.string "," <|> pure "") >> pure "MIC")
-               <|> (replicateM 3 A.anyChar <* "," >>= pure.fromString)
+               <|> fromString <$> (replicateM 3 A.anyChar <* ",")
                <|> A.takeWhile (A.inClass "0-9") <* ","
 
 parseMicE :: Address -> A.Parser APRSPacket

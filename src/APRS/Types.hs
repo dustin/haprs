@@ -42,6 +42,7 @@ import Data.Bits (xor, (.&.), shiftL)
 import Data.Char (toLower, digitToInt)
 import Data.Either (either)
 import Data.Foldable (foldl')
+import Data.Functor (($>))
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Int (Int16)
 import Data.Word (Word8)
@@ -362,18 +363,18 @@ data WeatherUnit = WUDavis
 
 parseWeatherUnit :: A.Parser WeatherUnit
 parseWeatherUnit =
-  "Dvs"           *> pure WUDavis
-  <|> "DsVP"      *> pure WUDavisVantagePro
-  <|> "HKT"       *> pure WUHeathkit
-  <|> "PIC"       *> pure WUPIC
-  <|> "RSW"       *> pure WURadioShack
-  <|> "U-II"      *> pure WUUltimeterIIAuto
-  <|> "U2R"       *> pure WUUltimeterIIRemote
-  <|> "U2k"       *> pure WUUltimeter2000
-  <|> "U2kr"      *> pure WUUltimeterRemote
-  <|> "U5"        *> pure WUUltimeter500
-  <|> "Upkm"      *> pure WURemoteUltimeterPacket
-  <|> "TW1"       *> pure WUOpenTrackerTW1
+  "Dvs"           $> WUDavis
+  <|> "DsVP"      $> WUDavisVantagePro
+  <|> "HKT"       $> WUHeathkit
+  <|> "PIC"       $> WUPIC
+  <|> "RSW"       $> WURadioShack
+  <|> "U-II"      $> WUUltimeterIIAuto
+  <|> "U2R"       $> WUUltimeterIIRemote
+  <|> "U2k"       $> WUUltimeter2000
+  <|> "U2kr"      $> WUUltimeterRemote
+  <|> "U5"        $> WUUltimeter500
+  <|> "Upkm"      $> WURemoteUltimeterPacket
+  <|> "TW1"       $> WUOpenTrackerTW1
   <|> (A.take 2  >>= (pure.) UnknownWeatherUnit)
 
 data ObjectData = ObjText Text

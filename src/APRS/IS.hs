@@ -5,6 +5,7 @@ module APRS.IS where
 import Control.Applicative ((<|>))
 import Control.Monad (when)
 import Data.Char (isSpace)
+import Data.Functor (($>))
 import Data.Int (Int16)
 import Data.List (intercalate)
 import Data.Semigroup ((<>))
@@ -157,7 +158,7 @@ parseFilterItem = NotFilter <$> ("-" *> parseFilterItem)
 
     qconsFilter = do
       conses <- "q/" *> A.many' (A.satisfy (`notElem` ['/', ' ']))
-      aye <- "/I" *> pure True <|> pure False
+      aye <- "/I" $> True <|> pure False
       pure $ QConsFilter conses aye
 
     wordlist = word `A.sepBy` A.char '/'

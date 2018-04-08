@@ -718,7 +718,7 @@ parseMicE (Address call ss) = do
   [sp,dc,se] <- replicateM 3 A.anyChar
   let speed10 = (fromEnum sp - 28) * 10
   let (speed1, course100) = (fromEnum dc - 28) `quotRem` 10
-  let course' = (fromEnum se - 28)
+  let course' = fromEnum se - 28
   let speed = (speed10 + speed1) `mod` 800
   let course = course' + (course100*100)
   let ext = PosECourseSpeed (if course > 400 then course - 400 else course) (fromIntegral speed)

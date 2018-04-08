@@ -108,7 +108,7 @@ instance Enum LowChar where
 
 testNoDupMapping :: (Bounded a, Enum a, Show b, Ord b) => (a -> b) -> Assertion
 testNoDupMapping f = case foldr findDup (Right Set.empty) [minBound..] of
-                       Left x -> assertString $ "Duplicate value found: " ++ show x
+                       Left x -> assertBool ("Duplicate value found: " ++ show x) True
                        Right _ -> pure ()
   where findDup x s = let p = f x in case Set.member p <$> s of
                                        Right True -> Left p

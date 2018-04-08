@@ -84,9 +84,22 @@ instance Arbitrary Frame where
   arbitrary = Frame <$> arbitrary <*> arbitrary <*> arbitraryTextList addrChars (1,7) <*> arbitrary
 
 instance Arbitrary MessageInfo where
-  arbitrary = Message <$> arbitraryText addrChars (1,7)
+  arbitrary = frequency [
+    (60, Message <$> arbitraryText addrChars (1,7)),
+    (1, pure MessageACK),
+    (1, pure MessageNAK)
+    ]
+
+instance Arbitrary Capability where
+  arbitrary = frequency [
+    (5, pure IGATE),
+    (5, MessageCount <$> arbitrary),
+    (5, LocalCount <$> arbitrary),
+    (5, Capability <$> arbitraryText addrChars (1,7) <*> arbitraryText addrChars (1,7))
+    ]
 
 instance Arbitrary APRSPacket where
   arbitrary = frequency [
-    (1, MessagePacket <$> arbitrary <*> arbitrary <*> (T.pack <$> arbitrary))
+    (20, MessagePacket <$> arbitrary <*> arbitrary <*> (T.pack <$> arbitrary)),
+    (5, CapabilitiesPacket <$> arbitrary)
     ]

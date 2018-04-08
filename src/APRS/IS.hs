@@ -97,7 +97,7 @@ instance Show FilterItem where
   show (StrictObjectFilter b) = "os/" <> intercalate "/" (map unpack b)
   show (TypeFilter t Nothing) = "t/" <> t
   show (TypeFilter t (Just (c,d))) = "t/" <> t <> "/" <> show c <> "/" <> show d
-  show (SymbolFilter a "" "") = "s/" <> intercalate "/" [a]
+  show (SymbolFilter a "" "") = "s/" <> a
   show (SymbolFilter a b "") = "s/" <> intercalate "/" [a, b]
   show (SymbolFilter a b c) = "s/" <> intercalate "/" [a, b, c]
   show (DigiFilter a) = "d/" <> intercalate "/" (map show a)
@@ -147,9 +147,7 @@ parseFilterItem = NotFilter <$> ("-" *> parseFilterItem)
 
     symFilter = do
       parts <- "s/" *> (A.many' (A.satisfy (`notElem` ['/', ' ']))) `A.sepBy` A.char '/'
-      case parts ++ repeat "" of
-        (a:b:c:_) -> pure $ SymbolFilter a b c
-        _           -> fail "too many symbol filter parts"
+      let (a:b:c:_) = parts ++ repeat "" in pure $ SymbolFilter a b c
 
     areaFilter = AreaFilter <$> ("a/" *> A.double)
                  <*> ("/" *> A.double)

@@ -102,5 +102,5 @@ tests = [
   testGroup "filter parser" testFilterParser,
 
   testProperty "filter round tripping" (propParseRoundTrip parseFilter),
-  testProperty "filter item round tripping" (propParseRoundTrip parseFilterItem)
+  testProperty "filter item round tripping" (withMaxSuccess 1000 $ propParseRoundTrip parseFilterItem)
   ]

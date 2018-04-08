@@ -59,7 +59,7 @@ instance Arbitrary FilterItem where
     ]
 
     where ws = arbitraryTextList addrChars (1, 7)
-          w = listOf1 (elements addrChars)
+          w = listOf (elements addrChars)
 
 instance Arbitrary Filter where
   arbitrary = Filter <$> listOf1 arbitrary

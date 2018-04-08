@@ -1,6 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module APRS.IS where
+module APRS.IS
+  (
+    Identification(..)
+  , Filter(..)
+  , FilterItem(..)
+  , parseIdentification
+  , parseFilter
+  , parseFilterItem
+  ) where
 
 import Control.Applicative ((<|>))
 import Control.Monad (when)

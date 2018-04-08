@@ -11,7 +11,7 @@ import qualified Data.Attoparsec.Text as A
 import qualified Data.Text as T
 
 import APRS.IS
-import APRS.Types (Address, Position(..), PosExtension(..))
+import APRS.Types (Address, Frame, Position(..), PosExtension(..))
 import APRS.Arbitrary ()
 
 raddr :: String -> Address
@@ -38,6 +38,14 @@ testIDParser =
   ]
 
   where id' a b c d = ID a b c d undefined
+
+propValidIDRW :: Frame -> Bool
+propValidIDRW = let (Right (ID _ _ _ _ v)) = A.parseOnly parseIdentification "user KG6HWF-9 pass 22955" in
+                  v
+
+propValidIDRO :: Frame -> Bool
+propValidIDRO = let (Right (ID _ _ _ _ v)) = A.parseOnly parseIdentification "user KG6HWF-9 pass -1" in
+                  not.v
 
 testFilterParser :: [TestTree]
 testFilterParser =
@@ -89,6 +97,8 @@ propParseRoundTrip f i = A.parseOnly f ((T.pack.show) i) == Right i
 tests :: [TestTree]
 tests = [
   testGroup "id parser" testIDParser,
+  testProperty "callsign validation (read-write)" propValidIDRW,
+  testProperty "callsign validation (read-only)" propValidIDRO,
   testGroup "filter parser" testFilterParser,
 
   testProperty "filter round tripping" (propParseRoundTrip parseFilter),

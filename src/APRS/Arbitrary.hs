@@ -12,7 +12,7 @@ import Test.QuickCheck
 import qualified Data.Text as T
 
 import APRS.IS
-import APRS.Types (Address, Position(..), PosExtension(..), address)
+import APRS.Types
 
 addrChars :: [Char]
 addrChars = ['A'..'Z'] ++ ['0'..'9']
@@ -79,3 +79,14 @@ instance Arbitrary Address where
     (ArbitraryCall c) <- arbitrary
     (ArbitrarySSID s) <- arbitrary
     pure $ either undefined id $ address c s
+
+instance Arbitrary Frame where
+  arbitrary = Frame <$> arbitrary <*> arbitrary <*> arbitraryTextList addrChars (1,7) <*> arbitrary
+
+instance Arbitrary MessageInfo where
+  arbitrary = Message <$> arbitraryText addrChars (1,7)
+
+instance Arbitrary APRSPacket where
+  arbitrary = frequency [
+    (1, MessagePacket <$> arbitrary <*> arbitrary <*> (T.pack <$> arbitrary))
+    ]

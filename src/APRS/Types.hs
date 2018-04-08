@@ -405,7 +405,7 @@ bodyParser dest = parseWeatherPacket
                   <|> parseMicE dest
                   <|> parseNMEA
                   <|> parsePositionPacket
-                  <|> (A.takeText >>= pure.NotUnderstoodPacket)
+                  <|> (NotUnderstoodPacket <$> A.takeText)
 
 parseNMEA :: A.Parser APRSPacket
 parseNMEA = do
@@ -423,8 +423,8 @@ parseCapabilityPacket = do
     isSep = (`elem` [' ', ','])
     cap :: A.Parser Capability
     cap = (A.string "IGATE" >> pure IGATE)
-          <|> "MSG_CNT=" *> (A.decimal >>= pure.MessageCount)
-          <|> "LOC_CNT=" *> (A.decimal >>= pure.LocalCount)
+          <|> "MSG_CNT=" *> (MessageCount <$> A.decimal)
+          <|> "LOC_CNT=" *> (LocalCount <$> A.decimal)
           <|> other
 
     other :: A.Parser Capability
@@ -555,7 +555,7 @@ parseObjectPacket = do
 
   where
     parseObjData :: A.Parser ObjectData
-    parseObjData = (parseWeather >>= (pure . ObjWeather)) <|> (A.takeText >>= (pure . ObjText))
+    parseObjData = (ObjWeather <$> parseWeather) <|> (ObjText <$> A.takeText)
 
 parseItemPacket :: A.Parser APRSPacket
 parseItemPacket = do
@@ -622,7 +622,7 @@ f2c x = (x - 32) * 5 / 9
 parseStandardWeather :: A.Parser APRSPacket
 parseStandardWeather = do
   c <- A.satisfy (`elem` ['_', '/', '!', '@', '='])
-  ts <- (parseTimestamp >>= pure.Just) <|> pure Nothing
+  ts <- (Just <$> parseTimestamp) <|> pure Nothing
   pos <- if c `elem` ['_', '='] then pure Nothing else ppos
   let extra = case pos of
                 (Just (Position (_,_,_,PosECourseSpeed a b))) -> [WindDir a, WindSpeed (round $ b / 1.852)]
@@ -654,7 +654,7 @@ parseStandardWeather = do
 parseStatusPacket :: A.Parser APRSPacket
 parseStatusPacket = do
   _ <- A.char '>'
-  ts <- (parseTimestamp >>= pure.Just) <|> pure Nothing
+  ts <- (Just <$> parseTimestamp) <|> pure Nothing
   msg <- A.many1 (A.satisfy (`notElem` ['|', '~']))
   pure $ StatusPacket ts (fromString msg)
 

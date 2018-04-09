@@ -38,7 +38,7 @@ instance Arbitrary Position where
 
 instance Arbitrary FilterItem where
   arbitrary = frequency [
-    (1, NotFilter <$> arbitrary),
+    (1, NotFilter <$> arbitrary `suchThat` (not.isNegative)),
     (10, RangeFilter <$> arbitrary <*> arbitrary),
     (10, PrefixFilter <$> ws),
     (10, BudlistFilter <$> listOf1 arbitrary),
@@ -61,6 +61,8 @@ instance Arbitrary FilterItem where
 
     where ws = arbitraryTextList addrChars (1, 7)
           w = listOf (elements addrChars)
+          isNegative (NotFilter _) = True
+          isNegative _ = False
 
 instance Arbitrary Filter where
   arbitrary = Filter <$> listOf1 arbitrary

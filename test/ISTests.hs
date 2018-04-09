@@ -94,6 +94,11 @@ testFilterParser =
 propParseRoundTrip :: (Eq a, Show a) => A.Parser a -> a -> Bool
 propParseRoundTrip f i = A.parseOnly f ((T.pack.show) i) == Right i
 
+propNoDoubleNegatives :: Filter -> Bool
+propNoDoubleNegatives (Filter a) = (not.any doubleNegative) a
+  where doubleNegative (NotFilter (NotFilter _)) = True
+        doubleNegative _ = False
+
 tests :: [TestTree]
 tests = [
   testGroup "id parser" testIDParser,
@@ -102,5 +107,6 @@ tests = [
   testGroup "filter parser" testFilterParser,
 
   testProperty "filter round tripping" (propParseRoundTrip parseFilter),
-  testProperty "filter item round tripping" (withMaxSuccess 1000 $ propParseRoundTrip parseFilterItem)
+  testProperty "filter item round tripping" (withMaxSuccess 1000 $ propParseRoundTrip parseFilterItem),
+  testProperty "no double negative filters" (withMaxSuccess 1000 $ propNoDoubleNegatives)
   ]

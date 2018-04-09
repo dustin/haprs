@@ -8,6 +8,7 @@ module APRS.Arbitrary (
   ) where
 
 import Data.String (fromString)
+import Data.List (subsequences)
 import Test.QuickCheck
 import qualified Data.Text as T
 
@@ -63,6 +64,9 @@ instance Arbitrary FilterItem where
 
 instance Arbitrary Filter where
   arbitrary = Filter <$> listOf1 arbitrary
+  shrink (Filter a) = Filter <$> ss a
+    where ss [_] = []
+          ss l = filter (\l' -> length l' == (pred.length) l) $ subsequences l
 
 newtype ArbitraryCall = ArbitraryCall T.Text deriving Show
 

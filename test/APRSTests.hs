@@ -8,7 +8,7 @@ import APRS.Arbitrary
 
 import Data.Char (chr)
 import Data.Either (isRight, either)
-import Data.String (fromString)
+import Data.String (IsString, fromString)
 import Data.Word (Word8)
 import Test.QuickCheck
 import Test.Tasty
@@ -19,6 +19,8 @@ import qualified Data.Set as Set
 
 must :: Either String a -> a
 must = either undefined id
+
+instance IsString Address where fromString = read
 
 testCallPass :: [TestTree]
 testCallPass =
@@ -35,9 +37,6 @@ testAddressParsing =
     ("KG6HWF", must $ address "KG6HWF" ""),
     ("KG6HWF-9", must $ address "KG6HWF" "9")]
 
-raddr :: String -> Address
-raddr = read
-
 testAddrSimilar :: [TestTree]
 testAddrSimilar =
   map (\(a, b) -> testCase (a ++ " ≈ " ++ b) $ assertBool "" (raddr a ≈ raddr b)) [
@@ -45,6 +44,9 @@ testAddrSimilar =
   ("KG6HWF-9", "KG6HWF"),
   ("KG6HWF", "KG6HWF-11"),
   ("KG6HWF-9", "KG6HWF-11")]
+
+  where raddr :: String -> Address
+        raddr = read
 
 -- Same as the above, but as a property test.
 propAddrSimilar :: ArbitraryCall -> ArbitrarySSID -> ArbitrarySSID -> Bool
@@ -73,7 +75,7 @@ rframe = must . A.parseOnly parseFrame . fromString
 
 testChristmasMsg :: Assertion
 testChristmasMsg =
-  assertEqual "christmas parsing" (raddr "KG6HWF") $ source $ rframe christmasMsg
+  assertEqual "christmas parsing" "KG6HWF" $ source $ rframe christmasMsg
   where source (Frame s _ _ _) = s
 
 propValidAddress :: String -> String -> Property
@@ -142,7 +144,7 @@ testWeatherParser =
 
 testMegaParser :: [TestTree]
 testMegaParser =
-  map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly (bodyParser $ raddr "S32UVT") a)) [
+  map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly (bodyParser "S32UVT") a)) [
   ("!4903.50N/07201.75W-Test 001234",
    Right (PositionPacket PositionNoTSNoMsg (Symbol '/' '-')
           (Position (49.05833333333333,-72.02916666666667,0,PosENone)) Nothing "Test 001234")),
@@ -209,12 +211,12 @@ testMegaParser =
    Right (PositionPacket PositionNoMsg (Symbol '/' '>')
           (Position (51.573,-0.32449999999999996,0,PosECourseSpeed 155 42.596000000000004)) (Just (HMS (5,58,16)))
           "!W26!/A=000188 14.3V 27C HDOP01.0 SATS09")),
-  (":OH7LZB   :Testing, 1 2 3{1", Right (MessagePacket (raddr "OH7LZB")
+  (":OH7LZB   :Testing, 1 2 3{1", Right (MessagePacket "OH7LZB"
                                          (Message "Testing, 1 2 3") "1")),
-  (":OH7LZB   :Testing, 1 2 3", Right (MessagePacket (raddr "OH7LZB")
+  (":OH7LZB   :Testing, 1 2 3", Right (MessagePacket "OH7LZB"
                                        (Message "Testing, 1 2 3") "")),
-  (":OH7LZB   :ack1", Right (MessagePacket (raddr "OH7LZB") MessageACK "1")),
-  (":OH7LZB   :rej1", Right (MessagePacket (raddr "OH7LZB") MessageNAK "1")),
+  (":OH7LZB   :ack1", Right (MessagePacket "OH7LZB" MessageACK "1")),
+  (":OH7LZB   :rej1", Right (MessagePacket "OH7LZB" MessageNAK "1")),
 
   ("!I0-X;T_Wv&{-Aigate testing",
    Right (PositionPacket PositionNoTSNoMsg (Symbol 'I' '&')
@@ -322,33 +324,33 @@ testFrameParser :: [TestTree]
 testFrameParser =
   map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly parseFrame a)) [
   ("W6BXN-3>BEACON,qAR,AA6I-1:Turlock Amateur Radio Club APRS",
-   (Right (Frame (raddr "W6BXN-3") (raddr "BEACON") ["qAR", "AA6I-1"]
+   (Right (Frame "W6BXN-3" "BEACON" ["qAR", "AA6I-1"]
            (NotUnderstoodPacket "Turlock Amateur Radio Club APRS")))),
 
   ("KE6BEA>SXQTXV,W6CX-3*,WIDE2-1,qAR,K6RPT:'2Z4l k/]\"3s}Sean's Truck Fairfield CA",
-   Right (Frame (raddr "KE6BEA") (raddr "SXQTXV") ["W6CX-3*","WIDE2-1","qAR","K6RPT"]
+   Right (Frame "KE6BEA" "SXQTXV" ["W6CX-3*","WIDE2-1","qAR","K6RPT"]
           (MicEPacket (Symbol ']' '/') 7
            (Position (38.24766666666667,-122.03733333333334,1,PosECourseSpeed 79 0.0))
            "Sean's Truck Fairfield CA"))),
 
   ("KD0YBR>SW4PXP,WB6TMS-6*,WIDE1*,WIDE2-1,qAR,W6PKT-5:`2_A!I:>/]\"3x}=",
-    Right (Frame (raddr "KD0YBR") (raddr "SW4PXP") ["WB6TMS-6*","WIDE1*","WIDE2-1","qAR","W6PKT-5"]
+    Right (Frame "KD0YBR" "SW4PXP" ["WB6TMS-6*","WIDE1*","WIDE2-1","qAR","W6PKT-5"]
            (MicEPacket (Symbol '/' '>') 6
             (Position (37.68,-122.12283333333333,6.0,PosECourseSpeed 130 54.0)) "="))),
 
   ("WA6TA-7>S6TPTV,W6TUW-3*,WIDE2-1,qAR,AC6SL-4:`1K\\l +K\\>\"45}^",
-   Right (Frame (raddr "WA6TA-7") (raddr "S6TPTV") ["W6TUW-3*","WIDE2-1","qAR","AC6SL-4"]
+   Right (Frame "WA6TA-7" "S6TPTV" ["W6TUW-3*","WIDE2-1","qAR","AC6SL-4"]
           (MicEPacket (Symbol '\\' 'K') 5
            (Position (36.67433333333334,-121.794,30.0,PosECourseSpeed 15 0.0)) "^"))),
   ("W6TDR>3W0PVQ,W6BXN-3*,qAR,W6SRR-3:`/O7ppuj/`\"55}146.820MHz T141 -060_%",
-    Right (Frame (raddr "W6TDR") (raddr "3W0PVQ") ["W6BXN-3*","qAR","W6SRR-3"]
+    Right (Frame "W6TDR" "3W0PVQ" ["W6BXN-3*","qAR","W6SRR-3"]
            (MicEPacket (Symbol '/' 'j') 2
             (Position (37.01016666666667,-119.8545,121.0,PosECourseSpeed 89 48.0))
             "146.820MHz T141 -060_%"))),
 
   -- A garbage packet
   ("WA6EWV-3>ID,SNOW,qAR,KJ6NKR-2:WA6EWV-3/R NONE/D WA6EWV-5/N",
-   (Right (Frame (raddr "WA6EWV-3") (raddr "ID") ["SNOW","qAR","KJ6NKR-2"]
+   (Right (Frame "WA6EWV-3" "ID" ["SNOW","qAR","KJ6NKR-2"]
             (NotUnderstoodPacket "WA6EWV-3/R NONE/D WA6EWV-5/N"))))
   ]
 

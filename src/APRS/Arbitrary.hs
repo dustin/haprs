@@ -40,7 +40,7 @@ instance Arbitrary Position where
 instance Arbitrary FilterItem where
   arbitrary = frequency [
     (1, NotFilter <$> arbitrary `suchThat` (not.isNegative)),
-    (10, RangeFilter <$> arbitrary <*> arbitrary),
+    (10, RangeFilter <$> (truncPos <$> arbitrary) <*> arbitrary),
     (10, PrefixFilter <$> ws),
     (10, BudlistFilter <$> listOf1 arbitrary),
     (10, ObjectFilter <$> ws),
@@ -95,6 +95,7 @@ instance Arbitrary Frame where
   arbitrary = Frame <$> arbitrary <*> arbitrary <*> arbitraryTextList addrChars (1,7) <*> arbitrary
 
 instance Arbitrary MessageInfo where
+          truncPos (Position (a, b, _, _)) = Position (a,b,0,PosENone)
   arbitrary = frequency [
     (60, Message <$> arbitraryText addrChars (1,7)),
     (1, pure MessageACK),

@@ -9,6 +9,7 @@ module APRS.Arbitrary (
 
 import Data.Semigroup ((<>))
 import Data.String (fromString)
+import Control.Applicative (liftA3)
 import Test.QuickCheck
 import qualified Data.Text as T
 
@@ -113,3 +114,16 @@ instance Arbitrary APRSPacket where
     (20, MessagePacket <$> arbitrary <*> arbitrary <*> (T.pack <$> arbitrary)),
     (5, CapabilitiesPacket <$> arbitrary)
     ]
+
+instance Arbitrary Timestamp where
+  arbitrary = oneof [
+    liftA3 (\a b c -> DHMLocal (a,b,c)) d h m,
+    liftA3 (\a b c -> DHMZulu (a,b,c)) d h m,
+    liftA3 (\a b c -> HMS (a,b,c)) h m s,
+    (\a b c d' -> MDHM (a,b,c,d')) <$> choose (1, 12) <*> d <*> h <*> m
+    ]
+
+    where d = choose (0, 31)
+          h = choose (0, 23)
+          m = choose (0, 59)
+          s = choose (0, 59)

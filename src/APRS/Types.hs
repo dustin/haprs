@@ -5,6 +5,7 @@ module APRS.Types
     ( PacketType(..)
     , Address
     , address
+    , unAddress
     , Similar
     , (≈)
     , Frame(..)
@@ -116,6 +117,9 @@ address c s
   | otherwise = Right $ Address c s
   where invalid :: Text -> Bool
         invalid = any (`notElem` addrChars)
+
+unAddress :: Address -> (Text, Text)
+unAddress (Address c s) = (c, s)
 
 instance Show Address where
   show (Address c "") = unpack c

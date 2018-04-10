@@ -166,6 +166,12 @@ instance Arbitrary Address where
     (ArbitrarySSID s) <- arbitrary
     pure $ either undefined id $ address c s
 
+  shrink a = case unAddress a of
+               ("A1A", "") -> []
+               (_, "") -> [addr "A1A" ""]
+               (c, _) -> [addr c ""]
+    where addr c s = either undefined id $ address c s
+
 instance Arbitrary Frame where
   arbitrary = Frame <$> arbitrary <*> arbitrary <*> arbitraryTextList addrChars (1,7) <*> arbitrary
 

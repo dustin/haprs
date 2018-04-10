@@ -143,12 +143,15 @@ instance Arbitrary FilterItem where
           isValidAF (AreaFilter latN lonW latS lonE) = latN >= latS && lonW <= lonE
           isValidAF _ = True
 
+lsubterm :: [a] -> [[a]]
+lsubterm l = map (flip dropn l) [0..length l - 1]
+  where dropn n = take n <> drop (succ n)
+
 instance Arbitrary Filter where
   arbitrary = Filter <$> listOf1 arbitrary
   shrink (Filter a) = Filter <$> ss a
     where ss [_] = [] -- never shrink to zero filter items
-          ss l = map (flip dropn l) [0..length l - 1]
-            where dropn n = take n <> drop (succ n)
+          ss l = lsubterm l
 
 newtype ArbitraryCall = ArbitraryCall T.Text deriving Show
 

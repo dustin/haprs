@@ -35,7 +35,40 @@ instance Arbitrary Position where
   arbitrary = do
     lat <- choose (-90, 90)
     lon <- choose (-180, 180)
-    pure $ Position (lon, lat, 0, PosENone)
+    alt <- arbitrary
+    ext <- arbitrary
+    pure $ Position (lon, lat, alt, ext)
+
+instance Arbitrary Directivity where arbitrary = arbitraryBoundedEnum
+
+instance Arbitrary PosExtension where
+  arbitrary = oneof [
+    PosECourseSpeed <$> arbitrary <*> arbitrary,
+    PosEPHG <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary,
+    pure PosERNG,
+    pure PosEDFS,
+    pure PosETypeDesc,
+    pure PosENone
+    ]
+
+instance Arbitrary WeatherParam where
+  arbitrary = oneof [
+    WindDir <$> choose (1, 360),
+    WindSpeed <$> choose (0, 500),
+    WindGust <$> choose (0, 500),
+    Temp <$> choose (-50, 50),
+    RainLastHour <$> choose (0, 100),
+    RainLast24Hours <$> choose (0, 100),
+    RainToday <$> choose (0, 100),
+    Humidity <$> choose (0, 100),
+    Baro <$> choose (0, 1000),
+    Voltage <$> choose (0, 250),
+    WaterLevel <$> choose (0, 1000),
+    Luminosity <$> choose (0, 100000),
+    Snowfall <$> choose (0, 100),
+    RawRain <$> choose (0, 1000000),
+    NoData <$> arbitrary
+    ]
 
 instance Arbitrary FilterItem where
   arbitrary = frequency [

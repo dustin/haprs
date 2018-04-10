@@ -47,10 +47,10 @@ instance Arbitrary FilterItem where
     (10, TypeFilter . T.unpack <$> (arbitraryText "poimqstunw" (1,9)) <*> arbitrary),
     (10, SymbolFilter <$> w <*> w <*> w),
     (10, DigiFilter <$> listOf1 arbitrary),
-    (10, AreaFilter <$> choose (-90, 90)
-         <*> choose (-90, 90)
-         <*> choose (-180, 180)
-         <*> choose (-180, 180)),
+    (10, (AreaFilter <$> choose (-90, 90)
+           <*> choose (-90, 90)
+           <*> choose (-180, 180)
+           <*> choose (-180, 180)) `suchThat` isValidAF),
     (10, EntryStationFilter <$> listOf1 arbitrary),
     (10, GroupMessageFilter <$> listOf1 arbitrary),
     (10, UnprotoFilter <$> listOf1 arbitrary),
@@ -63,6 +63,9 @@ instance Arbitrary FilterItem where
           w = listOf (elements addrChars)
           isNegative (NotFilter _) = True
           isNegative _ = False
+
+          isValidAF (AreaFilter latN lonW latS lonE) = latN >= latS && lonW <= lonE
+          isValidAF _ = True
 
 instance Arbitrary Filter where
   arbitrary = Filter <$> listOf1 arbitrary

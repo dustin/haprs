@@ -157,10 +157,15 @@ parseFilterItem = NotFilter <$> ("-" *> parseFilterItem)
       parts <- "s/" *> (A.many' (A.satisfy (`notElem` ['/', ' ']))) `A.sepBy` A.char '/'
       let (a:b:c:_) = parts ++ repeat "" in pure $ SymbolFilter a b c
 
-    areaFilter = AreaFilter <$> ("a/" *> A.double)
-                 <*> ("/" *> A.double)
-                 <*> ("/" *> A.double)
-                 <*> ("/" *> A.double)
+  -- a/latN/lonW/latS/lonE
+    areaFilter = do
+      af@(AreaFilter latN lonW latS lonE) <- AreaFilter <$> ("a/" *> A.double)
+                                             <*> ("/" *> A.double)
+                                             <*> ("/" *> A.double)
+                                             <*> ("/" *> A.double)
+      when (latN < latS) $ fail "north must be >= south"
+      when (lonE < lonW) $ fail "east must be >= west"
+      pure af
 
     qconsFilter = do
       conses <- "q/" *> A.many' (A.satisfy (`notElem` ['/', ' ']))

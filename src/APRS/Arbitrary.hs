@@ -51,6 +51,9 @@ instance Arbitrary PosExtension where
     pure PosENone
     ]
 
+instance Arbitrary Symbol where
+  arbitrary = Symbol <$> arbitrary <*> arbitrary
+
 instance Arbitrary WeatherParam where
   arbitrary = oneof [
     WindDir <$> choose (1, 360),
@@ -69,6 +72,44 @@ instance Arbitrary WeatherParam where
     RawRain <$> choose (0, 1000000),
     NoData <$> arbitrary
     ]
+
+instance Arbitrary ObjectData where
+  arbitrary = oneof [
+    ObjText <$> arbitraryText (['a'..'z'] <> ['0'..'9']) (1,9),
+    ObjWeather <$> arbitrary
+    ]
+
+instance Arbitrary ObjectState where arbitrary = arbitraryBoundedEnum
+
+instance Arbitrary WeatherSW where
+  arbitrary = oneof ((map pure [
+                         APRSdos
+                         , MacAPRS
+                         , PocketAPRS
+                         , APRSSA
+                         , WinAPRS
+                         , XAPRS
+                         , OpenTracker
+                         , Kenwood
+                         , Byonics
+                         , Yaesu]) <>
+                     [UnknownWeatherSW <$> arbitrary])
+
+instance Arbitrary WeatherUnit where
+  arbitrary = oneof ((map pure [
+                         WUDavis
+                         , WUDavisVantagePro
+                         , WUHeathkit
+                         , WUPIC
+                         , WURadioShack
+                         , WUUltimeterIIAuto
+                         , WUUltimeterIIRemote
+                         , WUUltimeter2000
+                         , WUUltimeterRemote
+                         , WUUltimeter500
+                         , WURemoteUltimeterPacket
+                         , WUOpenTrackerTW1]) <>
+                     [UnknownWeatherUnit <$> arbitraryText ['a'..'z'] (2,2)])
 
 instance Arbitrary FilterItem where
   arbitrary = frequency [
@@ -95,6 +136,7 @@ instance Arbitrary FilterItem where
 
     where ws = arbitraryTextList addrChars (1, 7)
           w = listOf (elements addrChars)
+          truncPos (Position (a, b, _, _)) = Position (a,b,0,PosENone)
           isNegative (NotFilter _) = True
           isNegative _ = False
 
@@ -128,7 +170,7 @@ instance Arbitrary Frame where
   arbitrary = Frame <$> arbitrary <*> arbitrary <*> arbitraryTextList addrChars (1,7) <*> arbitrary
 
 instance Arbitrary MessageInfo where
-          truncPos (Position (a, b, _, _)) = Position (a,b,0,PosENone)
+
   arbitrary = frequency [
     (60, Message <$> arbitraryText addrChars (1,7)),
     (1, pure MessageACK),
@@ -143,11 +185,45 @@ instance Arbitrary Capability where
     (5, Capability <$> arbitraryText addrChars (1,7) <*> arbitraryText addrChars (1,7))
     ]
 
+instance Arbitrary PacketType where
+  arbitrary = oneof ((map pure [
+                         CurrentMicEBin
+                         , CurrentMicE
+                         , Item
+                         , PositionNoTSNoMsg
+                         , PositionTSNoMsg
+                         , MessagePkt
+                         , Object
+                         , StationCaps
+                         , PositionNoTS
+                         , PositionNoMsg
+                         , PositionMsg
+                         , RawGPSOrUlt
+                         , Status
+                         , Query
+                         , Telemetry
+                         , WeatherNoPos
+                         , UserDefined
+                         , ThirdParty
+                         ]) <>
+                     [InvalidPacket <$> arbitrary])
+
 instance Arbitrary APRSPacket where
   arbitrary = frequency [
+    (20, PositionPacket <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> someText),
+    (20, ObjectPacket <$> arbitrary <*> arbitrary <*> someText <*> arbitrary <*> arbitrary <*> arbitrary),
+    (20, ItemPacket <$> arbitrary <*> arbitrary <*> someText <*> arbitrary <*> someText),
+    (20, WeatherPacket <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> someText),
+    (20, StatusPacket <$> arbitrary <*> someText),
     (20, MessagePacket <$> arbitrary <*> arbitrary <*> (T.pack <$> arbitrary)),
-    (5, CapabilitiesPacket <$> arbitrary)
+    (20, TelemetryPacket <$> someText <*> arbitrary <*> arbitrary <*> someText),
+    (20, MicEPacket <$> arbitrary <*> arbitrary <*> arbitrary <*> someText),
+    (20, RawGPSPacket <$> arbitrary <*> arbitrary),
+    (5, CapabilitiesPacket <$> arbitrary),
+    (5, NotUnderstoodPacket <$> someText)
     ]
+
+    where someText = arbitraryText (['A'..'z'] <> ['0'..'9']) (0,20)
 
 instance Arbitrary Timestamp where
   arbitrary = oneof [

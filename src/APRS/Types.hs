@@ -538,7 +538,7 @@ parsePositionPacket = do
       guard $ Data.Text.length pre <= 40
       A.char '!'
 
-data ObjectState = Live | Killed deriving (Show, Eq)
+data ObjectState = Live | Killed deriving (Show, Enum, Bounded, Eq)
 
 objState :: Char -> ObjectState
 objState '_' = Killed

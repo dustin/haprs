@@ -53,14 +53,24 @@ testAddrSimilar =
         raddr = read
 
 -- Same as the above, but as a property test.
-propAddrSimilar :: ArbitraryCall -> ArbitrarySSID -> ArbitrarySSID -> Bool
-propAddrSimilar (ArbitraryCall c) (ArbitrarySSID s1) (ArbitrarySSID s2) =
-  ma c s1 ≈ ma c s2
+propAddrSimilar :: ArbitraryCall -> ArbitrarySSID -> ArbitrarySSID -> Property
+propAddrSimilar (ArbitraryCall c) (ArbitrarySSID s1) (ArbitrarySSID s2)
+  | s1 == s2 = collect "same SSID" e
+  | otherwise = collect "diff SSID" e
+  where ma c' s' = must (address c' s')
+        e = ma c s1 ≈ ma c s2
+
+-- negative similarity tests
+propAddrNotSimilar :: ArbitraryCall -> ArbitraryCall -> ArbitrarySSID -> ArbitrarySSID -> Property
+propAddrNotSimilar (ArbitraryCall c1) (ArbitraryCall c2) (ArbitrarySSID s1) (ArbitrarySSID s2) =
+  (c1 /= c2) ==> not ((ma c1 s1) ≈ (ma c2 s2))
   where ma c' s' = must (address c' s')
 
-propElemish :: [Address] -> [Address] -> ArbitraryCall -> ArbitrarySSID -> ArbitrarySSID -> Bool
-propElemish l1 l2 (ArbitraryCall c) (ArbitrarySSID s1) (ArbitrarySSID s2) =
-  must (address c s1) `elemish` (l1 <> [must (address c s2)] <> l2)
+propElemish :: [Address] -> [Address] -> ArbitraryCall -> ArbitrarySSID -> ArbitrarySSID -> Property
+propElemish l1 l2 (ArbitraryCall c) (ArbitrarySSID s1) (ArbitrarySSID s2)
+  | s1 == s2 = collect "same SSID" f
+  | otherwise = collect "diff SSID" f
+  where f = must (address c s1) `elemish` (l1 <> [must (address c s2)] <> l2)
 
 propNotElemish :: [Address] -> Address -> Bool
 propNotElemish l a = not $ elemish a (filter (not . (≈) a) l)
@@ -373,6 +383,7 @@ tests = [
   testProperty "address/unAddress" propUnAddress,
   testGroup "addrSimilar" testAddrSimilar,
   testProperty "addrSimilar" propAddrSimilar,
+  localOption (QC.QuickCheckTests 1000) $ testProperty "addrNotSimilar" propAddrNotSimilar,
   testProperty "addr elemish" propElemish,
   testProperty "addr not elemish" propNotElemish,
   testCase "frame parsing" testChristmasMsg,

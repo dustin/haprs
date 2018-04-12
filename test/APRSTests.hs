@@ -72,8 +72,9 @@ propElemish l1 l2 (ArbitraryCall c) (ArbitrarySSID s1) (ArbitrarySSID s2)
   | otherwise = collect "diff SSID" f
   where f = must (address c s1) `elemish` (l1 <> [must (address c s2)] <> l2)
 
-propNotElemish :: [Address] -> Address -> Bool
-propNotElemish l a = not $ elemish a (filter (not . (≈) a) l)
+propNotElemish :: [Address] -> Address -> Property
+propNotElemish l a = noexact ==> not $ elemish a l
+  where noexact = notElem ((fst.unAddress) a) $ map (fst.unAddress) l
 
 testBase91 :: [TestTree]
 testBase91 =

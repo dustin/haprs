@@ -62,6 +62,9 @@ propElemish :: [Address] -> [Address] -> ArbitraryCall -> ArbitrarySSID -> Arbit
 propElemish l1 l2 (ArbitraryCall c) (ArbitrarySSID s1) (ArbitrarySSID s2) =
   must (address c s1) `elemish` mconcat [l1, [must (address c s2)], l2]
 
+propNotElemish :: [Address] -> Address -> Bool
+propNotElemish l a = not $ elemish a (filter (not . (≈) a) l)
+
 testBase91 :: [TestTree]
 testBase91 =
   map (\(a, want) -> testCase (show a ++ " -> " ++ show want) $ assertEqual "" want (decodeBase91 a)) [

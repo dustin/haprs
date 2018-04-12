@@ -38,6 +38,9 @@ testAddressParsing =
     ("KG6HWF", must $ address "KG6HWF" ""),
     ("KG6HWF-9", must $ address "KG6HWF" "9")]
 
+propUnAddress :: Address -> Bool
+propUnAddress a = Right a == (uncurry address . unAddress) a
+
 testAddrSimilar :: [TestTree]
 testAddrSimilar =
   map (\(a, b) -> testCase (a ++ " ≈ " ++ b) $ assertBool "" (raddr a ≈ raddr b)) [
@@ -364,9 +367,11 @@ tests = [
   testGroup "callPass"  testCallPass,
   testGroup "addrParse" testAddressParsing,
   testProperty "address round trips" (prop_roundtrips :: Address -> Bool),
+  testProperty "address/unAddress" propUnAddress,
   testGroup "addrSimilar" testAddrSimilar,
   testProperty "addrSimilar" propAddrSimilar,
   testProperty "addr elemish" propElemish,
+  testProperty "addr not elemish" propNotElemish,
   testCase "frame parsing" testChristmasMsg,
   localOption (QC.QuickCheckTests 1000) $ testProperty "address validation" propValidAddress,
   testGroup "base91" testBase91,

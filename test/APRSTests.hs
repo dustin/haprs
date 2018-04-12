@@ -10,6 +10,7 @@ import Data.Char (chr)
 import Data.Either (isRight, either)
 import Data.String (IsString, fromString)
 import Data.Word (Word8)
+import Data.Semigroup (mconcat)
 import Test.QuickCheck
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -53,6 +54,10 @@ propAddrSimilar :: ArbitraryCall -> ArbitrarySSID -> ArbitrarySSID -> Bool
 propAddrSimilar (ArbitraryCall c) (ArbitrarySSID s1) (ArbitrarySSID s2) =
   ma c s1 ≈ ma c s2
   where ma c' s' = must (address c' s')
+
+propElemish :: [Address] -> [Address] -> ArbitraryCall -> ArbitrarySSID -> ArbitrarySSID -> Bool
+propElemish l1 l2 (ArbitraryCall c) (ArbitrarySSID s1) (ArbitrarySSID s2) =
+  must (address c s1) `elemish` mconcat [l1, [must (address c s2)], l2]
 
 testBase91 :: [TestTree]
 testBase91 =
@@ -361,6 +366,7 @@ tests = [
   testProperty "address round trips" (prop_roundtrips :: Address -> Bool),
   testGroup "addrSimilar" testAddrSimilar,
   testProperty "addrSimilar" propAddrSimilar,
+  testProperty "addr elemish" propElemish,
   testCase "frame parsing" testChristmasMsg,
   localOption (QC.QuickCheckTests 1000) $ testProperty "address validation" propValidAddress,
   testGroup "base91" testBase91,

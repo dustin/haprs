@@ -6,8 +6,7 @@ module APRS.Types
     , Address
     , address
     , unAddress
-    , Similar
-    , (≈)
+    , Similar ((≈)), elemish
     , Frame(..)
     , Position(..)
     , Timestamp(..)
@@ -42,7 +41,7 @@ import Control.Monad (replicateM, replicateM_, guard)
 import Data.Bits (xor, (.&.), shiftL)
 import Data.Char (toLower, digitToInt)
 import Data.Either (either)
-import Data.Foldable (foldl')
+import Data.Foldable (any, foldl')
 import Data.Functor (($>))
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Int (Int16)
@@ -59,6 +58,9 @@ import qualified APRS.NMEA as N
 
 class Similar a where
   (≈) :: a -> a -> Bool
+
+elemish :: (Foldable f, Similar a) => a -> f a -> Bool
+elemish n = Data.Foldable.any (≈ n)
 
 data PacketType = CurrentMicEBin
   | CurrentMicE
@@ -116,7 +118,7 @@ address c s
   | invalid s = Left "invalid characters in SSID"
   | otherwise = Right $ Address c s
   where invalid :: Text -> Bool
-        invalid = any (`notElem` addrChars)
+        invalid = Data.Text.any (`notElem` addrChars)
 
 unAddress :: Address -> (Text, Text)
 unAddress (Address c s) = (c, s)

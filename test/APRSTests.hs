@@ -87,7 +87,7 @@ testBase91 =
   ("<*e7", 20346417 + 74529 + 6188 + 22)]
 
 prop_roundtrips :: (Show a, Read a, Eq a) => a -> Bool
-prop_roundtrips x = read (show x) == x
+prop_roundtrips = read.show >>= (==)
 
 christmasMsg :: String
 christmasMsg = "KG6HWF>APX200,WIDE1-1,WIDE2-1:=3722.1 N/12159.1 W-Merry Christmas!"

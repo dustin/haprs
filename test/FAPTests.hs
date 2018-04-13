@@ -29,8 +29,8 @@ instance FromJSON Digipeater where
     <*> v .: "call"
 
 data FAPResult = FAPResult {
-  _symbolCode :: Maybe String
-  , _symbolTable :: Maybe String
+  symbolCode :: Maybe String
+  , symbolTable :: Maybe String
   , srcCallsign :: Maybe String
   , dstCallsign :: Maybe String
   , latitude :: Maybe Double
@@ -150,7 +150,13 @@ fapTest fs = let parsed = map (\f -> case A.parseOnly parseFrame (fromString . s
 
                                       pure 3
 
-                                    pure $ n + 3 + pn + mn
+                                    sn <- if isNothing (symbol frame) then pure 0 else do
+                                      let (Just (Symbol t c)) = symbol frame
+                                      assertEqual ("sym tbl: " ++ show t) (fromJust . symbolTable $ res) [t]
+                                      assertEqual ("sym code: " ++ show c) (fromJust . symbolCode $ res) [c]
+                                      pure 2
+
+                                    pure $ n + 3 + pn + mn + sn
                                 ) (0::Int) (rights parsed)
                  pure $ show asses ++ " assertions run (" ++ show ((length.lefts) parsed) ++ " failed to parse)"
   where assertMaybeEqual lbl f a b = assertEqual lbl (fromJust (a =<< result f)) (show b)

@@ -16,6 +16,7 @@ module APRS.Types
     , identifyPacket
     , callPass
     , decodeBase91
+    , symbol
     -- New parser
     , APRSPacket(..)
     , PosExtension(..)
@@ -400,6 +401,14 @@ data APRSPacket = PositionPacket PacketType Symbol Position (Maybe Timestamp) Te
                 | CapabilitiesPacket [Capability]
                 | NotUnderstoodPacket Text
                 deriving (Show, Eq)
+
+symbol :: Frame -> Maybe Symbol
+symbol (Frame _ _ _ (PositionPacket _ s _ _ _)) = Just s
+symbol (Frame _ _ _ (ObjectPacket s _ _ _ _ _)) = Just s
+symbol (Frame _ _ _ (ItemPacket s _ _ _ _)) = Just s
+symbol (Frame _ _ _ (MicEPacket s _ _ _)) = Just s
+symbol _ = Nothing
+
 
 bodyParser :: Address -> A.Parser APRSPacket
 bodyParser dest = parseWeatherPacket

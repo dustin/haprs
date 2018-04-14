@@ -125,15 +125,15 @@ instance Show FilterItem where
 
 matchesTypeFilter :: Char -> Frame -> Bool
 matchesTypeFilter 'p' frame = (isJust.position) frame
-matchesTypeFilter 'o' (Frame _ _ _ (ObjectPacket _ _ _ _ _ _)) = True
-matchesTypeFilter 'i' (Frame _ _ _ (ItemPacket _ _ _ _ _)) = True
-matchesTypeFilter 'm' (Frame _ _ _ (MessagePacket _ _ _)) = True
+matchesTypeFilter 'o' (Frame _ _ _ ObjectPacket{}) = True
+matchesTypeFilter 'i' (Frame _ _ _ ItemPacket{}) = True
+matchesTypeFilter 'm' (Frame _ _ _ MessagePacket{}) = True
 matchesTypeFilter 'q' _ = undefined -- query
-matchesTypeFilter 's' (Frame _ _ _ (StatusPacket _ _)) = True
-matchesTypeFilter 't' (Frame _ _ _ (TelemetryPacket _ _ _ _)) = True
+matchesTypeFilter 's' (Frame _ _ _ StatusPacket{}) = True
+matchesTypeFilter 't' (Frame _ _ _ TelemetryPacket{}) = True
 matchesTypeFilter 'u' _ = undefined -- user defined
-matchesTypeFilter 'n' (Frame _ _ _ (WeatherPacket _ _ _ _ _ _)) = True -- nws
-matchesTypeFilter 'w' (Frame _ _ _ (WeatherPacket _ _ _ _ _ _)) = True
+matchesTypeFilter 'n' (Frame _ _ _ WeatherPacket{}) = True -- nws
+matchesTypeFilter 'w' (Frame _ _ _ WeatherPacket{}) = True
 matchesTypeFilter _ _ = False
 
 
@@ -141,11 +141,11 @@ passFrame :: FilterItem -> Frame -> Bool
 passFrame (NotFilter x) frame = (not.passFrame x) frame
 passFrame (RangeFilter (Position (_lon,_lat,_,_)) _d) _frame = undefined
 passFrame (PrefixFilter p) (Frame src _ _ _) = let s = (pack.show) src in
-                                                 any (flip isPrefixOf $ s) p
+                                                 any (flip isPrefixOf s) p
 passFrame (BudlistFilter b) (Frame src _ _ _) = src `elemish` b
 passFrame (ObjectFilter b) (Frame _ _ _ (ObjectPacket _ _ n _ _ _)) = n `elem` b
 passFrame (StrictObjectFilter b) frame = passFrame (ObjectFilter b) frame -- XXX: ???
-passFrame (TypeFilter t Nothing) frame = any (flip matchesTypeFilter $ frame) t
+passFrame (TypeFilter t Nothing) frame = any (flip matchesTypeFilter frame) t
 passFrame (TypeFilter _t (Just (_c,_d))) _frame = undefined
 passFrame (SymbolFilter _pri "" "") _frame = undefined
 passFrame (SymbolFilter _pri _sec "") _frame = undefined

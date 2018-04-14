@@ -63,7 +63,7 @@ propAddrSimilar (ArbitraryCall c) (ArbitrarySSID s1) (ArbitrarySSID s2)
 -- negative similarity tests
 propAddrNotSimilar :: ArbitraryCall -> ArbitraryCall -> ArbitrarySSID -> ArbitrarySSID -> Property
 propAddrNotSimilar (ArbitraryCall c1) (ArbitraryCall c2) (ArbitrarySSID s1) (ArbitrarySSID s2) =
-  (c1 /= c2) ==> not ((ma c1 s1) ≈ (ma c2 s2))
+  (c1 /= c2) ==> not (ma c1 s1 ≈ ma c2 s2)
   where ma c' s' = must (address c' s')
 
 propElemish :: [Address] -> [Address] -> ArbitraryCall -> ArbitrarySSID -> ArbitrarySSID -> Property

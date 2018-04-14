@@ -82,34 +82,34 @@ instance Arbitrary ObjectData where
 instance Arbitrary ObjectState where arbitrary = arbitraryBoundedEnum
 
 instance Arbitrary WeatherSW where
-  arbitrary = oneof ((map pure [
-                         APRSdos
-                         , MacAPRS
-                         , PocketAPRS
-                         , APRSSA
-                         , WinAPRS
-                         , XAPRS
-                         , OpenTracker
-                         , Kenwood
-                         , Byonics
-                         , Yaesu]) <>
+  arbitrary = oneof (map pure [
+                        APRSdos
+                        , MacAPRS
+                        , PocketAPRS
+                        , APRSSA
+                        , WinAPRS
+                        , XAPRS
+                        , OpenTracker
+                        , Kenwood
+                        , Byonics
+                        , Yaesu] <>
                      [UnknownWeatherSW <$> arbitrary])
 
 instance Arbitrary WeatherUnit where
-  arbitrary = oneof ((map pure [
-                         WUDavis
-                         , WUDavisVantagePro
-                         , WUHeathkit
-                         , WUPIC
-                         , WURadioShack
-                         , WUUltimeterIIAuto
-                         , WUUltimeterIIRemote
-                         , WUUltimeter2000
-                         , WUUltimeterRemote
-                         , WUUltimeter500
-                         , WURemoteUltimeterPacket
-                         , WUOpenTrackerTW1]) <>
-                     [UnknownWeatherUnit <$> arbitraryText ['a'..'z'] (2,2)])
+  arbitrary = oneof (map pure [
+                        WUDavis
+                        , WUDavisVantagePro
+                        , WUHeathkit
+                        , WUPIC
+                        , WURadioShack
+                        , WUUltimeterIIAuto
+                        , WUUltimeterIIRemote
+                        , WUUltimeter2000
+                        , WUUltimeterRemote
+                        , WUUltimeter500
+                        , WURemoteUltimeterPacket
+                        , WUOpenTrackerTW1] <>
+              [UnknownWeatherUnit <$> arbitraryText ['a'..'z'] (2,2)])
 
 instance Arbitrary FilterItem where
   arbitrary = frequency [
@@ -119,7 +119,7 @@ instance Arbitrary FilterItem where
     (10, BudlistFilter <$> listOf1 arbitrary),
     (10, ObjectFilter <$> ws),
     (10, StrictObjectFilter <$> ws),
-    (10, TypeFilter . T.unpack <$> (arbitraryText "poimqstunw" (1,9)) <*> arbitrary),
+    (10, TypeFilter . T.unpack <$> arbitraryText "poimqstunw" (1,9) <*> arbitrary),
     (10, SymbolFilter <$> w <*> w <*> w),
     (10, DigiFilter <$> listOf1 arbitrary),
     (10, (AreaFilter <$> choose (-90, 90)
@@ -144,7 +144,7 @@ instance Arbitrary FilterItem where
           isValidAF _ = True
 
 lsubterm :: [a] -> [[a]]
-lsubterm l = map (flip dropn l) [0..length l - 1]
+lsubterm l = map (`dropn` l) [0..length l - 1]
   where dropn n = take n <> drop (succ n)
 
 instance Arbitrary Filter where
@@ -195,26 +195,26 @@ instance Arbitrary Capability where
     ]
 
 instance Arbitrary PacketType where
-  arbitrary = oneof ((map pure [
-                         CurrentMicEBin
-                         , CurrentMicE
-                         , Item
-                         , PositionNoTSNoMsg
-                         , PositionTSNoMsg
-                         , MessagePkt
-                         , Object
-                         , StationCaps
-                         , PositionNoTS
-                         , PositionNoMsg
-                         , PositionMsg
-                         , RawGPSOrUlt
-                         , Status
-                         , Query
-                         , Telemetry
-                         , WeatherNoPos
-                         , UserDefined
-                         , ThirdParty
-                         ]) <>
+  arbitrary = oneof (map pure [
+                        CurrentMicEBin
+                        , CurrentMicE
+                        , Item
+                        , PositionNoTSNoMsg
+                        , PositionTSNoMsg
+                        , MessagePkt
+                        , Object
+                        , StationCaps
+                        , PositionNoTS
+                        , PositionNoMsg
+                        , PositionMsg
+                        , RawGPSOrUlt
+                        , Status
+                        , Query
+                        , Telemetry
+                        , WeatherNoPos
+                        , UserDefined
+                        , ThirdParty
+                        ] <>
                      [InvalidPacket <$> arbitrary])
 
 instance Arbitrary APRSPacket where

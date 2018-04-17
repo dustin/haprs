@@ -15,6 +15,7 @@ import Test.QuickCheck
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC
+import Test.Invariant (inverts)
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Set as Set
 
@@ -88,6 +89,11 @@ testBase91 =
 
 prop_roundtrips :: (Show a, Read a, Eq a) => a -> Bool
 prop_roundtrips = read.show >>= (==)
+
+-- this is the same as the above, but using invariant
+
+prop_roundtrips' :: (Show a, Read a, Eq a) => a -> Bool
+prop_roundtrips' = read `inverts` show
 
 christmasMsg :: String
 christmasMsg = "KG6HWF>APX200,WIDE1-1,WIDE2-1:=3722.1 N/12159.1 W-Merry Christmas!"
@@ -381,6 +387,7 @@ tests = [
   testGroup "callPass"  testCallPass,
   testGroup "addrParse" testAddressParsing,
   testProperty "address round trips" (prop_roundtrips :: Address -> Bool),
+  testProperty "address round trips 2" (prop_roundtrips' :: Address -> Bool),
   testProperty "address/unAddress" propUnAddress,
   testGroup "addrSimilar" testAddrSimilar,
   testProperty "addrSimilar" propAddrSimilar,

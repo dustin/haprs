@@ -4,12 +4,14 @@
 
 module ISTests where
 
+import Data.Either (fromRight)
 import Data.String (IsString, fromString)
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Text as T
+import Test.Invariant ((@~>))
 
 import APRS.IS
 import APRS.Types (Address, Frame, Position(..), PosExtension(..))
@@ -94,6 +96,10 @@ testFilterParser =
 propParseRoundTrip :: (Eq a, Show a) => A.Parser a -> a -> Bool
 propParseRoundTrip f i = A.parseOnly f ((T.pack.show) i) == Right i
 
+propParseRoundTrip' :: (Eq a, Show a) => A.Parser a -> a -> Bool
+propParseRoundTrip' f = fromRight undefined . A.parseOnly f @~> T.pack.show
+
+
 propNoDoubleNegatives :: Filter -> Bool
 propNoDoubleNegatives (Filter a) = (not.any doubleNegative) a
   where doubleNegative (NotFilter (NotFilter _)) = True
@@ -107,6 +113,7 @@ tests = [
   testGroup "filter parser" testFilterParser,
 
   testProperty "filter round tripping" (propParseRoundTrip parseFilter),
+  testProperty "filter round tripping (2)" (propParseRoundTrip' parseFilter),
   testProperty "filter item round tripping" (withMaxSuccess 1000 $ propParseRoundTrip parseFilterItem),
   testProperty "no double negative filters" (withMaxSuccess 1000 propNoDoubleNegatives)
   ]

@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ImplicitParams #-}
 {-# OPTIONS_GHC -Wno-orphans -Wno-type-defaults #-}
 
 module APRSTests (tests) where
@@ -8,14 +8,15 @@ import APRS.Arbitrary
 
 import Data.Char (chr)
 import Data.Either (isRight, either)
+import Data.Semigroup ((<>))
 import Data.String (IsString, fromString)
 import Data.Word (Word8)
-import Data.Semigroup ((<>))
+import Test.HUnit.Approx
+import Test.Invariant (inverts)
 import Test.QuickCheck
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC
-import Test.Invariant (inverts)
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Set as Set
 
@@ -382,6 +383,17 @@ testFrameParser =
             (NotUnderstoodPacket "WA6EWV-3/R NONE/D WA6EWV-5/N"))))
   ]
 
+testDistance :: [TestTree]
+testDistance = map (\((lon, lat), (lon', lat'), want) ->
+                       testCase ((show lon) <> ", " <> (show lat) <> " -> " <> (show want)) $
+                       let ?epsilon = 0.0001 in
+                         want @~? distance (Position (lon,lat,0,PosENone)) (Position (lon',lat',0,PosENone))) [
+  ((36.67433333333334,-119.8545),(36.67433333333334,-119.8545),0),
+  ((36.67433333333334,-119.8545),(37.67433333333334,-117.8545),229271.67615),
+  ((36.67433333333334,-119.8545),(36.779479,-120.104792),28495.47502295431)
+  ]
+
+
 tests :: [TestTree]
 tests = [
   testGroup "callPass"  testCallPass,
@@ -399,6 +411,8 @@ tests = [
   testGroup "base91" testBase91,
   testCase "no dup packet types" $ testNoDupMapping (identifyPacket.chr.fromIntegral :: Word8 -> PacketType),
   testCase "no dup weather sw" $ testNoDupMapping (lookupWeatherSW.fromLowChar :: LowChar -> WeatherSW),
+
+  testGroup "distance" testDistance,
 
   testGroup "timestamp parsing" testTimestampParser,
   testGroup "weather parsing" testWeatherParser,

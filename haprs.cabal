@@ -19,6 +19,8 @@ library
   build-depends:       base >= 4.7 && < 5
                      , text
                      , attoparsec
+                     , geodetics
+                     , dimensional
                      , QuickCheck
   default-language:    Haskell2010
   ghc-options:        -Wall

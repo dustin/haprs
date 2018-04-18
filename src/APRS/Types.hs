@@ -17,6 +17,7 @@ module APRS.Types
     , callPass
     , decodeBase91
     , symbol
+    , distance
     -- New parser
     , APRSPacket(..)
     , PosExtension(..)
@@ -44,14 +45,17 @@ import Data.Char (toLower, digitToInt)
 import Data.Either (either)
 import Data.Foldable (any, foldl')
 import Data.Functor (($>))
-import Data.Maybe (catMaybes, fromMaybe)
 import Data.Int (Int16)
-import Data.Word (Word8)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.String (fromString)
 import Data.Text (Text, any, all, length, unpack)
-import Text.Read (readMaybe)
+import Data.Word (Word8)
+import Geodetics.Geodetic (Geodetic(..), WGS84(..), groundDistance)
 import Numeric (readInt)
+import Numeric.Units.Dimensional ((/~), (*~), _0)
+import Numeric.Units.Dimensional.SIUnits (meter, degree)
 import Prelude hiding (any)
+import Text.Read (readMaybe)
 import qualified Data.Attoparsec.Text as A
 
 import qualified APRS.MicE as M
@@ -196,6 +200,13 @@ parseTimestamp = dhmlocal <|> dhmzulu <|> hms <|> mdhm
 -- TODO: Perhaps stuff some extensions in here to cover PosExtension
 -- as well as compression type and ambiguity.
 newtype Position = Position (Double, Double, Double, PosExtension) deriving (Eq, Show)
+
+distance :: Position -> Position -> Double
+distance a b = case groundDistance (g a) (g b) of
+                 Just (d,_,_) -> let d' = d /~ meter in if isNaN d' then 0 else d'
+                 _ -> 0
+
+  where g (Position (lon, lat, _, _)) = Geodetic (lat *~ degree) (lon *~ degree) _0 WGS84
 
 data WeatherParam = WindDir Int
                   | WindSpeed Int

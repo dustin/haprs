@@ -23,7 +23,7 @@ import Data.Text (Text, pack, unpack, isPrefixOf)
 import qualified Data.Attoparsec.Text as A
 
 import APRS.Types (Address, Frame(..), Position(..), PosExtension(..), position,
-                   elemish, APRSPacket(..), parseAddr, callPass)
+                   elemish, APRSPacket(..), parseAddr, callPass, distance)
 
 -- user mycall[-ss] pass passcode[ vers softwarename softwarevers[ UDP udpport][ servercommand]]
 
@@ -139,7 +139,9 @@ matchesTypeFilter _ _ = False
 
 passFrame :: FilterItem -> Frame -> Bool
 passFrame (NotFilter x) frame = (not.passFrame x) frame
-passFrame (RangeFilter (Position (_lon,_lat,_,_)) _d) _frame = undefined
+passFrame (RangeFilter p d) frame = case position frame of
+                                      Nothing -> False
+                                      Just p2 -> distance p p2 <= d
 passFrame (PrefixFilter p) (Frame src _ _ _) = let s = (pack.show) src in
                                                  any (flip isPrefixOf s) p
 passFrame (BudlistFilter b) (Frame src _ _ _) = src `elemish` b

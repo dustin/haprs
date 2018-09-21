@@ -5,4 +5,9 @@ packages:
 extra-deps:
 - geodetics-0.0.5
 - test-invariant-0.4.5.0
+
+- mqtt-hs-1.0.2
+- git: https://github.com/eamsden/w1-therm-haskell
+  commit: f6a6cb68db421eef76b767482814463e180d1bad
+
 resolver: lts-11.2

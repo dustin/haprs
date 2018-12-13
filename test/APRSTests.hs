@@ -15,6 +15,7 @@ import Test.HUnit.Approx
 import Test.Invariant (inverts)
 import Test.QuickCheck
 import Test.Tasty
+import Test.Tasty.Ingredients.Basic (HideSuccesses(..))
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC
 import qualified Data.Attoparsec.Text as A
@@ -416,6 +417,6 @@ tests = [
 
   testGroup "timestamp parsing" testTimestampParser,
   testGroup "weather parsing" testWeatherParser,
-  testGroup "mega parser" testMegaParser,
+  localOption (HideSuccesses True) $ testGroup "mega parser" testMegaParser,
   testGroup "frame parser" testFrameParser
   ]

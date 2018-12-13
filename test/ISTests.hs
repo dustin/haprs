@@ -7,6 +7,7 @@ module ISTests where
 import Data.Either (fromRight)
 import Data.String (IsString, fromString)
 import Test.Tasty
+import Test.Tasty.Ingredients.Basic (HideSuccesses(..))
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC
 import qualified Data.Attoparsec.Text as A
@@ -110,7 +111,7 @@ tests = [
   testGroup "id parser" testIDParser,
   testProperty "callsign validation (read-write)" propValidIDRW,
   testProperty "callsign validation (read-only)" propValidIDRO,
-  testGroup "filter parser" testFilterParser,
+  localOption (HideSuccesses True) $ testGroup "filter parser" testFilterParser,
 
   testProperty "filter round tripping" (propParseRoundTrip parseFilter),
   testProperty "filter round tripping (2)" (propParseRoundTrip' parseFilter),

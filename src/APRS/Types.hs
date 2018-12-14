@@ -54,7 +54,6 @@ import Geodetics.Geodetic (Geodetic(..), WGS84(..), groundDistance)
 import Numeric (readInt)
 import Numeric.Units.Dimensional ((/~), (*~), _0)
 import Numeric.Units.Dimensional.SIUnits (meter, degree)
-import Prelude hiding (any)
 import Text.Read (readMaybe)
 import qualified Data.Attoparsec.Text as A
 
@@ -156,9 +155,7 @@ b91chars :: String
 b91chars = "[!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\\^_`abcdefghijklmnopqrstuvwxyz{]"
 
 parseB91Seg :: Int -> A.Parser Double
-parseB91Seg n = do
-  stuff <- replicateM n (A.satisfy (`elem` b91chars))
-  pure $ (fromIntegral.decodeBase91.fromString) stuff
+parseB91Seg n = fromIntegral.decodeBase91.fromString <$> replicateM n (A.satisfy (`elem` b91chars))
 
 posamb :: Int -> Double
 posamb 0 = 0
@@ -486,9 +483,7 @@ parsePosCompressed = do
     -- TODO: Altitude
     unc m1 m2 v = (90 - (m1 / 380926), (-180) + (m2 / 190463), 0, v)
     pcvel :: A.Parser PosExtension
-    pcvel = do
-      x <- replicateM 3 A.anyChar
-      pure $ pcvel' $ map fromEnum x
+    pcvel = pcvel' . map fromEnum <$> replicateM 3 A.anyChar
 
     pcvel' [a,b,_]
       | a >= 33 && a <= 122 = let course = fromIntegral (a - 33) * 4

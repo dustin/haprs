@@ -386,7 +386,7 @@ testFrameParser =
 
 testDistance :: [TestTree]
 testDistance = map (\((lat, lon), (lat', lon'), want) ->
-                       testCase ((show lon) <> ", " <> (show lat) <> " -> " <> (show want)) $
+                       testCase (show lon <> ", " <> show lat <> " -> " <> show want) $
                        let ?epsilon = 0.0001 in
                          want @~? distance (Position (lon,lat,0,PosENone)) (Position (lon',lat',0,PosENone))) [
   ((36.67433333333334,-119.8545),(36.67433333333334,-119.8545),0),

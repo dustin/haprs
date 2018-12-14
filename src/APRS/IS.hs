@@ -64,10 +64,7 @@ parseIdentification = do
           b <- word
           pure (a, b)
         word :: A.Parser Text
-        word = do
-          _ <- A.skipSpace
-          w <- A.takeWhile (not.isSpace)
-          pure w
+        word = A.skipSpace *> A.takeWhile (not.isSpace)
 
 newtype Filter = Filter [FilterItem]
                deriving (Eq)
@@ -143,11 +140,11 @@ passFrame (RangeFilter p d) frame = case position frame of
                                       Nothing -> False
                                       Just p2 -> distance p p2 <= d
 passFrame (PrefixFilter p) (Frame src _ _ _) = let s = (pack.show) src in
-                                                 any (flip isPrefixOf s) p
+                                                 any (`isPrefixOf` s) p
 passFrame (BudlistFilter b) (Frame src _ _ _) = src `elemish` b
 passFrame (ObjectFilter b) (Frame _ _ _ (ObjectPacket _ _ n _ _ _)) = n `elem` b
 passFrame (StrictObjectFilter b) frame = passFrame (ObjectFilter b) frame -- XXX: ???
-passFrame (TypeFilter t Nothing) frame = any (flip matchesTypeFilter frame) t
+passFrame (TypeFilter t Nothing) frame = any (`matchesTypeFilter` frame) t
 passFrame (TypeFilter _t (Just (_c,_d))) _frame = undefined
 passFrame (SymbolFilter _pri "" "") _frame = undefined
 passFrame (SymbolFilter _pri _sec "") _frame = undefined
@@ -204,7 +201,7 @@ parseFilterItem = NotFilter <$> ("-" *> parseFilterItem)
               pure (a, d)
 
     symFilter = do
-      parts <- "s/" *> (A.many' (A.satisfy (`notElem` ['/', ' ']))) `A.sepBy` A.char '/'
+      parts <- "s/" *> A.many' (A.satisfy (`notElem` ['/', ' '])) `A.sepBy` A.char '/'
       let (a:b:c:_) = parts ++ repeat "" in pure $ SymbolFilter a b c
 
   -- a/latN/lonW/latS/lonE

@@ -39,16 +39,18 @@ import qualified Data.Attoparsec.Text as A
 parseNMEA :: A.Parser (Double, Double, (Int, Int, Int))
 parseNMEA = parseGGA <|> parseRMC
 
-parseGGA :: A.Parser (Double, Double, (Int, Int, Int))
-parseGGA = do
-  _ <- A.string "$GPGGA,"
+parseTSLatLon :: A.Parser (Double, Double, (Int, Int, Int))
+parseTSLatLon = do
   ts <- parseTS
-  _ <- A.char ','
+  _ <- ",A," <|> ","
   lat <- parseDir 2
   _ <- A.char ','
   lon <- parseDir 3
 
   pure (lat, lon, ts)
+
+parseGGA :: A.Parser (Double, Double, (Int, Int, Int))
+parseGGA = "$GPGGA," *> parseTSLatLon
 
 parseTS :: A.Parser (Int, Int, Int)
 parseTS = do
@@ -81,12 +83,4 @@ Where:
 -}
 
 parseRMC :: A.Parser (Double, Double, (Int, Int, Int))
-parseRMC = do
-  _ <- A.string "$GPRMC,"
-  ts <- parseTS
-  _ <- A.string ",A,"
-  lat <- parseDir 2
-  _ <- A.char ','
-  lon <- parseDir 3
-
-  pure (lat, lon, ts)
+parseRMC = "$GPRMC," *> parseTSLatLon

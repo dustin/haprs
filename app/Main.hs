@@ -16,7 +16,7 @@ import Network.Socket (HostName)
 import Network.Socket.Internal (PortNumber)
 import Options.Applicative
 import System.Console.ANSI
-import System.IO (Handle, hClose, hPutStr, hGetLine)
+import System.IO (Handle, hPutStr, hGetLine)
 import qualified Control.Concurrent.Broadcast as Broadcast
 import qualified Data.Attoparsec.Text as A
 import qualified Data.ByteString.Char8 as B

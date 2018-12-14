@@ -23,7 +23,8 @@ library
                      , dimensional
                      , QuickCheck
   default-language:    Haskell2010
-  ghc-options:        -Wall
+  ghc-options:        -Wall -Wcompat -Wincomplete-record-updates
+                      -Wredundant-constraints
 
 executable gate
   hs-source-dirs:      app

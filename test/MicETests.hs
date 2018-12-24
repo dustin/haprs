@@ -36,9 +36,9 @@ testMicEDest =
   (("S325V4",""), (-33.42733333333334, 4, 100, 1, 0))
   ]
 
-testDigits :: [TestTree]
+testDigits :: Assertion
 testDigits =
-  map (\(a, want) -> testCase (show a ++ " -> " ++ show want) $ assertEqual "" want (digit a)) [
+  mapM_ (\(a, want) -> assertEqual (show a ++ " -> " ++ show want) want (digit a)) [
   ('0', 0),
   ('9', 9),
   ('A', 0),
@@ -55,5 +55,5 @@ tests = [
   testGroup "micELonD" testMicELonD,
   testGroup "micELonM" testMicELonM,
   testGroup "micEDest" testMicEDest,
-  testGroup "digits" testDigits
+  testCase "digits" testDigits
   ]

@@ -15,7 +15,6 @@ import Test.HUnit.Approx
 import Test.Invariant (inverts)
 import Test.QuickCheck
 import Test.Tasty
-import Test.Tasty.Ingredients.Basic (HideSuccesses(..))
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC
 import qualified Data.Attoparsec.Text as A
@@ -172,9 +171,9 @@ testWeatherParser =
                                            NoData 'p', NoData 'P', Baro 10140, Humidity 88])
   ]
 
-testMegaParser :: [TestTree]
+testMegaParser :: Assertion
 testMegaParser =
-  map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly (bodyParser "S32UVT") a)) [
+  mapM_ (\(a, want) -> assertEqual (show a) want (A.parseOnly (bodyParser "S32UVT") a)) [
   ("!4903.50N/07201.75W-Test 001234",
    Right (PositionPacket PositionNoTSNoMsg (Symbol '/' '-')
           (Position (49.05833333333333,-72.02916666666667,0,PosENone)) Nothing "Test 001234")),
@@ -417,6 +416,6 @@ tests = [
 
   testGroup "timestamp parsing" testTimestampParser,
   testGroup "weather parsing" testWeatherParser,
-  localOption (HideSuccesses True) $ testGroup "mega parser" testMegaParser,
+  testCase "mega parser" testMegaParser,
   testGroup "frame parser" testFrameParser
   ]

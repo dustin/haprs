@@ -7,7 +7,6 @@ module ISTests where
 import Data.Either (fromRight)
 import Data.String (IsString, fromString)
 import Test.Tasty
-import Test.Tasty.Ingredients.Basic (HideSuccesses(..))
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC
 import qualified Data.Attoparsec.Text as A
@@ -20,9 +19,9 @@ import APRS.Arbitrary ()
 
 instance IsString Address where fromString = read
 
-testIDParser :: [TestTree]
+testIDParser :: Assertion
 testIDParser =
-  map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly parseIdentification a)) [
+  mapM_ (\(a, want) -> assertEqual (show a) want (A.parseOnly parseIdentification a)) [
   ("user KG6HWF-9 pass 11223 vers haprs 0.1 filter r/1", Left "Failed reading: invalid callpass"),
   ("user KG6HWF-9", Left "call pass: not enough input"),
 
@@ -50,9 +49,9 @@ propValidIDRO :: Frame -> Bool
 propValidIDRO = let (Right (ID _ _ _ _ v)) = A.parseOnly parseIdentification "user KG6HWF-9 pass -1" in
                   not.v
 
-testFilterParser :: [TestTree]
+testFilterParser :: Assertion
 testFilterParser =
-  map (\(a, want) -> testCase (show a) $ assertEqual "" want (A.parseOnly parseFilter a)) [
+  mapM_ (\(a, want) -> assertEqual (show a) want (A.parseOnly parseFilter a)) [
   ("filter r/37.335278/-121.891944/50",
    Right (Filter [RangeFilter (Position (-121.891944,37.335278,0.0,PosENone)) 50.0])),
   ("filter p/KG/K6",
@@ -108,10 +107,10 @@ propNoDoubleNegatives (Filter a) = (not.any doubleNegative) a
 
 tests :: [TestTree]
 tests = [
-  testGroup "id parser" testIDParser,
+  testCase "id parser" testIDParser,
   testProperty "callsign validation (read-write)" propValidIDRW,
   testProperty "callsign validation (read-only)" propValidIDRO,
-  localOption (HideSuccesses True) $ testGroup "filter parser" testFilterParser,
+  testCase "filter parser" testFilterParser,
 
   testProperty "filter round tripping" (propParseRoundTrip parseFilter),
   testProperty "filter round tripping (2)" (propParseRoundTrip' parseFilter),

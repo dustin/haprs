@@ -24,4 +24,4 @@ module APRS (
   , position
   ) where
 
-import APRS.Types
+import           APRS.Types

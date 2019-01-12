@@ -7,14 +7,14 @@ module APRS.Arbitrary (
   , addrChars
   ) where
 
-import Data.Semigroup ((<>))
-import Data.String (fromString)
-import Control.Applicative (liftA3)
-import Test.QuickCheck
-import qualified Data.Text as T
+import           Control.Applicative (liftA3)
+import           Data.Semigroup      ((<>))
+import           Data.String         (fromString)
+import qualified Data.Text           as T
+import           Test.QuickCheck
 
-import APRS.IS
-import APRS.Types
+import           APRS.IS
+import           APRS.Types
 
 addrChars :: [Char]
 addrChars = ['A'..'Z'] ++ ['0'..'9']
@@ -138,7 +138,7 @@ instance Arbitrary FilterItem where
           w = listOf (elements addrChars)
           truncPos (Position (a, b, _, _)) = Position (a,b,0,PosENone)
           isNegative (NotFilter _) = True
-          isNegative _ = False
+          isNegative _             = False
 
           isValidAF (AreaFilter latN lonW latS lonE) = latN >= latS && lonW <= lonE
           isValidAF _ = True
@@ -151,7 +151,7 @@ instance Arbitrary Filter where
   arbitrary = Filter <$> listOf1 arbitrary
   shrink (Filter a) = Filter <$> ss a
     where ss [_] = [] -- never shrink to zero filter items
-          ss l = lsubterm l
+          ss l   = lsubterm l
 
 newtype ArbitraryCall = ArbitraryCall T.Text deriving Show
 
@@ -171,8 +171,8 @@ instance Arbitrary Address where
 
   shrink a = case unAddress a of
                ("A1A", "") -> []
-               (_, "") -> [addr "A1A" ""]
-               (c, _) -> [addr c ""]
+               (_, "")     -> [addr "A1A" ""]
+               (c, _)      -> [addr c ""]
     where addr c s = either undefined id $ address c s
 
 instance Arbitrary Frame where

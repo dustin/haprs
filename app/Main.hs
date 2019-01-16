@@ -1,26 +1,24 @@
-{-# Language OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Main where
 
-import APRS
+import           APRS
 
-import Control.Concurrent (forkIO)
-import Control.Concurrent.Broadcast ( Broadcast )
-import Control.Concurrent.STM (newTChanIO)
-import Control.Monad (forever, when, void)
-import Data.Semigroup ((<>))
-import Data.String (fromString)
-import Data.Text (Text, stripEnd)
-import Network (PortID(..), connectTo)
-import Network.Socket (HostName)
-import Network.Socket.Internal (PortNumber)
-import Options.Applicative
-import System.Console.ANSI
-import System.IO (Handle, hPutStr, hGetLine)
+import           Control.Concurrent           (forkIO)
+import           Control.Concurrent.Broadcast (Broadcast)
 import qualified Control.Concurrent.Broadcast as Broadcast
-import qualified Data.Attoparsec.Text as A
-import qualified Data.ByteString.Char8 as B
-import qualified Network.MQTT as MQTT
+import           Control.Monad                (forever, void, when)
+import qualified Data.Attoparsec.Text         as A
+import qualified Data.ByteString.Lazy.Char8   as B
+import           Data.Semigroup               ((<>))
+import           Data.String                  (fromString)
+import           Data.Text                    (Text, stripEnd)
+import           Network                      (PortID (..), connectTo)
+import           Network.MQTT.Client
+import           Options.Applicative
+import           System.Console.ANSI
+import           System.IO                    (Handle, hGetLine, hPutStr)
 
 connect :: String -> String -> String -> String -> IO Handle
 connect s c p f = let h = takeWhile (/= ':') s
@@ -32,17 +30,17 @@ connect s c p f = let h = takeWhile (/= ':') s
                       hPutStr a stuff
                       pure a
 
-data Options = Options { optFilter :: String
-                       , optServer :: String
+data Options = Options { optFilter   :: String
+                       , optServer   :: String
                        , optCallsign :: String
                        , optCallpass :: String
                        -- mqtt options
-                       , optTopic :: MQTT.Topic
-                       , optHost :: HostName
-                       , optPort :: PortNumber
-                       , optUser :: Text
-                       , optPass :: Text
-                       , optClient :: Text
+                       , optTopic    :: Text
+                       , optHost     :: String
+                       , optPort     :: Int
+                       , optUser     :: String
+                       , optPass     :: String
+                       , optClient   :: String
                        } deriving (Show)
 
 data Msg = Msg String (Either String Frame)
@@ -76,37 +74,28 @@ colored ci c s = do
 consLog :: Broadcast Msg -> IO ()
 consLog b = forever (Broadcast.listen b >>= l)
   where l (Msg s (Right f)) = doBody s f
-        l (Msg s (Left _)) = colored Vivid Red $ "error parsing frame: " ++ s
+        l (Msg s (Left _))  = colored Vivid Red $ "error parsing frame: " ++ s
 
 entry :: Broadcast Msg -> String -> IO ()
 entry _ s@('#':_) = colored Vivid Black s
 entry b s = Broadcast.signal b (Msg s $ A.parseOnly parseFrame (stripEnd . fromString $ s))
 
 runMQTT :: Options -> Broadcast Msg -> IO ()
-runMQTT opts b = do
-  cmds <- MQTT.mkCommands
-  pubChan <- newTChanIO
-  let conf = (MQTT.defaultConfig cmds pubChan)
-             { MQTT.cClean = False
-             , MQTT.cClientID = optClient opts
-             , MQTT.cHost = optHost opts
-             , MQTT.cPort = optPort opts
-             , MQTT.cUsername = nilly $ optUser opts
-             , MQTT.cPassword = nilly $ optPass opts
-             , MQTT.cKeepAlive = Just 10
-             }
+runMQTT Options{..} b = do
+  mc <- runClient mqttConfig{_hostname = optHost,
+                             _port = optPort,
+                             _connID = optClient,
+                             _username = nilly optUser,
+                             _password = nilly optPass}
 
-  _ <- forkIO $ forever $ do
+  forever $ do
     m <- Broadcast.listen b
     case m of
       (Msg _ (Left _)) -> undefined
-      (Msg mt _) -> MQTT.publish conf MQTT.NoConfirm False (optTopic opts) (B.pack mt)
-
-  terminated <- MQTT.run conf
-  print terminated
+      (Msg mt _)       -> publishq mc optTopic (B.pack mt) False QoS1
 
   where nilly "" = Nothing
-        nilly s = Just s
+        nilly s  = Just s
 
 
 gate :: Options -> IO ()

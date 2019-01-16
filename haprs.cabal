@@ -38,7 +38,7 @@ executable gate
                      , haprs
                      , ansi-terminal
                      , concurrent-extra
-                     , mqtt-hs
+                     , net-mqtt
                      , stm
                      , bytestring
   default-language:    Haskell2010

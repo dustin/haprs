@@ -27,7 +27,7 @@ connect s c p f = let h = takeWhile (/= ':') s
                       pd = Service $ drop (length h + 1) s in
                     do
                       a <- connectTo h pd
-                      let stuff = "user " ++ c ++ " pass " ++ p ++ " vers haprs 0.1 filter " ++ f ++ "\r\n"
+                      let stuff = mconcat ["user ", c, " pass ", p, " vers haprs 0.1 filter ", f, "\r\n"]
                       print stuff
                       hPutStr a stuff
                       pure a
@@ -55,8 +55,8 @@ options = Options
 
 doBody :: String -> Frame -> IO ()
 doBody s f@(Frame _ _ _ (NotUnderstoodPacket _)) =
-  colored Vivid Red (":( " ++ s ++ " ") >> colored Vivid Black (show f)
-doBody s f = colored Vivid Black (":) " ++ s ++ " ") >> colored Vivid Green (show f)
+  colored Vivid Red (":( " <> s <> " ") >> colored Vivid Black (show f)
+doBody s f = colored Vivid Black (":) " <> s <> " ") >> colored Vivid Green (show f)
 
 colored :: ColorIntensity -> Color -> String -> IO ()
 colored ci c s = do
@@ -68,7 +68,7 @@ colored ci c s = do
 consLog :: Broadcast Msg -> IO ()
 consLog b = forever (Broadcast.listen b >>= l)
   where l (Msg s (Right f)) = doBody s f
-        l (Msg s (Left _))  = colored Vivid Red $ "error parsing frame: " ++ s
+        l (Msg s (Left _))  = colored Vivid Red $ "error parsing frame: " <> s
 
 entry :: Broadcast Msg -> String -> IO ()
 entry _ s@('#':_) = colored Vivid Black s
@@ -85,13 +85,13 @@ runMQTT Options{..} b = do
       (Msg _ (Left _)) -> undefined
       (Msg mt _)       -> publishq mc optTopic (B.pack mt) False QoS1
 
-  where cid ['#']    = "aprs"
+  where cid ['#']    = "aprs-gate"
         cid ('#':xs) = xs
-        cid _        = "aprs"
+        cid _        = "aprs-gate"
 
 gate :: Options -> IO ()
 gate opts = do
-  putStrLn $ "gatin' " ++ optServer opts ++ show opts
+  putStrLn $ "gatin' " <> optServer opts <> show opts
   b <- Broadcast.new
   _ <- forkIO $ consLog b
   when (isJust $ optMQTTURL opts) $ void $ forkIO $ runMQTT opts b

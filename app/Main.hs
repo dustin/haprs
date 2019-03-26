@@ -4,6 +4,7 @@
 module Main where
 
 import           APRS
+import           APRS.Types                   (unAddress)
 
 import           Control.Concurrent           (forkIO)
 import           Control.Concurrent.Broadcast (Broadcast)
@@ -14,7 +15,7 @@ import qualified Data.ByteString.Lazy.Char8   as B
 import           Data.Maybe                   (fromJust, isJust)
 import           Data.Semigroup               ((<>))
 import           Data.String                  (fromString)
-import           Data.Text                    (Text, pack, stripEnd)
+import           Data.Text                    (Text, stripEnd)
 import           Network                      (PortID (..), connectTo)
 import           Network.MQTT.Client
 import           Network.URI
@@ -89,8 +90,8 @@ runMQTT Options{..} b = do
         cid ('#':xs) = xs
         cid _        = "aprs-gate"
 
-        p :: Show a => a -> Text
-        p = pack . show
+        p :: Address -> Text
+        p = fst . unAddress
 
 gate :: Options -> IO ()
 gate opts = do

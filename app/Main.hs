@@ -14,7 +14,7 @@ import qualified Data.ByteString.Lazy.Char8   as B
 import           Data.Maybe                   (fromJust, isJust)
 import           Data.Semigroup               ((<>))
 import           Data.String                  (fromString)
-import           Data.Text                    (Text, stripEnd)
+import           Data.Text                    (Text, pack, stripEnd)
 import           Network                      (PortID (..), connectTo)
 import           Network.MQTT.Client
 import           Network.URI
@@ -82,12 +82,15 @@ runMQTT Options{..} b = do
   forever $ do
     m <- Broadcast.listen b
     case m of
-      (Msg _ (Left _)) -> undefined
-      (Msg mt _)       -> publishq mc optTopic (B.pack mt) False QoS1
+      (Msg _ (Left _))                     -> undefined
+      (Msg mt (Right (Frame src dst _ _))) -> publishq mc (mconcat [optTopic, "/", p src, "/", p dst]) (B.pack mt) False QoS1
 
   where cid ['#']    = "aprs-gate"
         cid ('#':xs) = xs
         cid _        = "aprs-gate"
+
+        p :: Show a => a -> Text
+        p = pack . show
 
 gate :: Options -> IO ()
 gate opts = do

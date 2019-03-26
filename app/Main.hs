@@ -11,11 +11,13 @@ import qualified Control.Concurrent.Broadcast as Broadcast
 import           Control.Monad                (forever, void, when)
 import qualified Data.Attoparsec.Text         as A
 import qualified Data.ByteString.Lazy.Char8   as B
+import           Data.Maybe                   (fromJust, isJust)
 import           Data.Semigroup               ((<>))
 import           Data.String                  (fromString)
 import           Data.Text                    (Text, stripEnd)
 import           Network                      (PortID (..), connectTo)
 import           Network.MQTT.Client
+import           Network.URI
 import           Options.Applicative
 import           System.Console.ANSI
 import           System.IO                    (Handle, hGetLine, hPutStr)
@@ -36,11 +38,7 @@ data Options = Options { optFilter   :: String
                        , optCallpass :: String
                        -- mqtt options
                        , optTopic    :: Text
-                       , optHost     :: String
-                       , optPort     :: Int
-                       , optUser     :: String
-                       , optPass     :: String
-                       , optClient   :: String
+                       , optMQTTURL  :: Maybe URI
                        } deriving (Show)
 
 data Msg = Msg String (Either String Frame)
@@ -53,11 +51,7 @@ options = Options
   <*> strOption (long "callpass" <> showDefault <> value "" <> help "your callpass")
   <*> option str (long "topic" <> showDefault <> value "aprs" <>
                   help "mqtt topic - if ends with a slash, sensor serial number will be appended")
-  <*> option str (long "mqttserver" <> showDefault <> value "localhost" <> help "mqtt host")
-  <*> option auto (long "mqttport" <> showDefault <> value 1883 <> help "mqtt port")
-  <*> option str (long "user" <> value "" <> help "mqtt username")
-  <*> option str (long "pass" <> value "" <> help "mqtt password")
-  <*> option str (long "client" <> value "aprsgate" <> help "mqtt client name")
+  <*> option (maybeReader $ pure . parseURI) (long "mqtt-uri" <> showDefault <> value (parseURI "mqtt://test.mosquitto.org/#aprs-gate") <> help "mqtt broker URI")
 
 doBody :: String -> Frame -> IO ()
 doBody s f@(Frame _ _ _ (NotUnderstoodPacket _)) =
@@ -82,11 +76,8 @@ entry b s = Broadcast.signal b (Msg s $ A.parseOnly parseFrame (stripEnd . fromS
 
 runMQTT :: Options -> Broadcast Msg -> IO ()
 runMQTT Options{..} b = do
-  mc <- runClient mqttConfig{_hostname = optHost,
-                             _port = optPort,
-                             _connID = optClient,
-                             _username = nilly optUser,
-                             _password = nilly optPass}
+  let uri = fromJust optMQTTURL
+  mc <- connectURI mqttConfig{_connID=cid (uriFragment uri)} uri
 
   forever $ do
     m <- Broadcast.listen b
@@ -94,16 +85,16 @@ runMQTT Options{..} b = do
       (Msg _ (Left _)) -> undefined
       (Msg mt _)       -> publishq mc optTopic (B.pack mt) False QoS1
 
-  where nilly "" = Nothing
-        nilly s  = Just s
-
+  where cid ['#']    = "aprs"
+        cid ('#':xs) = xs
+        cid _        = "aprs"
 
 gate :: Options -> IO ()
 gate opts = do
   putStrLn $ "gatin' " ++ optServer opts ++ show opts
   b <- Broadcast.new
   _ <- forkIO $ consLog b
-  when (optHost opts /= "") $ void $ forkIO $ runMQTT opts b
+  when (isJust $ optMQTTURL opts) $ void $ forkIO $ runMQTT opts b
   a <- connect (optServer opts) (optCallsign opts) (optCallpass opts) (optFilter opts)
   forever (hGetLine a >>= entry b)
 

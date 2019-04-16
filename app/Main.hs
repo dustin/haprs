@@ -84,6 +84,12 @@ runMQTT Options{..} b = do
         p :: Address -> Text
         p = fst . unAddress
 
+parseHostPort :: String -> (BCS.ByteString, Int)
+parseHostPort s = let h = takeWhile (/= ':') s
+                      ps = drop (length h + 1) s in
+                    (fromString h, read ps)
+
+
 gate :: Options -> IO ()
 gate opts@Options{..} = do
   putStrLn $ "gatin' " <> optServer <> show opts
@@ -91,8 +97,8 @@ gate opts@Options{..} = do
   _ <- forkIO $ consLog b
   when (isJust $ optMQTTURL) $ void $ forkIO $ runMQTT opts b
 
-  -- TODO:  Get the port and hostname split out
-  runTCPClient (clientSettings 14580 "rotate.aprs2.net") (app b)
+  let (h,p) = parseHostPort optServer
+  runTCPClient (clientSettings p h) (app b)
 
     where app b ad = do
             runConduit $

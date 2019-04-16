@@ -11,27 +11,22 @@ import           Control.Concurrent.Broadcast (Broadcast)
 import qualified Control.Concurrent.Broadcast as Broadcast
 import           Control.Monad                (forever, void, when)
 import qualified Data.Attoparsec.Text         as A
+import qualified Data.ByteString.Char8        as BCS
 import qualified Data.ByteString.Lazy.Char8   as B
+import           Data.Conduit                 (runConduit, (.|))
+import qualified Data.Conduit.Combinators     as C
+import           Data.Conduit.Network         (appSink, appSource,
+                                               clientSettings, runTCPClient)
+import qualified Data.Conduit.Text            as CT
 import           Data.Maybe                   (fromJust, isJust)
 import           Data.Semigroup               ((<>))
 import           Data.String                  (fromString)
-import           Data.Text                    (Text, stripEnd)
-import           Network                      (PortID (..), connectTo)
+import           Data.Text                    (Text, isPrefixOf, stripEnd,
+                                               unpack)
 import           Network.MQTT.Client
 import           Network.URI
 import           Options.Applicative
 import           System.Console.ANSI
-import           System.IO                    (Handle, hGetLine, hPutStr)
-
-connect :: String -> String -> String -> String -> IO Handle
-connect s c p f = let h = takeWhile (/= ':') s
-                      pd = Service $ drop (length h + 1) s in
-                    do
-                      a <- connectTo h pd
-                      let stuff = mconcat ["user ", c, " pass ", p, " vers haprs 0.1 filter ", f, "\r\n"]
-                      print stuff
-                      hPutStr a stuff
-                      pure a
 
 data Options = Options { optFilter   :: String
                        , optServer   :: String
@@ -42,7 +37,7 @@ data Options = Options { optFilter   :: String
                        , optMQTTURL  :: Maybe URI
                        } deriving (Show)
 
-data Msg = Msg String (Either String Frame)
+data Msg = Msg String (Either String Frame) deriving(Show)
 
 options :: Parser Options
 options = Options
@@ -94,13 +89,32 @@ runMQTT Options{..} b = do
         p = fst . unAddress
 
 gate :: Options -> IO ()
-gate opts = do
-  putStrLn $ "gatin' " <> optServer opts <> show opts
+gate opts@Options{..} = do
+  putStrLn $ "gatin' " <> optServer <> show opts
   b <- Broadcast.new
   _ <- forkIO $ consLog b
-  when (isJust $ optMQTTURL opts) $ void $ forkIO $ runMQTT opts b
-  a <- connect (optServer opts) (optCallsign opts) (optCallpass opts) (optFilter opts)
-  forever (hGetLine a >>= entry b)
+  when (isJust $ optMQTTURL) $ void $ forkIO $ runMQTT opts b
+
+  -- TODO:  Get the port and hostname split out
+  runTCPClient (clientSettings 14580 "rotate.aprs2.net") (app b)
+
+    where app b ad = do
+            runConduit $
+              appSource ad
+              .| C.yieldMany (BCS.pack <$> ["user ", optCallpass, " pass ", optCallpass, " vers haprs 0.1 filter ", optFilter, "\r\n"])
+              .| appSink ad
+
+            runConduit $
+              appSource ad
+              .| CT.decode CT.utf8
+              .| CT.lines
+              .| C.mapM_ (en b)
+
+          en :: Broadcast Msg -> Text -> IO ()
+          en b t
+            | "#" `isPrefixOf` t = colored Vivid Black (unpack t)
+            | otherwise = Broadcast.signal b (Msg (unpack t) $ A.parseOnly parseFrame (stripEnd t))
+
 
 main :: IO ()
 main = gate =<< execParser opts

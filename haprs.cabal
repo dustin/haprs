@@ -42,6 +42,8 @@ executable gate
                      , network-uri
                      , stm
                      , bytestring
+                     , conduit
+                     , conduit-extra
   default-language:    Haskell2010
   ghc-options:         -Wall
 

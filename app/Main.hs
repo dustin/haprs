@@ -66,10 +66,6 @@ consLog b = forever (Broadcast.listen b >>= l)
   where l (Msg s (Right f)) = doBody s f
         l (Msg s (Left _))  = colored Vivid Red $ "error parsing frame: " <> s
 
-entry :: Broadcast Msg -> String -> IO ()
-entry _ s@('#':_) = colored Vivid Black s
-entry b s = Broadcast.signal b (Msg s $ A.parseOnly parseFrame (stripEnd . fromString $ s))
-
 runMQTT :: Options -> Broadcast Msg -> IO ()
 runMQTT Options{..} b = do
   let uri = fromJust optMQTTURL

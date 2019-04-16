@@ -89,13 +89,12 @@ parseHostPort s = let h = takeWhile (/= ':') s
                       ps = drop (length h + 1) s in
                     (fromString h, read ps)
 
-
 gate :: Options -> IO ()
 gate opts@Options{..} = do
   putStrLn $ "gatin' " <> optServer <> show opts
   b <- Broadcast.new
   _ <- forkIO $ consLog b
-  when (isJust $ optMQTTURL) $ void $ forkIO $ runMQTT opts b
+  when (isJust optMQTTURL) $ void $ forkIO $ runMQTT opts b
 
   let (h,p) = parseHostPort optServer
   runTCPClient (clientSettings p h) (app b)

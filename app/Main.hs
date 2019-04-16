@@ -97,7 +97,9 @@ gate opts@Options{..} = do
     where app b ad = do
             runConduit $
               appSource ad
-              .| C.yieldMany (BCS.pack <$> ["user ", optCallpass, " pass ", optCallpass, " vers haprs 0.1 filter ", optFilter, "\r\n"])
+              .| C.yieldMany (BCS.pack <$> ["user ", optCallpass,
+                                            " pass ", optCallpass,
+                                            " vers haprs 0.1 filter ", optFilter, "\r\n"])
               .| appSink ad
 
             runConduit $

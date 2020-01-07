@@ -75,7 +75,7 @@ runMQTT Options{..} b = do
     m <- Broadcast.listen b
     case m of
       (Msg _ (Left _))                     -> undefined
-      (Msg mt (Right (Frame src dst _ _))) -> publishq mc (mconcat [optTopic, "/", p src, "/", p dst]) (B.pack mt) False QoS1
+      (Msg mt (Right (Frame src dst _ _))) -> publishq mc (mconcat [optTopic, "/", p src, "/", p dst]) (B.pack mt) False QoS1 []
 
   where cid ['#']    = "aprs-gate"
         cid ('#':xs) = xs

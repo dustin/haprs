@@ -15,14 +15,11 @@ import qualified Data.ByteString.Char8        as BCS
 import qualified Data.ByteString.Lazy.Char8   as B
 import           Data.Conduit                 (runConduit, (.|))
 import qualified Data.Conduit.Combinators     as C
-import           Data.Conduit.Network         (appSink, appSource,
-                                               clientSettings, runTCPClient)
+import           Data.Conduit.Network         (appSink, appSource, clientSettings, runTCPClient)
 import qualified Data.Conduit.Text            as CT
 import           Data.Maybe                   (fromJust, isJust)
-import           Data.Semigroup               ((<>))
 import           Data.String                  (fromString)
-import           Data.Text                    (Text, isPrefixOf, stripEnd,
-                                               unpack)
+import           Data.Text                    (Text, isPrefixOf, stripEnd, unpack)
 import           Network.MQTT.Client
 import           Network.URI
 import           Options.Applicative

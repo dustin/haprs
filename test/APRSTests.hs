@@ -1,24 +1,24 @@
-{-# LANGUAGE OverloadedStrings, ImplicitParams #-}
+{-# LANGUAGE ImplicitParams    #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-orphans -Wno-type-defaults #-}
 
 module APRSTests (tests) where
 
-import APRS.Types
-import APRS.Arbitrary
+import           APRS.Arbitrary
+import           APRS.Types
 
-import Data.Char (chr)
-import Data.Either (isRight, either)
-import Data.Semigroup ((<>))
-import Data.String (IsString, fromString)
-import Data.Word (Word8)
-import Test.HUnit.Approx
-import Test.Invariant (inverts)
-import Test.QuickCheck
-import Test.Tasty
-import Test.Tasty.HUnit
-import Test.Tasty.QuickCheck as QC
-import qualified Data.Attoparsec.Text as A
-import qualified Data.Set as Set
+import qualified Data.Attoparsec.Text  as A
+import           Data.Char             (chr)
+import           Data.Either           (isRight)
+import qualified Data.Set              as Set
+import           Data.String           (IsString, fromString)
+import           Data.Word             (Word8)
+import           Test.HUnit.Approx
+import           Test.Invariant        (inverts)
+import           Test.QuickCheck
+import           Test.Tasty
+import           Test.Tasty.HUnit
+import           Test.Tasty.QuickCheck as QC
 
 must :: Either String a -> a
 must = either undefined id
@@ -139,11 +139,11 @@ instance Enum LowChar where
 
 testNoDupMapping :: (Bounded a, Enum a, Show b, Ord b) => (a -> b) -> Assertion
 testNoDupMapping f = case foldr findDup (Right Set.empty) [minBound..] of
-                       Left x -> assertBool ("Duplicate value found: " ++ show x) True
+                       Left x  -> assertBool ("Duplicate value found: " ++ show x) True
                        Right _ -> pure ()
   where findDup x s = let p = f x in case Set.member p <$> s of
                                        Right True -> Left p
-                                       _ -> Set.insert p <$> s
+                                       _          -> Set.insert p <$> s
 
 testTimestampParser :: [TestTree]
 testTimestampParser =

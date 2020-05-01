@@ -8,7 +8,6 @@ module APRS.Arbitrary (
   ) where
 
 import           Control.Applicative (liftA3)
-import           Data.Semigroup      ((<>))
 import           Data.String         (fromString)
 import qualified Data.Text           as T
 import           Test.QuickCheck

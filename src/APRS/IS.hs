@@ -11,27 +11,26 @@ module APRS.IS
   , passFrame
   ) where
 
-import Control.Applicative ((<|>))
-import Control.Monad (when)
-import Data.Char (isSpace)
-import Data.Functor (($>))
-import Data.Int (Int16)
-import Data.List (intercalate)
-import Data.Maybe (isJust)
-import Data.Semigroup ((<>))
-import Data.Text (Text, pack, unpack, isPrefixOf)
+import           Control.Applicative  ((<|>))
+import           Control.Monad        (when)
 import qualified Data.Attoparsec.Text as A
+import           Data.Char            (isSpace)
+import           Data.Functor         (($>))
+import           Data.Int             (Int16)
+import           Data.List            (intercalate)
+import           Data.Maybe           (isJust)
+import           Data.Text            (Text, isPrefixOf, pack, unpack)
 
-import APRS.Types (Address, Frame(..), Position(..), PosExtension(..), position,
-                   elemish, APRSPacket(..), parseAddr, callPass, distance)
+import           APRS.Types           (APRSPacket (..), Address, Frame (..), PosExtension (..), Position (..), callPass,
+                                       distance, elemish, parseAddr, position)
 
 -- user mycall[-ss] pass passcode[ vers softwarename softwarevers[ UDP udpport][ servercommand]]
 
 data Identification = ID {
-  _idAddress :: Address
-  , _idSW :: Maybe (Text, Text)
-  , _idUDPPort :: Maybe Int16
-  , _idFilter :: Text
+  _idAddress    :: Address
+  , _idSW       :: Maybe (Text, Text)
+  , _idUDPPort  :: Maybe Int16
+  , _idFilter   :: Text
   , _idValidMsg :: Frame -> Bool
   }
 

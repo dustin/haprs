@@ -38,27 +38,26 @@ module APRS.Types
     , lookupWeatherSW
     ) where
 
-import Control.Applicative ((<|>))
-import Control.Monad (replicateM, replicateM_, guard)
-import Data.Bits (xor, (.&.), shiftL)
-import Data.Char (toLower, digitToInt)
-import Data.Either (either)
-import Data.Foldable (any, foldl')
-import Data.Functor (($>))
-import Data.Int (Int16)
-import Data.Maybe (catMaybes, fromMaybe)
-import Data.String (fromString)
-import Data.Text (Text, any, all, length, unpack)
-import Data.Word (Word8)
-import Geodetics.Geodetic (Geodetic(..), WGS84(..), groundDistance)
-import Numeric (readInt)
-import Numeric.Units.Dimensional ((/~), (*~), _0)
-import Numeric.Units.Dimensional.SIUnits (meter, degree)
-import Text.Read (readMaybe)
-import qualified Data.Attoparsec.Text as A
+import           Control.Applicative               ((<|>))
+import           Control.Monad                     (guard, replicateM, replicateM_)
+import qualified Data.Attoparsec.Text              as A
+import           Data.Bits                         (shiftL, xor, (.&.))
+import           Data.Char                         (digitToInt, toLower)
+import           Data.Foldable                     (any, foldl')
+import           Data.Functor                      (($>))
+import           Data.Int                          (Int16)
+import           Data.Maybe                        (catMaybes, fromMaybe)
+import           Data.String                       (fromString)
+import           Data.Text                         (Text, all, any, length, unpack)
+import           Data.Word                         (Word8)
+import           Geodetics.Geodetic                (Geodetic (..), WGS84 (..), groundDistance)
+import           Numeric                           (readInt)
+import           Numeric.Units.Dimensional         ((*~), (/~), _0)
+import           Numeric.Units.Dimensional.SIUnits (degree, meter)
+import           Text.Read                         (readMaybe)
 
-import qualified APRS.MicE as M
-import qualified APRS.NMEA as N
+import qualified APRS.MicE                         as M
+import qualified APRS.NMEA                         as N
 
 class Similar a where
   (≈) :: a -> a -> Bool
@@ -201,7 +200,7 @@ newtype Position = Position (Double, Double, Double, PosExtension) deriving (Eq,
 distance :: Position -> Position -> Double
 distance a b = case groundDistance (g a) (g b) of
                  Just (d,_,_) -> let d' = d /~ meter in if isNaN d' then 0 else d'
-                 _ -> 0
+                 _            -> 0
 
   where g (Position (lon, lat, _, _)) = Geodetic (lat *~ degree) (lon *~ degree) _0 WGS84
 
@@ -648,7 +647,7 @@ parseStandardWeather = do
   pos <- if c `elem` ['_', '='] then pure Nothing else ppos
   let extra = case pos of
                 (Just (Position (_,_,_,PosECourseSpeed a b))) -> [WindDir a, WindSpeed (round $ b / 1.852)]
-                _ -> []
+                _                                             -> []
   ws <- parsews <|> pure []
   wp <- parseWeather
   swc <- A.anyChar <|> pure '?'

@@ -543,8 +543,7 @@ parsePositionPacket = do
   pre <- A.satisfy (`elem` ['!', '=', '/', '@']) <|> bangjunk
   ts <- maybeTS pre
   (sym, pos) <- parsePosition
-  com <- A.takeText
-  pure $ PositionPacket (identifyPacket pre) sym pos ts com
+  PositionPacket (identifyPacket pre) sym pos ts <$> A.takeText
 
   where
     maybeTS :: Char -> A.Parser (Maybe Timestamp)
@@ -585,8 +584,7 @@ parseItemPacket = do
   guard $ Data.Text.length name >= 3 && Data.Text.length name <= 9
   ost <- A.satisfy (`elem` ['_', '!']) -- killed, live
   (sym, Position (lat,lon,alt,_)) <- parsePosition
-  comment <- A.takeText
-  pure $ ItemPacket sym (objState ost) name (Position (lat, lon, alt, PosENone)) comment
+  ItemPacket sym (objState ost) name (Position (lat, lon, alt, PosENone)) <$> A.takeText
 
 parseWeatherPacket :: A.Parser APRSPacket
 parseWeatherPacket = parseUltimeter <|> parseStandardWeather
@@ -652,8 +650,7 @@ parseStandardWeather = do
   wp <- parseWeather
   swc <- A.anyChar <|> pure '?'
   unit <- parseWeatherUnit <|> pure (UnknownWeatherUnit "??")
-  rest <- A.takeText
-  pure $ WeatherPacket ts (pos' pos) (mightsnow $ extra ++ ws ++ wp) (lookupWeatherSW swc) unit rest
+  WeatherPacket ts (pos' pos) (mightsnow $ extra ++ ws ++ wp) (lookupWeatherSW swc) unit <$> A.takeText
 
   where
     ppos :: A.Parser (Maybe Position)
@@ -715,9 +712,7 @@ parseTelemetry = do
   vals <- replicateM 5 (A.double <* ",")
   bits <- replicateM 8 (A.satisfy (`elem` ['0', '1']))
   let [(bits', "")] = readInt 2 (`elem` ['0', '1']) (\c -> if c == '0' then 0 else 1) bits
-  rest <- A.takeText
-
-  pure $ TelemetryPacket s vals (fromInteger bits') rest
+  TelemetryPacket s vals (fromInteger bits') <$> A.takeText
 
   where
     parseSeq :: A.Parser Text
@@ -745,9 +740,7 @@ parseMicE (Address call ss) = do
   sym <- A.anyChar
   tbl <- A.anyChar
   alt <- micalt
-  st <- A.takeText
-
-  pure $ MicEPacket (Symbol tbl sym) mbits (Position (lat,lon,alt-10000,ext)) st
+  MicEPacket (Symbol tbl sym) mbits (Position (lat,lon,alt-10000,ext)) <$> A.takeText
 
   where micalt = (A.satisfy (`elem` ['\'', '`', ' ', ']', '>', 'T']) >> decodeAlt) <|> decodeAlt
         decodeAlt = (parseB91Seg 3 <* "}") <|> pure 10000 -- 10km = sea level.

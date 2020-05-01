@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE OverloadedStrings #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">APRS.NMEA</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-comment">{-
+GGA - essential fix data which provide 3D location and accuracy data.
+
+ $GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47
+
+Where:
+     GGA          Global Positioning System Fix Data
+     123519       Fix taken at 12:35:19 UTC
+     4807.038,N   Latitude 48 deg 07.038' N
+     01131.000,E  Longitude 11 deg 31.000' E
+     1            Fix quality: 0 = invalid
+                               1 = GPS fix (SPS)
+                               2 = DGPS fix
+                               3 = PPS fix
+			       4 = Real Time Kinematic
+			       5 = Float RTK
+                               6 = estimated (dead reckoning) (2.3 feature)
+			       7 = Manual input mode
+			       8 = Simulation mode
+     08           Number of satellites being tracked
+     0.9          Horizontal dilution of position
+     545.4,M      Altitude, Meters, above mean sea level
+     46.9,M       Height of geoid (mean sea level) above WGS84
+                      ellipsoid
+     (empty field) time in seconds since last DGPS update
+     (empty field) DGPS station ID number
+     *47          the checksum data, always begins with *
+-}</span><span>
+</span><span id="line-33"></span><span>
+</span><span id="line-34"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Applicative</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-operator">(&lt;|&gt;)</span></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">replicateM</span></span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Attoparsec.Text</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">A</span></span><span>
+</span><span id="line-37"></span><span>
+</span><span id="line-38"></span><span class="hs-comment">-- Lat, Long, (H,M,S)</span><span>
+</span><span id="line-39"></span><span class="annot"><a href="APRS.NMEA.html#parseNMEA"><span class="hs-identifier hs-type">parseNMEA</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">A.Parser</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Double</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Double</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span id="parseNMEA"><span class="annot"><span class="annottext">parseNMEA :: Parser (Double, Double, (Int, Int, Int))
+</span><a href="APRS.NMEA.html#parseNMEA"><span class="hs-identifier hs-var hs-var">parseNMEA</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Parser (Double, Double, (Int, Int, Int))
+</span><a href="APRS.NMEA.html#parseGGA"><span class="hs-identifier hs-var">parseGGA</span></a></span><span> </span><span class="annot"><span class="annottext">Parser (Double, Double, (Int, Int, Int))
+-&gt; Parser (Double, Double, (Int, Int, Int))
+-&gt; Parser (Double, Double, (Int, Int, Int))
+forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f a -&gt; f a
+</span><span class="hs-operator hs-var">&lt;|&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Double, Double, (Int, Int, Int))
+</span><a href="APRS.NMEA.html#parseRMC"><span class="hs-identifier hs-var">parseRMC</span></a></span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span class="annot"><a href="APRS.NMEA.html#parseTSLatLon"><span class="hs-identifier hs-type">parseTSLatLon</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">A.Parser</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Double</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Double</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span id="parseTSLatLon"><span class="annot"><span class="annottext">parseTSLatLon :: Parser (Double, Double, (Int, Int, Int))
+</span><a href="APRS.NMEA.html#parseTSLatLon"><span class="hs-identifier hs-var hs-var">parseTSLatLon</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-44"></span><span>  </span><span id="local-6989586621679124013"><span class="annot"><span class="annottext">(Int, Int, Int)
+</span><a href="#local-6989586621679124013"><span class="hs-identifier hs-var">ts</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser (Int, Int, Int)
+</span><a href="APRS.NMEA.html#parseTS"><span class="hs-identifier hs-var">parseTS</span></a></span><span>
+</span><span id="line-45"></span><span>  </span><span class="annot"><span class="annottext">Text
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="hs-string">&quot;,A,&quot;</span></span><span> </span><span class="annot"><span class="annottext">Parser Text Text -&gt; Parser Text Text -&gt; Parser Text Text
+forall (f :: * -&gt; *) a. Alternative f =&gt; f a -&gt; f a -&gt; f a
+</span><span class="hs-operator hs-var">&lt;|&gt;</span></span><span> </span><span class="annot"><span class="hs-string">&quot;,&quot;</span></span><span>
+</span><span id="line-46"></span><span>  </span><span id="local-6989586621679124011"><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621679124011"><span class="hs-identifier hs-var">lat</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Parser Double
+</span><a href="APRS.NMEA.html#parseDir"><span class="hs-identifier hs-var">parseDir</span></a></span><span> </span><span class="annot"><span class="hs-number">2</span></span><span>
+</span><span id="line-47"></span><span>  </span><span class="annot"><span class="annottext">Char
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Char -&gt; Parser Char
+</span><span class="hs-identifier hs-var">A.char</span></span><span> </span><span class="annot"><span class="hs-char">','</span></span><span>
+</span><span id="line-48"></span><span>  </span><span id="local-6989586621679124008"><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621679124008"><span class="hs-identifier hs-var">lon</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Parser Double
+</span><a href="APRS.NMEA.html#parseDir"><span class="hs-identifier hs-var">parseDir</span></a></span><span> </span><span class="annot"><span class="hs-number">3</span></span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span>  </span><span class="annot"><span class="annottext">(Double, Double, (Int, Int, Int))
+-&gt; Parser (Double, Double, (Int, Int, Int))
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621679124011"><span class="hs-identifier hs-var">lat</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621679124008"><span class="hs-identifier hs-var">lon</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int, Int, Int)
+</span><a href="#local-6989586621679124013"><span class="hs-identifier hs-var">ts</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="annot"><a href="APRS.NMEA.html#parseGGA"><span class="hs-identifier hs-type">parseGGA</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">A.Parser</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Double</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Double</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span id="parseGGA"><span class="annot"><span class="annottext">parseGGA :: Parser (Double, Double, (Int, Int, Int))
+</span><a href="APRS.NMEA.html#parseGGA"><span class="hs-identifier hs-var hs-var">parseGGA</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;$GPGGA,&quot;</span></span><span> </span><span class="annot"><span class="annottext">Parser Text Text
+-&gt; Parser (Double, Double, (Int, Int, Int))
+-&gt; Parser (Double, Double, (Int, Int, Int))
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f a -&gt; f b -&gt; f b
+</span><span class="hs-operator hs-var">*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Double, Double, (Int, Int, Int))
+</span><a href="APRS.NMEA.html#parseTSLatLon"><span class="hs-identifier hs-var">parseTSLatLon</span></a></span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="annot"><a href="APRS.NMEA.html#parseTS"><span class="hs-identifier hs-type">parseTS</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">A.Parser</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span id="parseTS"><span class="annot"><span class="annottext">parseTS :: Parser (Int, Int, Int)
+</span><a href="APRS.NMEA.html#parseTS"><span class="hs-identifier hs-var hs-var">parseTS</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-57"></span><span>  </span><span id="local-6989586621679124007"><span class="annot"><span class="annottext">[[Char]]
+</span><a href="#local-6989586621679124007"><span class="hs-identifier hs-var">digs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Parser Text [Char] -&gt; Parser Text [[Char]]
+forall (m :: * -&gt; *) a. Applicative m =&gt; Int -&gt; m a -&gt; m [a]
+</span><span class="hs-identifier hs-var">replicateM</span></span><span> </span><span class="annot"><span class="hs-number">3</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Parser Char -&gt; Parser Text [Char]
+forall (m :: * -&gt; *) a. Applicative m =&gt; Int -&gt; m a -&gt; m [a]
+</span><span class="hs-identifier hs-var">replicateM</span></span><span> </span><span class="annot"><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Parser Char
+</span><span class="hs-identifier hs-var">A.digit</span></span><span class="hs-special">)</span><span>
+</span><span id="line-58"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">[</span><span id="local-6989586621679124005"><span class="annot"><span class="annottext">h :: Int
+</span><a href="#local-6989586621679124005"><span class="hs-identifier hs-var">h</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679124004"><span class="annot"><span class="annottext">m :: Int
+</span><a href="#local-6989586621679124004"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679124003"><span class="annot"><span class="annottext">s :: Int
+</span><a href="#local-6989586621679124003"><span class="hs-identifier hs-var">s</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Char] -&gt; Int) -&gt; [[Char]] -&gt; [Int]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">[Char] -&gt; Int
+forall a. Read a =&gt; [Char] -&gt; a
+</span><span class="hs-identifier hs-var">read</span></span><span> </span><span class="annot"><span class="annottext">[[Char]]
+</span><a href="#local-6989586621679124007"><span class="hs-identifier hs-var">digs</span></a></span><span>
+</span><span id="line-59"></span><span>  </span><span class="annot"><span class="annottext">(Int, Int, Int) -&gt; Parser (Int, Int, Int)
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679124005"><span class="hs-identifier hs-var">h</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679124004"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679124003"><span class="hs-identifier hs-var">s</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-60"></span><span>
+</span><span id="line-61"></span><span class="annot"><a href="APRS.NMEA.html#parseDir"><span class="hs-identifier hs-type">parseDir</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">A.Parser</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Double</span></span><span>
+</span><span id="line-62"></span><span id="parseDir"><span class="annot"><span class="annottext">parseDir :: Int -&gt; Parser Double
+</span><a href="APRS.NMEA.html#parseDir"><span class="hs-identifier hs-var hs-var">parseDir</span></a></span></span><span> </span><span id="local-6989586621679124001"><span class="annot"><span class="annottext">n :: Int
+</span><a href="#local-6989586621679124001"><span class="hs-identifier hs-var">n</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-63"></span><span>  </span><span id="local-6989586621679124000"><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679124000"><span class="hs-identifier hs-var">cD</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Parser Char -&gt; Parser Text [Char]
+forall (m :: * -&gt; *) a. Applicative m =&gt; Int -&gt; m a -&gt; m [a]
+</span><span class="hs-identifier hs-var">replicateM</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679124001"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">Parser Char
+</span><span class="hs-identifier hs-var">A.digit</span></span><span>
+</span><span id="line-64"></span><span>  </span><span id="local-6989586621679123999"><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621679123999"><span class="hs-identifier hs-var">cM</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser Double
+</span><span class="hs-identifier hs-var">A.double</span></span><span>
+</span><span id="line-65"></span><span>  </span><span class="annot"><span class="annottext">Char
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Char -&gt; Parser Char
+</span><span class="hs-identifier hs-var">A.char</span></span><span> </span><span class="annot"><span class="hs-char">','</span></span><span>
+</span><span id="line-66"></span><span>  </span><span id="local-6989586621679123997"><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123997"><span class="hs-identifier hs-var">cS</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(Char -&gt; Bool) -&gt; Parser Char
+</span><span class="hs-identifier hs-var">A.satisfy</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char -&gt; [Char] -&gt; Bool
+forall (t :: * -&gt; *) a. (Foldable t, Eq a) =&gt; a -&gt; t a -&gt; Bool
+</span><span class="hs-operator hs-var">`elem`</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-char">'N'</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-char">'E'</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-char">'W'</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-char">'S'</span></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span>  </span><span class="annot"><span class="annottext">Double -&gt; Parser Double
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">(Double -&gt; Parser Double) -&gt; Double -&gt; Parser Double
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Char] -&gt; Double
+forall a. Read a =&gt; [Char] -&gt; a
+</span><span class="hs-identifier hs-var">read</span></span><span> </span><span class="annot"><span class="annottext">[Char]
+</span><a href="#local-6989586621679124000"><span class="hs-identifier hs-var">cD</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621679123999"><span class="hs-identifier hs-var">cM</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">/</span></span><span> </span><span class="annot"><span class="hs-number">60</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="hs-special">(</span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123997"><span class="hs-identifier hs-var">cS</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; [Char] -&gt; Bool
+forall (t :: * -&gt; *) a. (Foldable t, Eq a) =&gt; a -&gt; t a -&gt; Bool
+</span><span class="hs-operator hs-var">`elem`</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="hs-char">'W'</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-char">'S'</span></span><span class="hs-special">]</span><span> </span><span class="hs-keyword">then</span><span> </span><span class="hs-glyph">-</span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span class="hs-comment">{-
+$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A
+
+Where:
+     RMC          Recommended Minimum sentence C
+     123519       Fix taken at 12:35:19 UTC
+     A            Status A=active or V=Void.
+     4807.038,N   Latitude 48 deg 07.038' N
+     01131.000,E  Longitude 11 deg 31.000' E
+     022.4        Speed over the ground in knots
+     084.4        Track angle in degrees True
+     230394       Date - 23rd of March 1994
+     003.1,W      Magnetic Variation
+     *6A          The checksum data, always begins with *
+-}</span><span>
+</span><span id="line-84"></span><span>
+</span><span id="line-85"></span><span class="annot"><a href="APRS.NMEA.html#parseRMC"><span class="hs-identifier hs-type">parseRMC</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">A.Parser</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Double</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Double</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-86"></span><span id="parseRMC"><span class="annot"><span class="annottext">parseRMC :: Parser (Double, Double, (Int, Int, Int))
+</span><a href="APRS.NMEA.html#parseRMC"><span class="hs-identifier hs-var hs-var">parseRMC</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-string">&quot;$GPRMC,&quot;</span></span><span> </span><span class="annot"><span class="annottext">Parser Text Text
+-&gt; Parser (Double, Double, (Int, Int, Int))
+-&gt; Parser (Double, Double, (Int, Int, Int))
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f a -&gt; f b -&gt; f b
+</span><span class="hs-operator hs-var">*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Parser (Double, Double, (Int, Int, Int))
+</span><a href="APRS.NMEA.html#parseTSLatLon"><span class="hs-identifier hs-var">parseTSLatLon</span></a></span><span>
+</span><span id="line-87"></span></pre></body></html>

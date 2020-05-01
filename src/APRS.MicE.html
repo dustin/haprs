@@ -1,0 +1,236 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">APRS.MicE</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Text</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Text</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">unpack</span></span><span class="hs-special">)</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- In:  Call, SSID</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- Out: Lat, MID, lon offset, Lon Sign, digipeater path</span><span>
+</span><span id="line-7"></span><span class="annot"><a href="APRS.MicE.html#micEDest"><span class="hs-identifier hs-type">micEDest</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Double</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span>
+</span><span id="line-8"></span><span id="micEDest"><span class="annot"><span class="annottext">micEDest :: Text -&gt; Text -&gt; (Double, Int, Int, Int, Int)
+</span><a href="APRS.MicE.html#micEDest"><span class="hs-identifier hs-var hs-var">micEDest</span></a></span></span><span> </span><span id="local-6989586621679123971"><span class="annot"><span class="annottext">t :: Text
+</span><a href="#local-6989586621679123971"><span class="hs-identifier hs-var">t</span></a></span></span><span> </span><span id="local-6989586621679123970"><span class="annot"><span class="annottext">_ssid :: Text
+</span><a href="#local-6989586621679123970"><span class="hs-identifier hs-var">_ssid</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-9"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span class="hs-special">[</span><span id="local-6989586621679123969"><span class="annot"><span class="annottext">a :: Char
+</span><a href="#local-6989586621679123969"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679123968"><span class="annot"><span class="annottext">b :: Char
+</span><a href="#local-6989586621679123968"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679123967"><span class="annot"><span class="annottext">c :: Char
+</span><a href="#local-6989586621679123967"><span class="hs-identifier hs-var">c</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679123966"><span class="annot"><span class="annottext">d :: Char
+</span><a href="#local-6989586621679123966"><span class="hs-identifier hs-var">d</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679123965"><span class="annot"><span class="annottext">e :: Char
+</span><a href="#local-6989586621679123965"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">,</span><span id="local-6989586621679123964"><span class="annot"><span class="annottext">f :: Char
+</span><a href="#local-6989586621679123964"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Char]
+</span><span class="hs-identifier hs-var">unpack</span></span><span> </span><span class="annot"><span class="annottext">Text
+</span><a href="#local-6989586621679123971"><span class="hs-identifier hs-var">t</span></a></span><span>
+</span><span id="line-10"></span><span>      </span><span id="local-6989586621679123963"><span class="annot"><span class="annottext">deg :: Double
+</span><a href="#local-6989586621679123963"><span class="hs-identifier hs-var hs-var">deg</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char -&gt; Double
+</span><a href="APRS.MicE.html#digit"><span class="hs-identifier hs-var">digit</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123969"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="hs-number">10</span></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Double
+</span><a href="APRS.MicE.html#digit"><span class="hs-identifier hs-var">digit</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123968"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span>
+</span><span id="line-11"></span><span>            </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char -&gt; Double
+</span><a href="APRS.MicE.html#digit"><span class="hs-identifier hs-var">digit</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123967"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="hs-number">10</span></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Double
+</span><a href="APRS.MicE.html#digit"><span class="hs-identifier hs-var">digit</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123966"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Double
+</span><a href="APRS.MicE.html#digit"><span class="hs-identifier hs-var">digit</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123965"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">/</span></span><span> </span><span class="annot"><span class="hs-number">10</span></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Double
+</span><a href="APRS.MicE.html#digit"><span class="hs-identifier hs-var">digit</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123964"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">/</span></span><span> </span><span class="annot"><span class="hs-number">100</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Fractional a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">/</span></span><span> </span><span class="annot"><span class="hs-number">60</span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">in</span><span>
+</span><span id="line-12"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Double
+</span><a href="#local-6989586621679123963"><span class="hs-identifier hs-var">deg</span></a></span><span> </span><span class="annot"><span class="annottext">Double -&gt; Double -&gt; Double
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Double
+forall p. Num p =&gt; Char -&gt; p
+</span><a href="#local-6989586621679123958"><span class="hs-identifier hs-var">sign</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123966"><span class="hs-identifier hs-var">d</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Char -&gt; Int
+forall p. Num p =&gt; Char -&gt; p
+</span><a href="#local-6989586621679123957"><span class="hs-identifier hs-var">bit</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123969"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="hs-number">4</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Int
+forall p. Num p =&gt; Char -&gt; p
+</span><a href="#local-6989586621679123957"><span class="hs-identifier hs-var">bit</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123968"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">*</span></span><span> </span><span class="annot"><span class="hs-number">2</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Int
+forall p. Num p =&gt; Char -&gt; p
+</span><a href="#local-6989586621679123957"><span class="hs-identifier hs-var">bit</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123967"><span class="hs-identifier hs-var">c</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Char -&gt; Int
+forall p. Num p =&gt; Char -&gt; p
+</span><a href="#local-6989586621679123956"><span class="hs-identifier hs-var">offset</span></a></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123965"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a
+</span><span class="hs-identifier hs-var">negate</span></span><span class="annot"><span class="annottext">(Int -&gt; Int) -&gt; (Char -&gt; Int) -&gt; Char -&gt; Int
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span class="annot"><span class="annottext">Char -&gt; Int
+forall p. Num p =&gt; Char -&gt; p
+</span><a href="#local-6989586621679123958"><span class="hs-identifier hs-var">sign</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123964"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-number">0</span></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-15"></span><span>    </span><span id="local-6989586621679123958"><span class="annot"><span class="annottext">sign :: Char -&gt; p
+</span><a href="#local-6989586621679123958"><span class="hs-identifier hs-var hs-var">sign</span></a></span></span><span> </span><span id="local-6989586621679123954"><span class="annot"><span class="annottext">c :: Char
+</span><a href="#local-6989586621679123954"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123954"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="hs-char">'P'</span></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">-</span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="hs-number">1</span></span><span>
+</span><span id="line-16"></span><span>    </span><span id="local-6989586621679123956"><span class="annot"><span class="annottext">offset :: Char -&gt; p
+</span><a href="#local-6989586621679123956"><span class="hs-identifier hs-var hs-var">offset</span></a></span></span><span> </span><span id="local-6989586621679123952"><span class="annot"><span class="annottext">c :: Char
+</span><a href="#local-6989586621679123952"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123952"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;</span></span><span> </span><span class="annot"><span class="hs-char">'P'</span></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="hs-number">0</span></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="hs-number">100</span></span><span>
+</span><span id="line-17"></span><span>    </span><span id="local-6989586621679123957"><span class="annot"><span class="annottext">bit :: Char -&gt; p
+</span><a href="#local-6989586621679123957"><span class="hs-identifier hs-var hs-var">bit</span></a></span></span><span> </span><span id="local-6989586621679123951"><span class="annot"><span class="annottext">c :: Char
+</span><a href="#local-6989586621679123951"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123951"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="hs-char">'A'</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123951"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="hs-char">'K'</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">||</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123951"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;</span></span><span> </span><span class="annot"><span class="hs-char">'P'</span></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="hs-number">1</span></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="annot"><a href="APRS.MicE.html#digit"><span class="hs-identifier hs-type">digit</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Double</span></span><span>
+</span><span id="line-20"></span><span id="digit"><span class="annot"><span class="annottext">digit :: Char -&gt; Double
+</span><a href="APRS.MicE.html#digit"><span class="hs-identifier hs-var hs-var">digit</span></a></span></span><span> </span><span id="local-6989586621679123946"><span class="annot"><span class="annottext">c :: Char
+</span><a href="#local-6989586621679123946"><span class="hs-identifier hs-var">c</span></a></span></span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123946"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="hs-char">'0'</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123946"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="hs-char">'9'</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Double
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">fromIntegral</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Double) -&gt; Int -&gt; Double
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">fromEnum</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123946"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="hs-number">48</span></span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123946"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="hs-char">'A'</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123946"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="hs-char">'J'</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Double
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">fromIntegral</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Double) -&gt; Int -&gt; Double
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">fromEnum</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123946"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="hs-number">65</span></span><span>
+</span><span id="line-23"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123946"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="hs-char">'P'</span></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123946"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Char -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="hs-char">'Y'</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Double
+forall a b. (Integral a, Num b) =&gt; a -&gt; b
+</span><span class="hs-identifier hs-var">fromIntegral</span></span><span> </span><span class="annot"><span class="annottext">(Int -&gt; Double) -&gt; Int -&gt; Double
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">fromEnum</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123946"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="hs-number">80</span></span><span>
+</span><span id="line-24"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-number">0</span></span><span>
+</span><span id="line-25"></span><span>
+</span><span id="line-26"></span><span class="annot"><a href="APRS.MicE.html#micELonD"><span class="hs-identifier hs-type">micELonD</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-27"></span><span id="micELonD"><span class="annot"><span class="annottext">micELonD :: Char -&gt; Int -&gt; Int
+</span><a href="APRS.MicE.html#micELonD"><span class="hs-identifier hs-var hs-var">micELonD</span></a></span></span><span> </span><span id="local-6989586621679123943"><span class="annot"><span class="annottext">c :: Char
+</span><a href="#local-6989586621679123943"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span id="local-6989586621679123942"><span class="annot"><span class="annottext">off :: Int
+</span><a href="#local-6989586621679123942"><span class="hs-identifier hs-var">off</span></a></span></span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; a -&gt; Bool
+</span><a href="#local-6989586621679123941"><span class="hs-identifier hs-var">between</span></a></span><span> </span><span class="annot"><span class="hs-number">180</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679123940"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="hs-number">189</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679123940"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="hs-number">80</span></span><span>
+</span><span id="line-29"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; a -&gt; Bool
+</span><a href="#local-6989586621679123941"><span class="hs-identifier hs-var">between</span></a></span><span> </span><span class="annot"><span class="hs-number">190</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679123940"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="hs-number">199</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679123940"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="hs-number">190</span></span><span>
+</span><span id="line-30"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679123940"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span>  </span><span class="hs-keyword">where</span><span> </span><span id="local-6989586621679123940"><span class="annot"><span class="annottext">d :: Int
+</span><a href="#local-6989586621679123940"><span class="hs-identifier hs-var hs-var">d</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679123942"><span class="hs-identifier hs-var">off</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Char -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">fromEnum</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123943"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="hs-number">28</span></span><span>
+</span><span id="line-33"></span><span>        </span><span id="local-6989586621679123941"><span class="annot"><span class="annottext">between :: a -&gt; a -&gt; a -&gt; Bool
+</span><a href="#local-6989586621679123941"><span class="hs-identifier hs-var hs-var">between</span></a></span></span><span> </span><span id="local-6989586621679123939"><span class="annot"><span class="annottext">l :: a
+</span><a href="#local-6989586621679123939"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621679123938"><span class="annot"><span class="annottext">v :: a
+</span><a href="#local-6989586621679123938"><span class="hs-identifier hs-var">v</span></a></span></span><span> </span><span id="local-6989586621679123937"><span class="annot"><span class="annottext">h :: a
+</span><a href="#local-6989586621679123937"><span class="hs-identifier hs-var">h</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679123938"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679123939"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679123938"><span class="hs-identifier hs-var">v</span></a></span><span> </span><span class="annot"><span class="annottext">a -&gt; a -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&lt;=</span></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679123937"><span class="hs-identifier hs-var">h</span></a></span><span>
+</span><span id="line-34"></span><span>
+</span><span id="line-35"></span><span class="annot"><a href="APRS.MicE.html#micELonM"><span class="hs-identifier hs-type">micELonM</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Char</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-36"></span><span id="micELonM"><span class="annot"><span class="annottext">micELonM :: Char -&gt; Int
+</span><a href="APRS.MicE.html#micELonM"><span class="hs-identifier hs-var hs-var">micELonM</span></a></span></span><span> </span><span id="local-6989586621679123935"><span class="annot"><span class="annottext">c :: Char
+</span><a href="#local-6989586621679123935"><span class="hs-identifier hs-var">c</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Char -&gt; Int
+forall a. Enum a =&gt; a -&gt; Int
+</span><span class="hs-identifier hs-var">fromEnum</span></span><span> </span><span class="annot"><span class="annottext">Char
+</span><a href="#local-6989586621679123935"><span class="hs-identifier hs-var">c</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="hs-number">28</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Integral a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">`mod`</span></span><span> </span><span class="annot"><span class="hs-number">60</span></span><span>
+</span><span id="line-37"></span></pre></body></html>

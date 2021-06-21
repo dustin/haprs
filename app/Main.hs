@@ -88,7 +88,7 @@ parseHostPort s = let h = takeWhile (/= ':') s
 
 gate :: Options -> IO ()
 gate opts@Options{..} = do
-  putStrLn $ "gatin' " <> optServer <> show opts
+  putStrLn $ "gatin' " <> optServer <> " " <> show opts
   b <- Broadcast.new
   _ <- forkIO $ consLog b
   when (isJust optMQTTURL) $ void $ forkIO $ runMQTT opts b
